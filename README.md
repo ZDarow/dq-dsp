@@ -28,20 +28,33 @@ USB host  →  TinyUSB UAC ring buffer  →  ASRC (PI controller, ±1400 ppm)
 CDC-ACM on the same USB cable carries control frames (SLIP + CRC-8) for
 the web UI's live parameter streaming, bulk Apply, and NVS Save-to-Device.
 
-## Hardware
+## Bill of materials
 
-ESP32-S3-DevKitC + 2 × **GY-PCM5102 / TENSTAR ROBOT PCM5102A** breakouts.
+| # | Part | Qty | Notes |
+|---|------|-----|-------|
+| 1 | **ESP32-S3-DevKitC-1 N16R8** | 1 | 16 MB flash + 8 MB Octal PSRAM. Standard 38-pin Espressif dev-board (also sold by Waveshare, AliExpress clones, etc.). |
+| 2 | **GY-PCM5102 / TENSTAR ROBOT PCM5102A** breakout | 2 | Purple board with 3.5 mm jack on the long edge and L/R/G analog pads. ~$2 each on AliExpress. |
+| 3 | USB-C data cable | 1 | Carries audio + serial. *Make sure it's a data cable, not power-only.* |
+| 4 | Dupont jumper wires (M-F) | ≥ 12 | 3 I2S signals × 2 DACs + shared 3V3 + GND = 8 minimum, plus a couple spares for the jumper pads. |
+| 5 | 3.5 mm audio cable / pigtail | 2 | One per DAC, into your amp or powered speakers. |
 
-| Function           | GPIO |
-|--------------------|------|
-| I2S0 BCK (DAC #1)  | 4    |
-| I2S0 LRCK          | 5    |
-| I2S0 DOUT          | 6    |
-| I2S1 BCK (DAC #2)  | 16   |
-| I2S1 LRCK          | 17   |
-| I2S1 DOUT          | 18   |
+Total parts cost: roughly **US $15–20** at the time of writing. ESP-IDF
+v5.2 toolchain is the only software dependency.
 
-Both DACs share 3V3 + GND. On each breakout:
+## Wiring
+
+![Wiring diagram — ESP32-S3 → 2× PCM5102A](docs/images/pin-diagram.svg)
+
+| Function           | ESP32-S3 GPIO |
+|--------------------|---------------|
+| I2S0 BCK (DAC #1)  | 4             |
+| I2S0 LRCK          | 5             |
+| I2S0 DOUT          | 6             |
+| I2S1 BCK (DAC #2)  | 16            |
+| I2S1 LRCK          | 17            |
+| I2S1 DOUT          | 18            |
+
+Both DACs share **3V3** + **GND**. On each PCM5102A breakout:
 - **XSMT** → 3V3 (un-mute — default jumper position is LOW = silence)
 - **SCK** → GND (chip generates MCLK internally from BCK)
 - FLT / DEMP / FMT → default LOW
