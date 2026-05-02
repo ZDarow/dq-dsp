@@ -39,10 +39,13 @@ ports of the dev-board:
 ## What do I actually do with this?
 
 Plug an ESP32-S3 dev-board with two PCM5102A breakouts soldered in into
-your laptop. Your OS sees a generic USB audio device called *DQ-DSP*.
-Open the web UI in Chrome on the same laptop, click **Connect Serial**,
-and now every PEQ knob you drag goes straight into the chip — no
-recompile, no MIDI, no $400 miniDSP.
+your laptop. Your OS sees a generic USB audio device showing up as
+**usb uac** in the audio picker (that's the UAC interface descriptor
+the upstream TinyUSB component ships — feel free to rename it to
+*DQ-DSP* in your OS sound settings if you want). Open the web UI in
+Chrome on the same laptop, click **Connect Serial**, and now every PEQ
+knob you drag goes straight into the chip — no recompile, no MIDI, no
+$400 miniDSP.
 
 ![How DQ-DSP plugs into your system](docs/images/usage-diagram.svg)
 
@@ -104,17 +107,64 @@ Both DACs share **3V3** + **GND**. On each PCM5102A breakout:
 Pin assignments are overridable via `idf.py menuconfig` →
 *Audio DSP I2S Configuration (ESP32-S3)*.
 
-## Just want the binary?
+## Flash a pre-built binary
 
-Grab the pre-built one from the [v1.0.0 release](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)
-and flash it in one shot:
+Grab the merged image from the
+[v1.0.0 release](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)
+(the ``dq-dsp-firmware-1.0.0.bin`` asset — single file, flashed at offset
+``0x0``).
 
-    python -m esptool --chip esp32s3 -b 460800 \
+### 1. Install esptool
+
+    pip install esptool                # any Python 3.8+ env
+
+### 2. Find the serial port
+
+The DevKitC-1 has two USB-C connectors. Either one works for flashing —
+the chip's ROM exposes a USB-Serial-JTAG / CDC interface in download
+mode regardless of which port you plug in. Connect at least one cable
+and look for a new device:
+
+| OS         | Command                                                |
+|------------|--------------------------------------------------------|
+| **macOS**  | ``ls /dev/cu.usbmodem*`` — pick the new entry          |
+| **Linux**  | ``ls /dev/ttyACM* /dev/ttyUSB* 2>/dev/null`` (or watch ``dmesg | tail`` after plug-in) |
+| **Windows**| Device Manager → *Ports (COM & LPT)* → look for **USB Serial Device (COMxx)** |
+
+> 💡 If two ports show up, either is fine for flashing — pick whichever
+> is new. The other one will host the audio stream once the firmware is
+> running.
+
+### 3. Quit anything that's holding the port
+
+If the chip is already running an earlier build of the firmware:
+
+- macOS Sound Settings: switch the audio output **away** from "usb uac"
+  (or whatever you renamed it to)
+- Web UI: if you're connected, click **Disconnect**
+- Other terminal apps (Arduino IDE serial monitor, ``screen``,
+  ``picocom``) — close them
+
+If ``esptool`` complains **"Resource busy"**, this is why.
+
+### 4. Flash
+
+    python -m esptool --chip esp32s3 \
+      --port /dev/cu.usbmodemXXXX \
+      -b 460800 \
       --before default_reset --after hard_reset \
       write_flash 0x0 dq-dsp-firmware-1.0.0.bin
 
-Then plug the board into a Mac / PC, [open the UI](https://dq-dsp.tamduongs.com)
-in Chrome, click **Connect Serial**, pick the DQ-DSP port, and start tweaking.
+Replace ``/dev/cu.usbmodemXXXX`` with whatever step 2 turned up
+(on Linux it's ``/dev/ttyACM0``-ish, on Windows ``COM5`` or similar).
+You should see ``Hash of data verified.`` followed by ``Hard resetting
+via RTS pin...``.
+
+After reset the chip enumerates as **usb uac** in your OS audio picker
+(rename it to *DQ-DSP* in your sound settings — macOS, Windows, and
+Linux all let you do this; the rename sticks per host).
+[Open the UI](https://dq-dsp.tamduongs.com) in Chrome, click
+**Connect Serial**, pick the device's `usbmodem*` port, and start tweaking.
 
 ## Build from source
 
