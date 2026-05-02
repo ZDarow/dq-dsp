@@ -1,12 +1,14 @@
 # DQ-DSP — Web UI
 
-Real-time control surface for the **DQ-DSP** audio DSP — an ESP32-S3
-USB Audio Class device with a 2-in / 4-out parametric pipeline.
-Parameter edits stream to the device live over Web Serial; presets live
-in the browser's localStorage and can be exported as JSON or committed
-to the device's flash.
+### 👉 [**Check it out: dq-dsp.tamduongs.com**](https://dq-dsp.tamduongs.com)
 
-> **DQ** stands for **Dương Quỳnh** — the author's daughter.
+Real-time control surface for **DQ-DSP** — an ESP32-S3 USB Audio Class
+device with a 2-in / 4-out parametric pipeline. Parameter edits stream
+to the device live over Web Serial; presets live in the browser's
+localStorage and can be exported as JSON or committed to the device's
+flash.
+
+> *(DQ = my daughter's name. Yes, I named a DSP after her. Don't @ me.)*
 
 ![DQ-DSP UI screenshot](docs/images/sample.png)
 
@@ -25,14 +27,16 @@ to the device's flash.
 - Full keyboard accessibility, theme-aware tooltips with REW export
   step-by-step instructions baked into the Import REW button
 
-## Live demo
+## Demo notes
 
-Coming soon at `https://dq-dsp.vercel.app` once the firmware repo is
-ready and the demo hardware is wired up.
+Open <https://dq-dsp.tamduongs.com> in **Chrome / Edge / Brave / Opera
+on desktop** to actually push parameters to a connected device. On
+mobile, Firefox, or Safari you can still browse the UI — Web Serial
+just isn't exposed there, and a banner says so.
 
-> Web Serial requires **Chrome / Edge / Brave / Opera on desktop**. The
-> UI auto-detects unsupported browsers (Firefox, Safari, mobile) and
-> shows a banner explaining why the Connect button is disabled.
+No hardware? You can still drag PEQ bands, swap routing, load presets,
+and watch the response chart redraw. Everything except the live device
+push works offline.
 
 ## Run locally
 
