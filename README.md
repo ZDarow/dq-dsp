@@ -62,6 +62,16 @@ The wire-protocol contract is documented there in
 `shared/dsp/serial_protocol.h`. The TypeScript decoder in
 `src/types/serial-protocol.ts` is a direct mirror.
 
+## Support the project
+
+If DQ-DSP is useful to you and you want to chip in for hardware
+prototypes, parts, or coffee while the next firmware version cooks,
+buy me a Ko-fi:
+
+[![ko-fi](https://img.shields.io/badge/Support%20on-Ko--fi-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/tamdnq)
+
+Anything is appreciated and goes straight into the build.
+
 ## License
 
 [GPLv3](./LICENSE). Forks and derivatives must remain open-source under
