@@ -18,7 +18,11 @@ flash.
 
 ![DQ-DSP UI screenshot](docs/images/sample.png)
 
-> **▶ [3-minute video demo on YouTube](https://youtu.be/UXzky9iujUc)** — me, the dev-board, two purple PCM5102As, and a bookshelf speaker pair, in one shot.
+### ▶ Video demo
+
+[![Watch the 3-minute demo on YouTube](https://img.youtube.com/vi/UXzky9iujUc/maxresdefault.jpg)](https://youtu.be/UXzky9iujUc "Click to watch on YouTube")
+
+*Me, the dev-board, two purple PCM5102As, and a bookshelf speaker pair, in one shot.*
 
 ## What do I actually do with this?
 
