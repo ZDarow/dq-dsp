@@ -1,6 +1,6 @@
 # DQ-DSP — Web UI
 
-### 📝 [**Full write-up & build story**](https://tamduongs.com/blog/dq-dsp)  ·  👉 [**Live UI**](https://dq-dsp.tamduongs.com)  ·  🔥 [**Firmware repo**](https://github.com/agooddaytowork/dq-dsp-firmware)  ·  📦 [**Pre-built v1.0.0 binary**](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)
+### 🎥 [**Watch the demo**](https://youtu.be/UXzky9iujUc)  ·  📝 [**Full write-up & build story**](https://tamduongs.com/blog/dq-dsp)  ·  👉 [**Live UI**](https://dq-dsp.tamduongs.com)  ·  🔥 [**Firmware repo**](https://github.com/agooddaytowork/dq-dsp-firmware)  ·  📦 [**Pre-built v1.0.0 binary**](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)
 
 Real-time control surface for **DQ-DSP** — an ESP32-S3 USB Audio Class
 device with a 2-in / 4-out parametric pipeline. Parameter edits stream
@@ -17,6 +17,8 @@ flash.
 > the UI; the blog is the narrative.*
 
 ![DQ-DSP UI screenshot](docs/images/sample.png)
+
+> **▶ [3-minute video demo on YouTube](https://youtu.be/UXzky9iujUc)** — me, the dev-board, two purple PCM5102As, and a bookshelf speaker pair, in one shot.
 
 ## What do I actually do with this?
 
