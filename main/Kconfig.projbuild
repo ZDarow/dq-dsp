@@ -1,0 +1,39 @@
+menu "Audio DSP I2S Configuration (ESP32-S3)"
+
+    config EXAMPLE_I2S0_BCK_PIN
+        int "I2S0 BCK GPIO (left speaker)"
+        default 4
+        help
+            GPIO for I2S0 bit clock (left speaker DAC).
+
+    config EXAMPLE_I2S0_LRCK_PIN
+        int "I2S0 WS/LRCK GPIO (left speaker)"
+        default 5
+        help
+            GPIO for I2S0 word select (left speaker DAC).
+
+    config EXAMPLE_I2S0_DATA_PIN
+        int "I2S0 DOUT GPIO (left speaker)"
+        default 6
+        help
+            GPIO for I2S0 data out (left speaker DAC).
+
+    config EXAMPLE_I2S1_BCK_PIN
+        int "I2S1 BCK GPIO (right speaker)"
+        default 16
+        help
+            GPIO for I2S1 bit clock (right speaker DAC).
+
+    config EXAMPLE_I2S1_LRCK_PIN
+        int "I2S1 WS/LRCK GPIO (right speaker)"
+        default 17
+        help
+            GPIO for I2S1 word select (right speaker DAC).
+
+    config EXAMPLE_I2S1_DATA_PIN
+        int "I2S1 DOUT GPIO (right speaker)"
+        default 18
+        help
+            GPIO for I2S1 data out (right speaker DAC).
+
+endmenu

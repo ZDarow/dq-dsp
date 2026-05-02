@@ -1,0 +1,21 @@
+build/
+.cache/
+managed_components/
+
+# User-local IDF config — only sdkconfig.defaults + Kconfig are tracked
+sdkconfig
+sdkconfig.old
+
+# OS
+.DS_Store
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+.venv/
