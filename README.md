@@ -1,10 +1,14 @@
 # DQ-DSP — ESP32-S3 Firmware
 
-USB Audio Class 1.0 → on-device DSP → dual I2S out for two PCM5102A
-breakouts. Pairs with the [DQ-DSP web UI](https://github.com/agooddaytowork/dq-dsp-ui)
-for live parameter control over the same USB cable (CDC-ACM).
+### 👉 [**Try the live UI: dq-dsp.tamduongs.com**](https://dq-dsp.tamduongs.com)  ·  📦 [**Pre-built binaries (v1.0.0)**](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)  ·  🖥 [**UI source**](https://github.com/agooddaytowork/dq-dsp-ui)
 
-> **DQ** stands for **Dương Quỳnh** — the author's daughter.
+USB Audio Class 1.0 → on-device DSP → dual I2S out for two PCM5102A
+breakouts. Pairs with the **DQ-DSP web UI** for live parameter control
+over the same USB cable (CDC-ACM).
+
+> *(DQ = my daughter's name. Yes, I named a DSP after her. Don't @ me.)*
+
+[![DQ-DSP UI](docs/images/dq-dsp-ui.png)](https://dq-dsp.tamduongs.com)
 
 ## Audio path
 
@@ -45,7 +49,19 @@ Both DACs share 3V3 + GND. On each breakout:
 Pin assignments are overridable via `idf.py menuconfig` →
 *Audio DSP I2S Configuration (ESP32-S3)*.
 
-## Build
+## Just want the binary?
+
+Grab the pre-built one from the [v1.0.0 release](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)
+and flash it in one shot:
+
+    python -m esptool --chip esp32s3 -b 460800 \
+      --before default_reset --after hard_reset \
+      write_flash 0x0 dq-dsp-firmware-1.0.0.bin
+
+Then plug the board into a Mac / PC, [open the UI](https://dq-dsp.tamduongs.com)
+in Chrome, click **Connect Serial**, pick the DQ-DSP port, and start tweaking.
+
+## Build from source
 
 ESP-IDF v5.x required. Set up per
 <https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/get-started/>.
@@ -94,9 +110,20 @@ in the companion repo and is a one-to-one mirror.
 
 ## Web UI companion
 
-UI lives at <https://github.com/agooddaytowork/dq-dsp-ui> — connect via
-Web Serial on Chrome / Edge / Brave / Opera desktop. The UI auto-detects
-unsupported browsers (Firefox, Safari, mobile) and shows a banner.
+UI source: <https://github.com/agooddaytowork/dq-dsp-ui>. Live deploy:
+<https://dq-dsp.tamduongs.com>. Connect via Web Serial on Chrome / Edge /
+Brave / Opera desktop — the UI auto-detects unsupported browsers
+(Firefox, Safari, mobile) and shows a banner.
+
+## Support the project
+
+If DQ-DSP is useful to you and you want to chip in for hardware
+prototypes, parts, or coffee while the next firmware version cooks,
+buy me a Ko-fi:
+
+[![ko-fi](https://img.shields.io/badge/Support%20on-Ko--fi-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/tamdnq)
+
+Anything is appreciated and goes straight into the build.
 
 ## License
 
