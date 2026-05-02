@@ -1,6 +1,6 @@
 # DQ-DSP — ESP32-S3 Firmware
 
-### 📝 [**Full write-up & build story**](https://tamduongs.com/blog/dq-dsp)  ·  👉 [**Live UI**](https://dq-dsp.tamduongs.com)  ·  📦 [**Pre-built v1.0.0 binary**](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)  ·  🖥 [**UI source**](https://github.com/agooddaytowork/dq-dsp-ui)
+### 🎥 [**Watch the demo**](https://youtu.be/UXzky9iujUc)  ·  📝 [**Full write-up & build story**](https://tamduongs.com/blog/dq-dsp)  ·  👉 [**Live UI**](https://dq-dsp.tamduongs.com)  ·  📦 [**Pre-built v1.0.0 binary**](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)  ·  🖥 [**UI source**](https://github.com/agooddaytowork/dq-dsp-ui)
 
 USB Audio Class 1.0 → on-device DSP → dual I2S out for two PCM5102A
 breakouts. Pairs with the **DQ-DSP web UI** for live parameter control
@@ -15,6 +15,8 @@ over a second USB cable (UART0 over the DevKitC-1's USB-Serial-JTAG port).
 > the blog is the narrative.*
 
 [![DQ-DSP UI](docs/images/dq-dsp-ui.png)](https://dq-dsp.tamduongs.com)
+
+> **▶ [3-minute video demo on YouTube](https://youtu.be/UXzky9iujUc)** — bench tour, browser UI, and a bi-amped bookshelf speaker actually playing music.
 
 ## Audio path
 
