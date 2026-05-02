@@ -1,12 +1,18 @@
 # DQ-DSP — ESP32-S3 Firmware
 
-### 👉 [**Try the live UI: dq-dsp.tamduongs.com**](https://dq-dsp.tamduongs.com)  ·  📦 [**Pre-built binaries (v1.0.0)**](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)  ·  🖥 [**UI source**](https://github.com/agooddaytowork/dq-dsp-ui)
+### 📝 [**Full write-up & build story**](https://tamduongs.com/blog/dq-dsp)  ·  👉 [**Live UI**](https://dq-dsp.tamduongs.com)  ·  📦 [**Pre-built v1.0.0 binary**](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)  ·  🖥 [**UI source**](https://github.com/agooddaytowork/dq-dsp-ui)
 
 USB Audio Class 1.0 → on-device DSP → dual I2S out for two PCM5102A
 breakouts. Pairs with the **DQ-DSP web UI** for live parameter control
 over a second USB cable (UART0 over the DevKitC-1's USB-Serial-JTAG port).
 
 > *(DQ = my daughter's name. Yes, I named a DSP after her. Don't @ me.)*
+
+> **📝 [The full story →](https://tamduongs.com/blog/dq-dsp)** —
+> *why an active speaker, what I tried first (a Wondom ADAU1701 board, a
+> failed attempt to ship a miniDSP into Vietnam), and the complete $20
+> build journey with photos. This README is the technical reference;
+> the blog is the narrative.*
 
 [![DQ-DSP UI](docs/images/dq-dsp-ui.png)](https://dq-dsp.tamduongs.com)
 
@@ -54,7 +60,9 @@ $400 miniDSP.
 Bookshelf speakers are usually passive — the crossover is a chunk of
 inductors and capacitors inside the cab, splitting one full-range
 amplifier feed into woofer + tweeter. That passive XO has tradeoffs:
-phase shift, insertion loss, no per-driver EQ, no time alignment.
+phase shift, insertion loss, no per-driver EQ, no time alignment. In
+Vietnam it's also painful to source — decent air-core inductors and
+audiophile-grade film caps cost more than the drivers themselves.
 
 **Active bi-amp** rips the passive crossover out and feeds each driver
 its own amplifier, with the crossover done in DSP. DQ-DSP makes that a
@@ -72,6 +80,18 @@ You pick the crossover frequency from the driver's spec sheet (usually
 delay for time-alignment, and PEQ for any baffle / room peaks. Save the
 preset, commit to flash, unplug from the laptop — the box keeps playing
 forever from any USB host.
+
+**Reference build** — the speakers I actually drive with this thing:
+
+| Role     | Driver                        | Notes                                                            |
+|----------|-------------------------------|------------------------------------------------------------------|
+| Tweeter  | **Dayton Audio NHP25Ti-4**    | 1" titanium dome, 4Ω. ~$28. Crosses over comfortably from ~2 kHz. |
+| Mid/Bass | **Dayton Audio TCP115-4**     | 5" paper-cone polypropylene-coated, 4Ω. ~$38. Tight bottom.       |
+
+Dayton drivers are cheap and well-measured — Parts Express publishes
+proper FRD/ZMA files, so you can simulate the crossover in VituixCAD or
+similar before cutting wood. Pictures of the actual cabs and the
+breadboarded DSP are in the [blog post](https://tamduongs.com/blog/dq-dsp).
 
 ## Bill of materials
 
