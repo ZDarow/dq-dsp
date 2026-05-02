@@ -99,19 +99,20 @@ export function SerialStatusBar() {
     });
   }, [onConfig, applyDeviceConfig, addSerialLog]);
 
-  // Auto-sync from device on connect — pull current sample rate, EQ, XO,
-  // gain, etc. so the UI reflects the firmware's actual state instead of
-  // whatever was cached in localStorage. Single shot, ~250 ms after connect
-  // gives the device time to finish enumerating and the read loop to be up.
-  useEffect(() => {
-    if (!serialConnected) return;
-    const t = setTimeout(() => {
-      addSerialLog('[sync] Requesting current config from device…');
-      requestConfig();
-    }, 250);
-    return () => clearTimeout(t);
-  }, [serialConnected, requestConfig, addSerialLog]);
-
+  // No auto-sync from device on connect.
+  //
+  // The UI already restores its state from localStorage, so what the user
+  // sees right after Connect is what they last had open. Pulling the
+  // device's current config in the background was a constant footgun:
+  // the late SYNC_CONFIG reply would race with whatever the user did
+  // during the 250 ms grace window (most commonly clicking Load Preset)
+  // and the device's stale RAM state would overwrite the just-loaded
+  // preset. If a user really wants to reflect the device's truth,
+  // they can click Apply to push their UI state instead.
+  //
+  // Keep `requestConfig` available for a future manual "Pull from Device"
+  // button.
+  void requestConfig;
   const handleConnect = useCallback(async () => {
     await serialConnect();
   }, [serialConnect]);
