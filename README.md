@@ -1,6 +1,6 @@
 # DQ-DSP — Web UI
 
-### 👉 [**Check it out: dq-dsp.tamduongs.com**](https://dq-dsp.tamduongs.com)
+### 📝 [**Full write-up & build story**](https://tamduongs.com/blog/dq-dsp)  ·  👉 [**Live UI**](https://dq-dsp.tamduongs.com)  ·  🔥 [**Firmware repo**](https://github.com/agooddaytowork/dq-dsp-firmware)  ·  📦 [**Pre-built v1.0.0 binary**](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)
 
 Real-time control surface for **DQ-DSP** — an ESP32-S3 USB Audio Class
 device with a 2-in / 4-out parametric pipeline. Parameter edits stream
@@ -9,6 +9,12 @@ localStorage and can be exported as JSON or committed to the device's
 flash.
 
 > *(DQ = my daughter's name. Yes, I named a DSP after her. Don't @ me.)*
+
+> **📝 [The full story →](https://tamduongs.com/blog/dq-dsp)** —
+> *why an active speaker, what I tried first (a Wondom ADAU1701 board, a
+> failed attempt to ship a miniDSP into Vietnam), and the complete $20
+> build journey with photos. This README is the technical reference for
+> the UI; the blog is the narrative.*
 
 ![DQ-DSP UI screenshot](docs/images/sample.png)
 
@@ -43,6 +49,11 @@ Pick the crossover frequency off the driver's spec sheet (usually
 1.5–3 kHz for a 1" dome / 5" mid), trim gain, time-align with delay,
 and notch out the room with the Room EQ tab. Save preset → click
 **Save to Device** → unplug → the box keeps playing forever.
+
+The reference build I drive with this UI: **Dayton Audio NHP25Ti-4**
+(1" titanium dome) on top + **Dayton Audio TCP115-4** (5" paper-cone)
+on the bottom. Crossed over around 2 kHz with LR4 24 dB/oct. Photos and
+the full story are in the [blog write-up](https://tamduongs.com/blog/dq-dsp).
 
 ## Features
 
