@@ -134,7 +134,7 @@ function PinDiagram() {
       <g>
         <rect x="30" y="50" width="200" height="400" rx="12" fill={PANEL} stroke={SURFACE} strokeWidth="1.5" />
         <text x="130" y="78" textAnchor="middle" fontSize="14" fontWeight="700" fill={TEXT}>ESP32-S3</text>
-        <text x="130" y="94" textAnchor="middle" fontSize="10" fill={DIM}>USB-OTG · UAC + CDC</text>
+        <text x="130" y="94" textAnchor="middle" fontSize="10" fill={DIM}>USB-OTG (UAC) + UART0 (USB-CDC bridge)</text>
 
         {/* Power pins */}
         <circle cx="230" cy="140" r="4" fill={PWR} />
@@ -461,7 +461,8 @@ ratio = clamp(ratio, ±maxPpm)`}</pre>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card title="Core 0 — Control & USB">
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
-                  <li><strong className="text-text-primary">tinyusb_task</strong> — UAC + CDC class drivers</li>
+                  <li><strong className="text-text-primary">tinyusb_task</strong> — UAC class driver on the native USB-OTG port</li>
+                  <li><strong className="text-text-primary">UART0 / USB-Serial-JTAG</strong> — separate USB-C port; carries the Web Serial control stream</li>
                   <li><strong className="text-text-primary">serial_rx</strong> — frame parser, dispatches to <code className="value-mono">dsp_param_apply()</code></li>
                   <li><strong className="text-text-primary">app_main</strong> — NVS init, DSP boot, idle</li>
                 </ul>

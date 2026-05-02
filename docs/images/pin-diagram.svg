@@ -23,7 +23,7 @@
   <!-- ESP32-S3 module -->
   <rect x="30" y="50" width="200" height="400" rx="12" fill="#242428" stroke="#2e2e32" stroke-width="1.5"/>
   <text x="130" y="78" text-anchor="middle" class="title" fill="#f0f0f2">ESP32-S3</text>
-  <text x="130" y="94" text-anchor="middle" class="sub">USB-OTG · UAC + CDC</text>
+  <text x="130" y="94" text-anchor="middle" class="sub">USB-OTG (UAC) + UART0 (USB-CDC bridge)</text>
   <text x="130" y="108" text-anchor="middle" class="sub">N16R8 (16 MB flash + 8 MB PSRAM)</text>
 
   <!-- Power pins -->
