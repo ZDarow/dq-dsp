@@ -66,6 +66,38 @@ The wire-protocol contract is documented there in
 `shared/dsp/serial_protocol.h`. The TypeScript decoder in
 `src/types/serial-protocol.ts` is a direct mirror.
 
+### Bill of materials
+
+| # | Part | Qty | Notes |
+|---|------|-----|-------|
+| 1 | **ESP32-S3-DevKitC-1 N16R8** | 1 | 16 MB flash + 8 MB Octal PSRAM, 38-pin Espressif dev-board. |
+| 2 | **GY-PCM5102 / TENSTAR ROBOT PCM5102A** breakout | 2 | Purple board, 3.5 mm jack + L/R/G analog pads. |
+| 3 | USB-C data cable | 1 | Carries audio + serial. Must be a data cable, not power-only. |
+| 4 | Dupont jumper wires (M-F) | ≥ 12 | 3 I2S signals × 2 DACs + shared power = 8 min + a few for the jumper pads. |
+| 5 | 3.5 mm audio cable / pigtail | 2 | One per DAC, into amp or powered speakers. |
+
+Roughly **US $15–20** end-to-end. Pre-built firmware binary lives on the
+firmware repo's [v1.0.0 release](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)
+— flash, plug in, and the UI sees it.
+
+### Wiring
+
+![Wiring — ESP32-S3 → 2× PCM5102A](docs/images/pin-diagram.svg)
+
+| Function           | ESP32-S3 GPIO |
+|--------------------|---------------|
+| I2S0 BCK (DAC #1)  | 4             |
+| I2S0 LRCK          | 5             |
+| I2S0 DOUT          | 6             |
+| I2S1 BCK (DAC #2)  | 16            |
+| I2S1 LRCK          | 17            |
+| I2S1 DOUT          | 18            |
+
+Both DACs share 3V3 + GND. On each PCM5102A breakout:
+**XSMT → 3V3** (un-mute — default jumper position is LOW = silence),
+**SCK → GND** (chip generates MCLK internally from BCK),
+FLT / DEMP / FMT default LOW.
+
 ## Support the project
 
 If DQ-DSP is useful to you and you want to chip in for hardware
