@@ -16,7 +16,11 @@ over a second USB cable (UART0 over the DevKitC-1's USB-Serial-JTAG port).
 
 [![DQ-DSP UI](docs/images/dq-dsp-ui.png)](https://dq-dsp.tamduongs.com)
 
-> **▶ [3-minute video demo on YouTube](https://youtu.be/UXzky9iujUc)** — bench tour, browser UI, and a bi-amped bookshelf speaker actually playing music.
+### ▶ Video demo
+
+[![Watch the 3-minute demo on YouTube](https://img.youtube.com/vi/UXzky9iujUc/maxresdefault.jpg)](https://youtu.be/UXzky9iujUc "Click to watch on YouTube")
+
+*Bench tour, browser UI, and a bi-amped bookshelf speaker actually playing music.*
 
 ## Audio path
 
