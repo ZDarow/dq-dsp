@@ -72,7 +72,7 @@ The wire-protocol contract is documented there in
 |---|------|-----|-------|
 | 1 | **ESP32-S3-DevKitC-1 N16R8** | 1 | 16 MB flash + 8 MB Octal PSRAM, 38-pin Espressif dev-board. |
 | 2 | **GY-PCM5102 / TENSTAR ROBOT PCM5102A** breakout | 2 | Purple board, 3.5 mm jack + L/R/G analog pads. |
-| 3 | USB-C data cable | 1 | Carries audio + serial. Must be a data cable, not power-only. |
+| 3 | USB-C data cable | 2 | DevKitC-1 has two USB-C ports — USB-Serial-JTAG (for flashing) and native USB-OTG (for UAC audio + CDC control). Both must be data-capable. |
 | 4 | Dupont jumper wires (M-F) | ≥ 12 | 3 I2S signals × 2 DACs + shared power = 8 min + a few for the jumper pads. |
 | 5 | 3.5 mm audio cable / pigtail | 2 | One per DAC, into amp or powered speakers. |
 
