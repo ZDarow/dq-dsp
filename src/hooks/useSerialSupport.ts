@@ -4,7 +4,7 @@ export interface SerialSupport {
   /** Web Serial API is callable in this environment. */
   supported: boolean;
   /** Coarse environment classification — used to tailor the warning copy. */
-  kind: 'supported' | 'mobile' | 'firefox' | 'safari' | 'other';
+  kind: 'supported' | 'insecure' | 'mobile' | 'firefox' | 'safari' | 'other';
   /** Short description suitable for a toast/banner headline. */
   headline: string;
   /** Longer actionable message explaining what to do. */
@@ -12,12 +12,27 @@ export interface SerialSupport {
 }
 
 function detect(): SerialSupport {
-  if (typeof navigator === 'undefined') {
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') {
     return {
       supported: false,
       kind: 'other',
       headline: 'Serial control unavailable',
       message: 'Browser environment not detected.',
+    };
+  }
+
+  // Web Serial requires a secure context. The check has to run before the
+  // navigator.serial probe, because Chrome simply doesn't expose `serial`
+  // on http:// origins — and the user would then think their (perfectly
+  // capable) browser is the problem. localhost and 127.0.0.1 count as
+  // secure contexts even on http.
+  if (!window.isSecureContext) {
+    const httpsUrl = `https://${window.location.host}${window.location.pathname}${window.location.search}`;
+    return {
+      supported: false,
+      kind: 'insecure',
+      headline: 'This page is loaded over HTTP — Web Serial needs HTTPS',
+      message: `Web Serial only runs on secure contexts (HTTPS or localhost). Reopen the page at ${httpsUrl} to enable the Connect button.`,
     };
   }
 
