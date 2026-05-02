@@ -48,6 +48,66 @@ ports of the dev-board:
 | USB-Serial-JTAG (UART0)  | flashing + Web Serial parameter control| #1    |
 | Native USB-OTG           | USB Audio Class (UAC) — the actual audio stream | #2 |
 
+## DSP specs
+
+### Audio I/O
+
+| | |
+|---|---|
+| USB input | UAC 1.0, 2 channels, **16-bit / 48 kHz** |
+| Analog output | 4 channels (2 × stereo line) via 2 × PCM5102A I²S DACs |
+| DAC dynamic range | 112 dB (PCM5102A datasheet, A-weighted) |
+| Output drive | 2.1 Vrms typical line level, AC-coupled — feed any line-level amp / powered speaker |
+
+### DSP pipeline (per audio block)
+
+| | |
+|---|---|
+| Internal precision | 32-bit float |
+| Sample rate | 48 kHz fixed (matches USB UAC + I²S) |
+| Block size | 128 samples (~ 2.7 ms) |
+| **Per-input (×2)** | 10-band Room EQ + 10-band Input PEQ + gain · phase · mute |
+| **Routing** | 2 in × 4 out matrix · per-cell enable + linear gain (0–100 %) |
+| **Per-output (×4)** | 10-band PEQ + crossover (HP + LP) + delay + gain · phase · mute |
+| PEQ filter types | peak · low / high shelf · low / high pass · notch |
+| PEQ ranges | freq 20 Hz – 20 kHz · gain ±15 dB · Q 0.1 – 30 |
+| Crossover topologies | Linkwitz-Riley, Butterworth |
+| Crossover slopes | 6 / 12 / 18 / 24 dB/oct |
+| Delay range | 0 – 10 ms per output, sample-accurate |
+| Gain range | −72 to +12 dB per channel + post-processing master |
+| Limiter | Soft-clip on master output |
+
+### Real-time behaviour
+
+| | |
+|---|---|
+| End-to-end latency | ~10–15 ms typical (USB packet + ring buffer + ASRC + DSP + I²S) |
+| ASRC compensation | PI controller, ±1400 ppm tunable (default Kp 0.10 / Ki 0.020 / target 20 %) |
+| Telemetry rate | 1 Hz over USB CDC (CPU load, drift PPM, buffer fill) |
+| DSP load | ~30–40 % of one Core (Core 1 pinned, 240 MHz) at full pipeline |
+| Atomic config swap | shadow-buffer commit between audio blocks — no clicks on parameter changes |
+
+### Hardware platform
+
+| | |
+|---|---|
+| MCU | ESP32-S3 N16R8 — Xtensa LX7 dual core @ 240 MHz |
+| Flash | 16 MB QSPI |
+| PSRAM | 8 MB Octal |
+| USB | 2 × USB-C: USB-Serial-JTAG (UART0) + native USB-OTG |
+| ESP-IDF | v5.2 |
+
+### Control link
+
+| | |
+|---|---|
+| Transport | USB CDC-ACM via UART0 / USB-Serial-JTAG bridge |
+| Baud rate | 115 200 8N1 |
+| Frame format | `0xAA 0x55 \| length \| payload \| CRC-8 (poly 0x07)` |
+| Param updates | live diff streaming, ~5 ms typical RTT (browser → device → ack) |
+| Bulk push | "Apply" — entire config in one frame burst |
+| Persistence | NVS commit on "Save to Device" (explicit user action; deferred to avoid audio glitch from flash-erase blocking the audio task) |
+
 ## What do I actually do with this?
 
 Plug an ESP32-S3 dev-board with two PCM5102A breakouts soldered in into
