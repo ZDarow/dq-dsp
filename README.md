@@ -36,6 +36,40 @@ ports of the dev-board:
 | USB-Serial-JTAG (UART0)  | flashing + Web Serial parameter control| #1    |
 | Native USB-OTG           | USB Audio Class (UAC) — the actual audio stream | #2 |
 
+## What do I actually do with this?
+
+Plug an ESP32-S3 dev-board with two PCM5102A breakouts soldered in into
+your laptop. Your OS sees a generic USB audio device called *DQ-DSP*.
+Open the web UI in Chrome on the same laptop, click **Connect Serial**,
+and now every PEQ knob you drag goes straight into the chip — no
+recompile, no MIDI, no $400 miniDSP.
+
+![How DQ-DSP plugs into your system](docs/images/usage-diagram.svg)
+
+### The use case I actually built it for: active 2-way speakers
+
+Bookshelf speakers are usually passive — the crossover is a chunk of
+inductors and capacitors inside the cab, splitting one full-range
+amplifier feed into woofer + tweeter. That passive XO has tradeoffs:
+phase shift, insertion loss, no per-driver EQ, no time alignment.
+
+**Active bi-amp** rips the passive crossover out and feeds each driver
+its own amplifier, with the crossover done in DSP. DQ-DSP makes that a
+$20 BOM:
+
+| DSP output | Drives           | Typical settings                  |
+|------------|------------------|-----------------------------------|
+| Out 1      | Left woofer      | LP @ XO freq, LR4 24 dB/oct       |
+| Out 2      | Left tweeter     | HP @ XO freq, LR4 24 dB/oct, +delay if needed |
+| Out 3      | Right tweeter    | mirror of Out 2 (link group)      |
+| Out 4      | Right woofer     | mirror of Out 1 (link group)      |
+
+You pick the crossover frequency from the driver's spec sheet (usually
+1.5–3 kHz for a typical 1" dome / 5" mid). Add per-driver gain trim,
+delay for time-alignment, and PEQ for any baffle / room peaks. Save the
+preset, commit to flash, unplug from the laptop — the box keeps playing
+forever from any USB host.
+
 ## Bill of materials
 
 | # | Part | Qty | Notes |
