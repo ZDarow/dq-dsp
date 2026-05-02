@@ -34,7 +34,7 @@ the web UI's live parameter streaming, bulk Apply, and NVS Save-to-Device.
 |---|------|-----|-------|
 | 1 | **ESP32-S3-DevKitC-1 N16R8** | 1 | 16 MB flash + 8 MB Octal PSRAM. Standard 38-pin Espressif dev-board (also sold by Waveshare, AliExpress clones, etc.). |
 | 2 | **GY-PCM5102 / TENSTAR ROBOT PCM5102A** breakout | 2 | Purple board with 3.5 mm jack on the long edge and L/R/G analog pads. ~$2 each on AliExpress. |
-| 3 | USB-C data cable | 1 | Carries audio + serial. *Make sure it's a data cable, not power-only.* |
+| 3 | USB-C data cable | 2 | DevKitC-1 has two USB-C ports — one **USB-Serial-JTAG** (UART0, used for flashing) and one **native USB-OTG** (used for UAC audio + CDC control). Use both during initial bring-up; once flashed you only need the OTG cable. *Both must be data-capable, not power-only.* |
 | 4 | Dupont jumper wires (M-F) | ≥ 12 | 3 I2S signals × 2 DACs + shared 3V3 + GND = 8 minimum, plus a couple spares for the jumper pads. |
 | 5 | 3.5 mm audio cable / pigtail | 2 | One per DAC, into your amp or powered speakers. |
 
