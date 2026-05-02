@@ -8,7 +8,7 @@ to the device's flash.
 
 > **DQ** stands for **Dương Quỳnh** — the author's daughter.
 
-![DQ-DSP UI](public/icon.svg)
+![DQ-DSP UI screenshot](docs/images/sample.png)
 
 ## Features
 
