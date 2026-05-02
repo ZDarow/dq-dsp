@@ -12,6 +12,35 @@ flash.
 
 ![DQ-DSP UI screenshot](docs/images/sample.png)
 
+## What do I actually do with this?
+
+Plug an ESP32-S3 dev-board with two PCM5102A breakouts soldered in into
+your laptop. Your OS sees a generic USB audio device called *DQ-DSP*.
+Open this UI in Chrome on the same laptop, click **Connect Serial**,
+and now every PEQ knob you drag goes straight into the chip — no
+recompile, no MIDI, no $400 miniDSP.
+
+![How DQ-DSP plugs into your system](docs/images/usage-diagram.svg)
+
+### The use case I actually built it for: active 2-way speakers
+
+Bookshelf speakers are usually passive — the crossover is a chunk of
+inductors and capacitors inside the cab. Active bi-amp rips that out
+and feeds each driver its own amp, with the crossover done in DSP.
+DQ-DSP makes it a $20 BOM:
+
+| DSP output | Drives        | Typical settings                          |
+|------------|---------------|-------------------------------------------|
+| Out 1      | Left woofer   | LP @ XO freq, LR4 24 dB/oct               |
+| Out 2      | Left tweeter  | HP @ XO freq, LR4 24 dB/oct, optional delay |
+| Out 3      | Right tweeter | mirror of Out 2 via link group            |
+| Out 4      | Right woofer  | mirror of Out 1 via link group            |
+
+Pick the crossover frequency off the driver's spec sheet (usually
+1.5–3 kHz for a 1" dome / 5" mid), trim gain, time-align with delay,
+and notch out the room with the Room EQ tab. Save preset → click
+**Save to Device** → unplug → the box keeps playing forever.
+
 ## Features
 
 - **2 inputs × 4 outputs**, 10-band parametric EQ on every channel
