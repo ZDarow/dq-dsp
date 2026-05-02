@@ -61,20 +61,20 @@ The reference build I drive with this UI: **Dayton Audio NHP25Ti-4**
 on the bottom. Crossed over around 2 kHz with LR4 24 dB/oct. Photos and
 the full story are in the [blog write-up](https://tamduongs.com/blog/dq-dsp).
 
-## Features
+## What the UI lets you do
 
-- **2 inputs × 4 outputs**, 10-band parametric EQ on every channel
-- **Room EQ** stage with REW measurement import + auto-EQ against
-  flat / Harman / tilt targets
-- **2 × 4 routing matrix** with per-crosspoint linear gain
-- **Per-output**: gain · mute · phase · 0–10 ms delay · 10-band PEQ
-  · crossover (LR / Butterworth, 6/12/18/24 dB/oct)
-- **Flexible link groups** — any-to-any output mirroring
-- **Live clock-drift compensation (ASRC)** with tunable PI controller
-- Per-channel CPU-load + buffer-fill telemetry charts
-- **Liquid Glass** UI in light + dark
-- Full keyboard accessibility, theme-aware tooltips with REW export
-  step-by-step instructions baked into the Import REW button
+| Section | Feature | Detail |
+|---|---|---|
+| **Per-input** (×2) | Room EQ + Input PEQ | Two 10-band parametric EQ stages — Room EQ (REW import + auto-EQ vs flat / Harman / tilt) sits before the Input PEQ, both run before routing |
+| **Routing matrix** | 2 in × 4 out, per-cell gain | Enable / disable any crosspoint, linear gain 0–100 % per cell — mono-sum, balance, sub blends, all of it |
+| **Per-output** (×4) | PEQ · crossover · delay · gain · phase · mute | 10-band PEQ + HP / LP crossover (Linkwitz-Riley or Butterworth, 6 / 12 / 18 / 24 dB/oct) + 0–10 ms sample-accurate delay |
+| **Link groups** | Any-to-any output mirroring | Link Out 1 + Out 3, or all four — parameter edits replicate across every member of the group, ideal for stereo pairs or ganging amps onto one sub |
+| **ASRC drift comp** | Tunable PI controller | Kp / Ki / target fill / max PPM all live-tunable from the System panel; clock-drift + buffer-fill charts redraw at 1 Hz |
+| **Master stage** | Volume + soft-clip limiter | Post-processing dB knob applied right before the DAC |
+| **Acoustic sums** | User-defined sum curves | Add Σ Speaker L = Out 1 + Out 2 etc. — chart plots their complex (phase-aware) sum so you can verify the bi-amp blend |
+| **Presets** | Browser localStorage + JSON | Save New / Save / Save to File / Load — dirty indicator (Saved · Modified · Unsaved) vs the loaded preset |
+| **Device sync** | Apply + Save to Device | Live diff-streaming on every knob; **Apply** bulk-pushes the whole config to RAM, **Save to Device** commits to NVS |
+| **UX polish** | Liquid Glass · light + dark · custom tooltips · keyboard nav | Theme-aware Tooltip with REW export step-by-step baked into the Import REW button. Auto-detect banner on Firefox / Safari / mobile / HTTP — Connect button greys out with a contextual reason |
 
 ## Demo notes
 
