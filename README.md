@@ -15,10 +15,13 @@ flash.
 ## What do I actually do with this?
 
 Plug an ESP32-S3 dev-board with two PCM5102A breakouts soldered in into
-your laptop. Your OS sees a generic USB audio device called *DQ-DSP*.
-Open this UI in Chrome on the same laptop, click **Connect Serial**,
-and now every PEQ knob you drag goes straight into the chip — no
-recompile, no MIDI, no $400 miniDSP.
+your laptop. Your OS sees a generic USB audio device showing up as
+**usb uac** in the audio picker (that's the UAC interface descriptor
+the upstream TinyUSB component ships — feel free to rename it to
+*DQ-DSP* in your OS sound settings if you want). Open this UI in Chrome
+on the same laptop, click **Connect Serial**, and now every PEQ knob
+you drag goes straight into the chip — no recompile, no MIDI, no $400
+miniDSP.
 
 ![How DQ-DSP plugs into your system](docs/images/usage-diagram.svg)
 
