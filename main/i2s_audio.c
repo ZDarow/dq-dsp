@@ -19,7 +19,20 @@ esp_err_t i2s_audio_init_dual_output(uint32_t sample_rate)
 {
     esp_err_t err;
 
-    /* ---------- I2S0 -- left speaker ---------- */
+    /* ---------- I2S0 -- left speaker ----------
+     *
+     * auto_clear=false: at 24-bit/96kHz the DMA buffer holds only ~30 ms of
+     * audio (12 × 240 × 8 bytes). With auto_clear=true the IDF driver zeroes
+     * any descriptor it consumes before the audio task refills it. That
+     * produces persistent silence whenever the USB→ASRC→I2S pipeline lags
+     * even briefly. Leaving auto_clear=false makes brief stalls audible
+     * (replay of the previous descriptor) which is the lesser evil and is
+     * what the audio task already handles via the drift PI controller.
+     *
+     * Clock source: ESP32-S3 only exposes XTAL (40 MHz) and PLL_F160M for I2S
+     * (no APLL on S3 I2S unit). Default PLL_F160M divides to 96 kHz × 64fs =
+     * 6.144 MHz with fractional divider; PCM5102A's PLL has enough capture
+     * range to lock. */
     i2s_chan_config_t chan0_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     chan0_cfg.dma_desc_num = 12;
     chan0_cfg.dma_frame_num = 240;
@@ -33,7 +46,7 @@ esp_err_t i2s_audio_init_dual_output(uint32_t sample_rate)
 
     i2s_std_config_t std0_cfg = {
         .clk_cfg  = I2S_STD_CLK_DEFAULT_CONFIG(sample_rate),
-        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
         .gpio_cfg = {
             .mclk = I2S_GPIO_UNUSED,
             .bclk = CONFIG_EXAMPLE_I2S0_BCK_PIN,
@@ -43,6 +56,7 @@ esp_err_t i2s_audio_init_dual_output(uint32_t sample_rate)
             .invert_flags = { .mclk_inv = false, .bclk_inv = false, .ws_inv = false },
         },
     };
+    std0_cfg.slot_cfg.slot_bit_width = I2S_SLOT_BIT_WIDTH_32BIT;
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(i2s_tx_chan0, &std0_cfg));
 
     /* ---------- I2S1 -- right speaker ---------- */
@@ -59,7 +73,7 @@ esp_err_t i2s_audio_init_dual_output(uint32_t sample_rate)
 
     i2s_std_config_t std1_cfg = {
         .clk_cfg  = I2S_STD_CLK_DEFAULT_CONFIG(sample_rate),
-        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
         .gpio_cfg = {
             .mclk = I2S_GPIO_UNUSED,
             .bclk = CONFIG_EXAMPLE_I2S1_BCK_PIN,
@@ -69,6 +83,7 @@ esp_err_t i2s_audio_init_dual_output(uint32_t sample_rate)
             .invert_flags = { .mclk_inv = false, .bclk_inv = false, .ws_inv = false },
         },
     };
+    std1_cfg.slot_cfg.slot_bit_width = I2S_SLOT_BIT_WIDTH_32BIT;
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(i2s_tx_chan1, &std1_cfg));
 
     /* Enable both channels back-to-back for phase-coherent start */

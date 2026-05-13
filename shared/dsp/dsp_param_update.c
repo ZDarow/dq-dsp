@@ -9,6 +9,7 @@
 #include "dsp_param_update.h"
 #include "ble_protocol.h"
 #include "esp_log.h"
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include <math.h>
@@ -811,12 +812,43 @@ uint8_t dsp_param_apply_bulk(const uint8_t *data, size_t len)
     /* Copy to staging */
     memcpy(staging_ptr, data, sizeof(dsp_config_t));
 
+    /* Sample rate is fixed at compile time by CONFIG_UAC_SAMPLE_RATE — the USB
+     * UAC descriptor advertises only that rate, and biquad coefficients are
+     * frequency-warped by the design Fs. If the UI sends a config carrying a
+     * different rate (e.g. UI default 48k vs firmware 96k), the coefficients
+     * inside that blob were computed for the wrong Fs and would warp the EQ
+     * cutoffs and possibly destabilise filter poles.
+     *
+     * Defence: force header/global sample_rate to the firmware-fixed rate, and
+     * wipe all biquad coefficients to identity (transparent passthrough). The
+     * UI will re-derive correct coefficients on its next push once it observes
+     * the corrected sample rate from the device. */
+    if (staging_ptr->global.sample_rate != CONFIG_UAC_SAMPLE_RATE) {
+        ESP_LOGW(TAG, "Bulk config sr=%lu mismatches firmware %d — forcing rate, wiping biquads to identity",
+                 (unsigned long)staging_ptr->global.sample_rate, CONFIG_UAC_SAMPLE_RATE);
+        staging_ptr->header.sample_rate = CONFIG_UAC_SAMPLE_RATE;
+        staging_ptr->global.sample_rate = CONFIG_UAC_SAMPLE_RATE;
+        const biquad_coeffs_t identity = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+        for (int i = 0; i < DSP_NUM_INPUTS; i++) {
+            for (int b = 0; b < DSP_MAX_PEQ_BANDS; b++)
+                staging_ptr->inputs[i].eq_bands[b] = identity;
+        }
+        for (int o = 0; o < DSP_NUM_OUTPUTS; o++) {
+            for (int b = 0; b < DSP_MAX_PEQ_BANDS; b++)
+                staging_ptr->outputs[o].eq_bands[b] = identity;
+            for (int s = 0; s < DSP_MAX_XO_STAGES; s++) {
+                staging_ptr->outputs[o].hp_stages[s] = identity;
+                staging_ptr->outputs[o].lp_stages[s] = identity;
+            }
+        }
+    }
+
     /* Commit immediately for bulk updates */
     dsp_param_commit();
     dsp_param_notify_update();
 
     ESP_LOGI(TAG, "Bulk config applied (preset %d, sr %lu Hz)",
              incoming->header.preset_index,
-             (unsigned long)incoming->header.sample_rate);
+             (unsigned long)staging_ptr->header.sample_rate);
     return BLE_STATUS_OK;
 }

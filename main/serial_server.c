@@ -273,6 +273,10 @@ void serial_server_start(void)
     );
 
     ESP_LOGI(TAG, "Serial server started");
+}
+
+void serial_server_attach_logs(void)
+{
     esp_log_set_vprintf(serial_log_vprintf);
 }
 

@@ -15,6 +15,7 @@
 
 esp_err_t serial_server_init(void);
 void serial_server_start(void);
+void serial_server_attach_logs(void);
 void serial_server_stop(void);
 
 #endif /* SERIAL_SERVER_H */

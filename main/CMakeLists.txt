@@ -1,4 +1,4 @@
-set(SHARED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../shared/dsp)
+set(SHARED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/dsp)
 
 idf_component_register(SRCS "main.c"
                             "usb_audio.c"
@@ -11,7 +11,7 @@ idf_component_register(SRCS "main.c"
                     INCLUDE_DIRS "." "${SHARED_DIR}"
                     PRIV_REQUIRES driver nvs_flash esp_psram esp_timer
                                   esp_hw_support
-                                  espressif__usb_device_uac
+                                  usb_device_uac
                                   espressif__tinyusb)
 
 # Route TinyUSB's compile-time-baked tud_descriptor_string_cb through our
