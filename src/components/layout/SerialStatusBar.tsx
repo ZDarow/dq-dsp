@@ -99,20 +99,14 @@ export function SerialStatusBar() {
     });
   }, [onConfig, applyDeviceConfig, addSerialLog]);
 
-  // No auto-sync from device on connect.
-  //
-  // The UI already restores its state from localStorage, so what the user
-  // sees right after Connect is what they last had open. Pulling the
-  // device's current config in the background was a constant footgun:
-  // the late SYNC_CONFIG reply would race with whatever the user did
-  // during the 250 ms grace window (most commonly clicking Load Preset)
-  // and the device's stale RAM state would overwrite the just-loaded
-  // preset. If a user really wants to reflect the device's truth,
-  // they can click Apply to push their UI state instead.
-  //
-  // Keep `requestConfig` available for a future manual "Pull from Device"
-  // button.
-  void requestConfig;
+  // Manual sync only — auto-pull on connect raced with user actions
+  // (Load Preset, in-flight tweaks) and overwrote local state with the
+  // device's stale RAM. The user pulls explicitly via the Sync button.
+  const handleSync = useCallback(() => {
+    requestConfig();
+    addSerialLog('[sync] Pulling config from device…');
+  }, [requestConfig, addSerialLog]);
+
   const handleConnect = useCallback(async () => {
     await serialConnect();
   }, [serialConnect]);
@@ -169,6 +163,21 @@ export function SerialStatusBar() {
         <span className="text-text-dimmed text-xs font-mono">
           {serialLatency}ms
         </span>
+      )}
+
+      {/* Sync — pull the device's current config into the UI. Use this
+       * after Connect (or after an external change) so the UI reflects
+       * the firmware's actual state, including device-fixed fields like
+       * sample rate. */}
+      {serialConnected && (
+        <Tooltip content="Sync: pull the device's current configuration into the UI. Use after Connect to mirror the firmware's actual state (sample rate, EQ, routing). Overwrites local UI state.">
+          <button
+            onClick={handleSync}
+            className="text-xs px-2 py-0.5 rounded border bg-control-bg text-text-secondary border-surface-bg hover:text-text-primary hover:border-mute transition-colors"
+          >
+            Sync
+          </button>
+        </Tooltip>
       )}
 
       {/* Apply config — bulk-push the entire current configuration to the
