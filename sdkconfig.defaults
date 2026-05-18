@@ -21,9 +21,10 @@ CONFIG_ESP_PHY_ENABLE_USB=y
 CONFIG_ESP_CONSOLE_UART_DEFAULT=y
 CONFIG_LOG_DEFAULT_LEVEL_INFO=y
 
-# USB Audio Class (UAC) — stereo speaker, macOS compatible
+# USB Audio Class (UAC) — stereo speaker, macOS compatible, 24-bit / 96 kHz
 CONFIG_UAC_SPEAKER_CHANNEL_NUM=2
 CONFIG_UAC_SAMPLE_RATE=48000
+CONFIG_UAC_BIT_DEPTH_24=y
 CONFIG_UAC_SUPPORT_MACOS=y
 
 # USB descriptor strings — what the host shows in the audio picker

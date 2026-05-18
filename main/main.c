@@ -231,4 +231,6 @@ void app_main(void)
     usb_audio_start();
 
     ESP_LOGI(TAG, "DSP processor running (USB Audio + Serial control)");
+
+    serial_server_attach_logs();
 }

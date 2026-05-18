@@ -28,9 +28,35 @@
 #include "esp_timer.h"
 #include <math.h>
 #include "usb_device_uac.h"
+#include "sdkconfig.h"
 
 extern void dsp_pipeline_process(const dsp_config_t *cfg, float in_l, float in_r, float out[4]);
 extern void dsp_pipeline_reset_filter_states(void);
+
+/* -----------------------------------------------------------------------
+ * Sample format helpers — gated on CONFIG_UAC_BIT_DEPTH (Kconfig).
+ *
+ * Input (USB):  little-endian PCM, 2 bytes/sample (16) or 3 bytes/sample (24).
+ * Output (I2S): always int32 MSB-aligned for the 32-bit-slot DAC frame.
+ *               PCM5102A latches the upper 24 bits.
+ * ----------------------------------------------------------------------- */
+#if CONFIG_UAC_BIT_DEPTH == 24
+#define UAC_BYTES_PER_SAMPLE 3
+static inline float decode_in(const uint8_t *p)
+{
+    /* Sign-extend from bit 23 into int32, then normalize. */
+    int32_t s = ((int32_t)p[0]) | ((int32_t)p[1] << 8) | ((int32_t)(int8_t)p[2] << 16);
+    return (float)s / 8388608.0f;  /* 2^23 */
+}
+#else
+#define UAC_BYTES_PER_SAMPLE 2
+static inline float decode_in(const uint8_t *p)
+{
+    int16_t s = (int16_t)((uint16_t)p[0] | ((uint16_t)p[1] << 8));
+    return (float)s / 32768.0f;
+}
+#endif
+#define UAC_BYTES_PER_PAIR (UAC_BYTES_PER_SAMPLE * 2)
 
 /**
  * Soft saturation curve — replaces hard clipping at the int16 boundary.
@@ -63,9 +89,16 @@ static const char *TAG = "usb_audio";
  * Ring buffer and DMA buffers
  * ----------------------------------------------------------------------- */
 
-/* 48kHz stereo 16-bit = 192 KB/s. 48KB buffer ≈ 250ms — fits in internal RAM. */
-#define USB_AUDIO_RINGBUF_SIZE  (48 * 1024)
-#define USB_AUDIO_DMA_BUF_SIZE  (32 * 1024)
+/* Sized for 24-bit / 96 kHz stereo.
+ *   USB byte rate = 96k * 3 * 2 = 576 KB/s
+ *   I2S byte rate = 96k * 4 * 2 = 768 KB/s (int32 frames)
+ * Ringbuf 192KB ≈ 333ms at 24/96 USB rate.
+ * Scratch buffer 16KB ≈ 21ms of int32 stereo @ 96k — comfortably above the
+ * largest ASRC chunk produced per ringbuffer dequeue (≤10ms USB packet).
+ * Buffer holds ASRC output between USB and I2S; the I2S driver memcpy's
+ * from it into its own DMA descriptors, so MALLOC_CAP_DMA is not required. */
+#define USB_AUDIO_RINGBUF_SIZE  (192 * 1024)
+#define USB_AUDIO_DMA_BUF_SIZE  (16  * 1024)
 
 static RingbufHandle_t s_ringbuf = NULL;
 static uint8_t *s_buf_i2s0 = NULL;
@@ -194,11 +227,15 @@ static void usb_audio_task(void *arg)
         }
 
         /* If Core 0 is recalculating coefficients, output silence.
-         * This prevents committing a half-written staging config. */
+         * Silence size mirrors the input duration but in I2S output units
+         * (8 bytes/pair: stereo int32). */
         if (dsp_param_is_recalculating()) {
-            memset(s_buf_i2s0, 0, item_size);
-            memset(s_buf_i2s1, 0, item_size);
-            i2s_audio_write_dual(s_buf_i2s0, s_buf_i2s1, item_size);
+            size_t silence_pairs = item_size / UAC_BYTES_PER_PAIR;
+            size_t silence_bytes = silence_pairs * 8;
+            if (silence_bytes > USB_AUDIO_DMA_BUF_SIZE) silence_bytes = USB_AUDIO_DMA_BUF_SIZE;
+            memset(s_buf_i2s0, 0, silence_bytes);
+            memset(s_buf_i2s1, 0, silence_bytes);
+            i2s_audio_write_dual(s_buf_i2s0, s_buf_i2s1, silence_bytes);
             vRingbufferReturnItem(s_ringbuf, (void *)data);
             continue;
         }
@@ -211,39 +248,37 @@ static void usb_audio_task(void *arg)
 
         const dsp_config_t *cfg = dsp_param_get_active();
 
-        const int16_t *in = (const int16_t *)data;
-        int16_t *out0 = (int16_t *)s_buf_i2s0;
-        int16_t *out1 = (int16_t *)s_buf_i2s1;
+        const uint8_t *in = data;
+        int32_t *out0 = (int32_t *)s_buf_i2s0;
+        int32_t *out1 = (int32_t *)s_buf_i2s1;
 
         int64_t t0 = esp_timer_get_time();
 
-        /* ASRC: resample interleaved stereo int16 via fractional phase
-         * accumulator with linear interpolation.  The PI controller on
-         * Core 0 sets s_resample_ratio ≈ 1.0 ± 200ppm. */
+        /* ASRC: resample interleaved stereo via fractional phase accumulator
+         * with linear interpolation. Input is 24-bit LE decoded to float; output
+         * is int32 MSB-aligned for a 32-bit I2S slot. PI controller on Core 0
+         * sets s_resample_ratio ≈ 1.0 ± 200ppm. */
         float uv = s_usb_mute ? 0.0f : s_usb_volume;
-        float ratio = s_resample_ratio;        /* local copy from PI */
-        size_t num_pairs = item_size / 4;      /* stereo sample pairs */
+        float ratio = s_resample_ratio;
+        size_t num_pairs = item_size / UAC_BYTES_PER_PAIR;
         size_t in_idx = 0;
         size_t out_bytes = 0;
 
-        while (out_bytes + 4 <= USB_AUDIO_DMA_BUF_SIZE) {
-            /* Advance input when phase crosses integer boundaries.
-             * Check input availability BEFORE committing phase/prev update
-             * to avoid producing an extra output sample per chunk. */
+        while (out_bytes + 8 <= USB_AUDIO_DMA_BUF_SIZE) {
             while (s_asrc_phase >= 1.0f) {
                 if (in_idx < num_pairs) {
                     s_asrc_phase -= 1.0f;
                     s_asrc_prev_l = s_asrc_cur_l;
                     s_asrc_prev_r = s_asrc_cur_r;
-                    s_asrc_cur_l = (float)in[in_idx * 2]     / 32768.0f;
-                    s_asrc_cur_r = (float)in[in_idx * 2 + 1] / 32768.0f;
+                    const uint8_t *p = in + in_idx * UAC_BYTES_PER_PAIR;
+                    s_asrc_cur_l = decode_in(p);
+                    s_asrc_cur_r = decode_in(p + UAC_BYTES_PER_SAMPLE);
                     in_idx++;
                 } else {
                     goto asrc_done;
                 }
             }
 
-            /* Linear interpolation between prev and cur */
             float frac = s_asrc_phase;
             float interp_l = s_asrc_prev_l + frac * (s_asrc_cur_l - s_asrc_prev_l);
             float interp_r = s_asrc_prev_r + frac * (s_asrc_cur_r - s_asrc_prev_r);
@@ -251,24 +286,17 @@ static void usb_audio_task(void *arg)
             float dsp_out[4];
             dsp_pipeline_process(cfg, interp_l, interp_r, dsp_out);
 
-            /* Soft-clip + headroom architecture:
-             *   1. soft_clip() shapes overshoots in float domain (transparent
-             *      below −1.4 dBFS, smooth knee above) — no harsh harmonics.
-             *   2. User volume scales the *post-saturation* signal, so quiet
-             *      listening doesn't carry over clipping artifacts.
-             *   3. soft_clip output is bounded to (−1.0, 1.0) and uv ∈ [0, 1],
-             *      so the final scale to int16 cannot overflow — no hard clip
-             *      needed. */
+            int32_t s24[4];
             for (int ch = 0; ch < 4; ch++) {
                 float s = soft_clip(dsp_out[ch]) * uv;
-                dsp_out[ch] = s * 32767.0f;
+                s24[ch] = (int32_t)(s * 8388607.0f);
             }
 
-            *out0++ = (int16_t)dsp_out[0];
-            *out0++ = (int16_t)dsp_out[1];
-            *out1++ = (int16_t)dsp_out[2];
-            *out1++ = (int16_t)dsp_out[3];
-            out_bytes += 4;
+            *out0++ = s24[0] << 8;
+            *out0++ = s24[1] << 8;
+            *out1++ = s24[2] << 8;
+            *out1++ = s24[3] << 8;
+            out_bytes += 8;
 
             s_asrc_phase += ratio;
         }
@@ -294,7 +322,6 @@ asrc_done: ;
                     .correction_ppm = s_drift_correction_ppm,
                 };
                 msg_handler_post_telemetry(&stats);
-                /* BLE telemetry is flushed by ble_server's own timer on Core 0 */
             }
 
             s_dsp_min_us = UINT32_MAX;
@@ -304,7 +331,6 @@ asrc_done: ;
             s_dsp_last_report_us = now;
         }
 
-        /* Write to both I2S channels (out_bytes may differ from item_size due to drift compensation) */
         if (out_bytes > 0) {
             i2s_audio_write_dual(s_buf_i2s0, s_buf_i2s1, out_bytes);
         }
@@ -379,8 +405,8 @@ esp_err_t usb_audio_init(uint32_t sample_rate)
     }
 
     /* Allocate DMA-capable I2S output buffers */
-    s_buf_i2s0 = heap_caps_malloc(USB_AUDIO_DMA_BUF_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    s_buf_i2s1 = heap_caps_malloc(USB_AUDIO_DMA_BUF_SIZE, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    s_buf_i2s0 = heap_caps_malloc(USB_AUDIO_DMA_BUF_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    s_buf_i2s1 = heap_caps_malloc(USB_AUDIO_DMA_BUF_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (!s_buf_i2s0 || !s_buf_i2s1) {
         ESP_LOGE(TAG, "Failed to allocate I2S DMA buffers");
         return ESP_ERR_NO_MEM;
@@ -414,7 +440,8 @@ esp_err_t usb_audio_init(uint32_t sample_rate)
     esp_timer_create(&drift_timer_args, &drift_timer);
     esp_timer_start_periodic(drift_timer, DRIFT_TIMER_INTERVAL_US);
 
-    ESP_LOGI(TAG, "USB Audio initialized (stereo, 16-bit, %lu Hz, drift PI active)", (unsigned long)sample_rate);
+    ESP_LOGI(TAG, "USB Audio initialized (stereo, %d-bit, %lu Hz, drift PI active)",
+             CONFIG_UAC_BIT_DEPTH, (unsigned long)sample_rate);
     return ESP_OK;
 }
 
