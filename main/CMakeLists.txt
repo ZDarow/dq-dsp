@@ -1,4 +1,4 @@
-set(SHARED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/dsp)
+set(SHARED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../shared/dsp)
 
 idf_component_register(SRCS "main.c"
                             "usb_audio.c"
