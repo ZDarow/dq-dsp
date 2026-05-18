@@ -322,7 +322,7 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
               </Card>
               <Card title="Audio Path">
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
-                  <li>USB Audio Class 1.0 — 2 ch in / out, 16-bit, 48 kHz</li>
+                  <li>USB Audio Class 1.0 — 2 ch in / out, 24-bit, 48 kHz</li>
                   <li>Dual I2S TX → 2 × PCM5102A (4 channels, 24-bit internal pipeline)</li>
                   <li>Sample-rate-agnostic biquads (coeffs recomputed if SR changes)</li>
                   <li>Atomic config swap — parameter updates never click or pop</li>
