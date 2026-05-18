@@ -22,6 +22,20 @@ over a second USB cable (UART0 over the DevKitC-1's USB-Serial-JTAG port).
 
 *Bench tour, browser UI, and a bi-amped bookshelf speaker actually playing music.*
 
+## 🆕 Hi-res upgrade — 24-bit / 48 kHz
+
+The USB Audio Class endpoint now streams **24-bit / 48 kHz stereo** end-to-end.
+The whole path — TinyUSB ring buffer, ASRC, DSP pipeline, dual I²S TX — was
+widened to a 32-bit slot with 24 valid bits (MSB-aligned), so PCM5102A latches
+the upper 24 bits directly. That's **+48 dB of dynamic-range headroom** over
+the previous 16-bit build with zero compatibility risk on macOS / Windows /
+Linux UAC 1.0 hosts.
+
+![macOS Audio MIDI Setup showing usb uac at 48.000 Hz 2 ch 24-bit Integer](docs/images/24bit-48khz.png)
+
+*macOS Audio MIDI Setup confirming the device negotiates 48 kHz, 2 channel,
+24-bit Integer.*
+
 ## Audio path
 
 ```
@@ -54,7 +68,7 @@ ports of the dev-board:
 
 | | |
 |---|---|
-| USB input | UAC 1.0, 2 channels, **16-bit / 48 kHz** |
+| USB input | UAC 1.0, 2 channels, **24-bit / 48 kHz** |
 | Analog output | 4 channels (2 × stereo line) via 2 × PCM5102A I²S DACs |
 | DAC dynamic range | 112 dB (PCM5102A datasheet, A-weighted) |
 | Output drive | 2.1 Vrms typical line level, AC-coupled — feed any line-level amp / powered speaker |
