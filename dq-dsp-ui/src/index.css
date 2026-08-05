@@ -1,0 +1,351 @@
+@import "tailwindcss";
+
+/* DSPi-inspired palette: cool-grey macOS native dark instead of pure black.
+ * Slightly lower-saturation channel colors to match DSPi's pastel signature.
+ * Channel-color identity is shared between sidebar / graph / PEQ rows.
+ */
+@theme {
+  --color-app-bg: #1c1c1e;
+  --color-panel-bg: #242428;
+  --color-surface-bg: #2e2e32;
+  --color-control-bg: #3a3a40;
+  --color-text-primary: #f0f0f2;
+  --color-text-secondary: #9a9aa0;
+  --color-text-dimmed: #6e6e74;
+  --color-chart-measurement: #888892;
+  --color-chart-eq: #5ea8d6;
+  --color-chart-predicted: #e8e8ee;
+  --color-chart-target: #e0a06c;
+  --color-chart-phase: #e06c8c;
+  --color-input-l: #5ea8d6;
+  --color-input-r: #e06c6c;
+  --color-output-1: #5ed68b;
+  --color-output-2: #e0c46c;
+  --color-output-3: #b48cd6;
+  --color-output-4: #e06caf;
+  --color-mute: #e06c6c;
+  --color-phase: #e0c46c;
+  --color-accent: #5ea8d6;
+  --color-meter-normal: #5ed68b;
+  --color-meter-caution: #e0c46c;
+  --color-meter-clip: #e06c6c;
+
+  /* Layout primitives */
+  --radius-panel: 10px;
+  --radius-pill: 999px;
+  --font-mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
+}
+
+/* Light theme — Liquid Glass on a cool off-white. Panels float over a
+ * pastel backdrop so the backdrop-filter blur actually has something to
+ * refract; channel hues are warmer and slightly desaturated for legible
+ * pills + chart traces on a near-white field. */
+[data-theme="light"] {
+  --color-app-bg: #eef0f5;
+  --color-panel-bg: #ffffff;
+  --color-surface-bg: #e2e5ec;
+  --color-control-bg: #d3d6de;
+  --color-text-primary: #16181d;
+  --color-text-secondary: #4a4d56;
+  --color-text-dimmed: #7d808a;
+  --color-chart-measurement: #7d808a;
+  --color-chart-eq: #2c6fc8;
+  --color-chart-predicted: #16181d;
+  --color-chart-target: #d2622e;
+  --color-chart-phase: #b85a8c;
+  --color-input-l: #2c6fc8;
+  --color-input-r: #d8504a;
+  --color-output-1: #2a9966;
+  --color-output-2: #c47324;
+  --color-output-3: #7a5cc0;
+  --color-output-4: #c44a8e;
+  --color-mute: #d8504a;
+  --color-phase: #c47324;
+  --color-accent: #2c6fc8;
+  --color-meter-normal: #2a9966;
+  --color-meter-caution: #c47324;
+  --color-meter-clip: #d8504a;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+html, [data-theme] {
+  transition: background-color 0.2s, color 0.2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  overflow: auto;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px; /* baseline — overridden by viewport-tier media queries */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Adaptive root font-size — Tailwind sizes derive from rem, so a single
+ * font-size knob scales the whole UI proportionally. Tiered by viewport
+ * height so the layout always fits without page-scroll while staying
+ * comfortably readable on dense 4K / 5K displays. */
+@media (min-height: 1000px) { html { font-size: 16px; } }   /* FullHD laptops */
+@media (min-height: 1300px) { html { font-size: 18px; } }   /* WQHD / 2K */
+@media (min-height: 1650px) { html { font-size: 22px; } }   /* 4K / 5K */
+
+/* Liquid-glass background — subtle multi-layered radial gradient gives the
+ * frosted-glass panels something to refract instead of being a flat solid.
+ * Without color variation behind the blur, glass looks just like opaque grey. */
+body {
+  background:
+    radial-gradient(circle at 15% 10%, color-mix(in srgb, var(--color-input-l) 12%, transparent), transparent 50%),
+    radial-gradient(circle at 85% 20%, color-mix(in srgb, var(--color-input-r) 10%, transparent), transparent 55%),
+    radial-gradient(circle at 50% 100%, color-mix(in srgb, var(--color-output-3) 12%, transparent), transparent 55%),
+    var(--color-app-bg);
+  background-attachment: fixed;
+}
+
+/* Light theme needs more pronounced pastel hotspots — without color in the
+ * backdrop the frosted blur has nothing to refract and panels look opaque. */
+[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--color-input-l) 22%, transparent), transparent 48%),
+    radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--color-input-r) 18%, transparent), transparent 52%),
+    radial-gradient(circle at 65% 95%, color-mix(in srgb, var(--color-output-3) 20%, transparent), transparent 55%),
+    radial-gradient(circle at 25% 75%, color-mix(in srgb, var(--color-output-1) 14%, transparent), transparent 50%),
+    var(--color-app-bg);
+  background-attachment: fixed;
+}
+
+/* Liquid-glass panel — translucent fill + backdrop blur + saturate boost,
+ * with a 1px top-edge inner highlight and soft shadow below. Mimics
+ * Apple's iOS / macOS 26 Liquid Glass material. */
+.glass-panel {
+  background: color-mix(in srgb, var(--color-panel-bg) 55%, transparent);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid color-mix(in srgb, white 6%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+    0 4px 24px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="light"] .glass-panel {
+  background: color-mix(in srgb, white 50%, transparent);
+  backdrop-filter: blur(28px) saturate(150%) brightness(1.04);
+  -webkit-backdrop-filter: blur(28px) saturate(150%) brightness(1.04);
+  /* Two-pass border: subtle outer line + inner ring picks up the refracted
+   * highlights for a proper Apple Liquid Glass edge. */
+  border: 1px solid color-mix(in srgb, white 70%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 90%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, black 4%, transparent),
+    0 1px 2px rgba(15, 18, 30, 0.04),
+    0 8px 32px rgba(15, 18, 30, 0.08);
+}
+
+.glass-panel-strong {
+  background: color-mix(in srgb, var(--color-panel-bg) 75%, transparent);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  border: 1px solid color-mix(in srgb, white 8%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 10%, transparent),
+    0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .glass-panel-strong {
+  background: color-mix(in srgb, white 65%, transparent);
+  backdrop-filter: blur(40px) saturate(170%) brightness(1.05);
+  -webkit-backdrop-filter: blur(40px) saturate(170%) brightness(1.05);
+  border: 1px solid color-mix(in srgb, white 75%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 95%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, black 5%, transparent),
+    0 1px 3px rgba(15, 18, 30, 0.05),
+    0 12px 40px rgba(15, 18, 30, 0.12);
+}
+
+/* ---------------------------------------------------------------- */
+/* Minimal scrollbars — keep the affordance, drop the chrome.        */
+/* Default OS scrollbars look heavy-handed against the glass panels  */
+/* so the layout looks fragmented. A thin, fully-transparent track   */
+/* with a soft semi-opaque thumb reads as a hint, not a UI element.  */
+/* ---------------------------------------------------------------- */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-text-dimmed) 45%, transparent) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-text-dimmed) 35%, transparent);
+  border-radius: 999px;
+  transition: background-color 0.15s ease-out;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-text-dimmed) 65%, transparent);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* On idle, fade the thumb almost out so seam is invisible. Only when the
+ * user starts hovering near the edge of a scrollable region does it pick
+ * up enough opacity to be noticed. */
+*:not(:hover)::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-text-dimmed) 18%, transparent);
+}
+
+/* DSPi-style utility classes — used across panels, charts, status bars. */
+
+.section-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-dimmed);
+}
+
+.value-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+/* DSPi-style pill: rounded full, semi-transparent colored bg, colored text.
+ * Color is set via CSS variable `--pill-color` on the element so a single
+ * class works for any channel/transport color. Falls back to accent. */
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.65rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--pill-color, var(--color-accent)) 18%, transparent);
+  color: var(--pill-color, var(--color-accent));
+  border: 1px solid color-mix(in srgb, var(--pill-color, var(--color-accent)) 30%, transparent);
+  white-space: nowrap;
+}
+
+.pill-badge.is-toggleable {
+  cursor: pointer;
+  transition: background-color 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.pill-badge.is-toggleable[data-active="false"] {
+  background: transparent;
+  border-color: var(--color-surface-bg);
+  color: var(--color-text-dimmed);
+}
+
+/* Unified slider — track and fill are a single CSS gradient on the input
+ * itself so the thumb sits visually ON the line instead of floating
+ * above a separate fill bar. Color and fill % drive through CSS vars
+ * `--slider-color` and `--slider-fill` (0..100 number). */
+.dq-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--slider-color, var(--color-accent)) 70%, transparent) 0%,
+    color-mix(in srgb, var(--slider-color, var(--color-accent)) 70%, transparent) calc(var(--slider-fill, 0) * 1%),
+    var(--color-control-bg) calc(var(--slider-fill, 0) * 1%),
+    var(--color-control-bg) 100%
+  );
+  outline: none;
+}
+
+.dq-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  background: transparent;
+  border-radius: 999px;
+}
+
+.dq-slider::-moz-range-track {
+  height: 8px;
+  background: transparent;
+  border-radius: 999px;
+}
+
+.dq-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--slider-color, var(--color-accent));
+  /* Subtle ring that adapts to theme — slightly darker than panel-bg so
+   * the thumb stays distinct on both dark and light backdrops. */
+  border: 2px solid color-mix(in srgb, var(--color-panel-bg) 70%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-text-primary) 12%, transparent),
+    0 1px 4px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  margin-top: -4px; /* (thumb 16 − track 8) / 2 */
+  transition: transform 0.12s ease-out;
+}
+
+.dq-slider::-webkit-slider-thumb:hover,
+.dq-slider:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.1);
+}
+
+.dq-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--slider-color, var(--color-accent));
+  border: 2px solid color-mix(in srgb, var(--color-panel-bg) 70%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-text-primary) 12%, transparent),
+    0 1px 4px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: transform 0.12s ease-out;
+}
+
+.dq-slider::-moz-range-thumb:hover,
+.dq-slider:focus-visible::-moz-range-thumb {
+  transform: scale(1.1);
+}
+
+/* Custom tooltip entrance — fast fade only (transform handled inline so
+ * placement isn't fought by the keyframe). The Tooltip component portals
+ * into <body> so this keyframe lives at the root stylesheet. */
+@keyframes dq-tooltip-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
