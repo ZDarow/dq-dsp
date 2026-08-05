@@ -1,19 +1,19 @@
 import type { FilterType, CrossoverFilterType, CrossoverSlope } from '../types/filter';
 
-export const FILTER_TYPES: { value: FilterType; label: string }[] = [
-  { value: 'peaking', label: 'Peaking' },
-  { value: 'lowShelf', label: 'Low Shelf' },
-  { value: 'highShelf', label: 'High Shelf' },
-  { value: 'lowPass', label: 'Low Pass' },
-  { value: 'highPass', label: 'High Pass' },
-  { value: 'bandPass', label: 'Band Pass' },
-  { value: 'notch', label: 'Notch' },
-  { value: 'allPass', label: 'All Pass' },
+export const FILTER_TYPES: { value: FilterType; labelKey: string }[] = [
+  { value: 'peaking', labelKey: 'filterType.labelPeaking' },
+  { value: 'lowShelf', labelKey: 'filterType.labelLowShelf' },
+  { value: 'highShelf', labelKey: 'filterType.labelHighShelf' },
+  { value: 'lowPass', labelKey: 'filterType.labelLowPass' },
+  { value: 'highPass', labelKey: 'filterType.labelHighPass' },
+  { value: 'bandPass', labelKey: 'filterType.labelBandPass' },
+  { value: 'notch', labelKey: 'filterType.labelNotch' },
+  { value: 'allPass', labelKey: 'filterType.labelAllPass' },
 ];
 
-export const CROSSOVER_TYPES: { value: CrossoverFilterType; label: string }[] = [
-  { value: 'butterworth', label: 'Butterworth' },
-  { value: 'linkwitzRiley', label: 'Linkwitz-Riley' },
+export const CROSSOVER_TYPES: { value: CrossoverFilterType; labelKey: string }[] = [
+  { value: 'butterworth', labelKey: 'crossover.typeButterworth' },
+  { value: 'linkwitzRiley', labelKey: 'crossover.typeLinkwitzRiley' },
 ];
 
 export const CROSSOVER_SLOPES: { value: CrossoverSlope; label: string }[] = [

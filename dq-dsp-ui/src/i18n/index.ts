@@ -34,6 +34,11 @@ i18n.use(initReactI18next).init({
   interpolation: {
     escapeValue: false, // React already escapes
   },
+  react: {
+    // Allow <Trans> to render these intrinsic HTML tags found in
+    // translation strings (used by AboutDialog feature lists, etc.).
+    transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'p', 'code'],
+  },
 });
 
 /** Persist the chosen language. */

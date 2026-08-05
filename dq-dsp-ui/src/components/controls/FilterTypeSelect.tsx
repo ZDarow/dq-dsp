@@ -21,7 +21,7 @@ export function FilterTypeSelect({ value, onChange }: FilterTypeSelectProps) {
       >
         {FILTER_TYPES.map((ft) => (
           <option key={ft.value} value={ft.value}>
-            {ft.label}
+            {t(ft.labelKey)}
           </option>
         ))}
       </select>

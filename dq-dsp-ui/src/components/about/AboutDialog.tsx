@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
 import { Logo } from '../layout/Logo';
 import { Tooltip } from '../ui/Tooltip';
 
@@ -63,13 +63,14 @@ const PIN_PANEL = 'color-mix(in srgb, var(--color-panel-bg) 80%, transparent)';
 // DAC pin row — declared at module scope so React doesn't recreate the
 // component on every render of <PinDiagram>.
 function DacPins({ baseY, accent }: { baseY: number; accent: string }) {
+  const { t } = useTranslation();
   const rows: Array<{ y: number; label: string; tone: string; note?: string }> = [
-    { y: 0, label: 'SCK', tone: PIN_GND, note: '→ GND (internal MCLK)' },
+    { y: 0, label: 'SCK', tone: PIN_GND, note: t('about.pinSckNote') },
     { y: 22, label: 'BCK', tone: accent },
     { y: 44, label: 'DIN', tone: accent },
     { y: 66, label: 'LCK', tone: accent },
     { y: 88, label: 'GND', tone: PIN_GND },
-    { y: 110, label: 'VIN', tone: PIN_PWR, note: '3.3 V' },
+    { y: 110, label: 'VIN', tone: PIN_PWR, note: t('about.pinVinNote') },
   ];
   return (
     <g>
@@ -105,6 +106,7 @@ function DacPins({ baseY, accent }: { baseY: number; accent: string }) {
 }
 
 function PinDiagram() {
+  const { t } = useTranslation();
   const I2S0 = PIN_I2S0;
   const I2S1 = PIN_I2S1;
   const PWR = PIN_PWR;
@@ -135,7 +137,7 @@ function PinDiagram() {
       <g>
         <rect x="30" y="50" width="200" height="400" rx="12" fill={PANEL} stroke={SURFACE} strokeWidth="1.5" />
         <text x="130" y="78" textAnchor="middle" fontSize="14" fontWeight="700" fill={TEXT}>ESP32-S3</text>
-        <text x="130" y="94" textAnchor="middle" fontSize="10" fill={DIM}>USB-OTG (UAC) + UART0 (USB-CDC bridge)</text>
+        <text x="130" y="94" textAnchor="middle" fontSize="10" fill={DIM}>{t('about.pinUsbSub')}</text>
 
         {/* Power pins */}
         <circle cx="230" cy="140" r="4" fill={PWR} />
@@ -171,11 +173,11 @@ function PinDiagram() {
       <g>
         <rect x="500" y="50" width="240" height="180" rx="10" fill={PANEL} stroke={I2S0} strokeWidth="1.5" />
         <text x="620" y="76" textAnchor="middle" fontSize="14" fontWeight="700" fill={I2S0}>PCM5102A #1</text>
-        <text x="620" y="92" textAnchor="middle" fontSize="10" fill={DIM}>Left speaker · Out 1+2</text>
+        <text x="620" y="92" textAnchor="middle" fontSize="10" fill={DIM}>{t('about.pinDacLeft')}</text>
         <text x="620" y="106" textAnchor="middle" fontSize="9" fill={DIM} fontStyle="italic">GY-PCM5102 · TENSTAR ROBOT</text>
         <DacPins baseY={120} accent={I2S0} />
         <text x="620" y="248" textAnchor="middle" fontSize="9" fill={DIM} fontStyle="italic" opacity="0.85">
-          back-side jumpers: H3L XSMT → HIGH (un-mute)
+          {t('about.pinJumper')}
         </text>
       </g>
 
@@ -183,11 +185,11 @@ function PinDiagram() {
       <g>
         <rect x="500" y="270" width="240" height="180" rx="10" fill={PANEL} stroke={I2S1} strokeWidth="1.5" />
         <text x="620" y="296" textAnchor="middle" fontSize="14" fontWeight="700" fill={I2S1}>PCM5102A #2</text>
-        <text x="620" y="312" textAnchor="middle" fontSize="10" fill={DIM}>Right speaker · Out 3+4</text>
+        <text x="620" y="312" textAnchor="middle" fontSize="10" fill={DIM}>{t('about.pinDacRight')}</text>
         <text x="620" y="326" textAnchor="middle" fontSize="9" fill={DIM} fontStyle="italic">GY-PCM5102 · TENSTAR ROBOT</text>
         <DacPins baseY={340} accent={I2S1} />
         <text x="620" y="468" textAnchor="middle" fontSize="9" fill={DIM} fontStyle="italic" opacity="0.85">
-          back-side jumpers: H3L XSMT → HIGH (un-mute)
+          {t('about.pinJumper')}
         </text>
       </g>
 
@@ -217,10 +219,10 @@ function PinDiagram() {
 
       {/* Legend */}
       <g transform="translate(40 488)">
-        <circle cx="0" cy="0" r="4" fill={I2S0} /><text x="10" y="4" fontSize="10" fill={DIM}>I2S0 → DAC #1</text>
-        <circle cx="120" cy="0" r="4" fill={I2S1} /><text x="130" y="4" fontSize="10" fill={DIM}>I2S1 → DAC #2</text>
-        <circle cx="240" cy="0" r="4" fill={PWR} /><text x="250" y="4" fontSize="10" fill={DIM}>3V3 power</text>
-        <circle cx="340" cy="0" r="4" fill={GND} /><text x="350" y="4" fontSize="10" fill={DIM}>GND (incl. SCK tie)</text>
+        <circle cx="0" cy="0" r="4" fill={I2S0} /><text x="10" y="4" fontSize="10" fill={DIM}>{t('about.pinLegendI2S0')}</text>
+        <circle cx="120" cy="0" r="4" fill={I2S1} /><text x="130" y="4" fontSize="10" fill={DIM}>{t('about.pinLegendI2S1')}</text>
+        <circle cx="240" cy="0" r="4" fill={PWR} /><text x="250" y="4" fontSize="10" fill={DIM}>{t('about.pinLegend3V3')}</text>
+        <circle cx="340" cy="0" r="4" fill={GND} /><text x="350" y="4" fontSize="10" fill={DIM}>{t('about.pinLegendGnd')}</text>
       </g>
     </svg>
   );
@@ -258,10 +260,7 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
           <section>
             <h2 className="section-label mb-2" style={{ color: 'var(--color-accent)' }}>{t('about.title')}</h2>
             <p className="text-text-primary text-sm leading-relaxed">
-              DQ-DSP is a flexible 2-in / 4-out audio DSP firmware-and-UI for the ESP32-S3, built around USB
-              UAC class-compliant audio plus live serial control. The web UI streams every parameter
-              tweak (gain, EQ, crossover, routing) to the device in real time, with bulk Apply for
-              preset loads and Save-to-Device for NVS persistence.
+              {t('about.blurb')}
             </p>
             <div className="mt-3 flex items-center gap-2 text-xs text-text-secondary">
               <span className="section-label">{t('about.author')}</span>
@@ -282,52 +281,52 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card title={t('about.cardPerInput')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
-                  <li>Gain (−72 to +12 dB), mute, polarity invert</li>
-                  <li><strong className="text-text-primary">10-band parametric EQ</strong> — peak / shelf / HP / LP / notch</li>
-                  <li><strong className="text-text-primary">10-band Room EQ stage</strong> with REW measurement import + auto-EQ against flat / Harman / tilt targets</li>
-                  <li>Stereo link mirrors edits across both inputs</li>
+                  <li>{t('about.featInput1')}</li>
+                  <li><Trans i18nKey="about.featInput2" /></li>
+                  <li><Trans i18nKey="about.featInput3" /></li>
+                  <li>{t('about.featInput4')}</li>
                 </ul>
               </Card>
               <Card title={t('about.cardRouting')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
-                  <li>Per-crosspoint enable + linear gain (0–100 %)</li>
-                  <li>Mono-sum, balance, route a single sub off both channels</li>
-                  <li>Live diff-sent on every edit — no recompile, no reflash</li>
+                  <li>{t('about.featRouting1')}</li>
+                  <li>{t('about.featRouting2')}</li>
+                  <li>{t('about.featRouting3')}</li>
                 </ul>
               </Card>
               <Card title={t('about.cardPerOutput')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
-                  <li>Gain, mute, polarity invert, delay (0–10 ms, sample-accurate)</li>
-                  <li><strong className="text-text-primary">10-band parametric EQ</strong> per output</li>
-                  <li><strong className="text-text-primary">Crossover</strong> — HP + LP, Linkwitz-Riley or Butterworth, 6 / 12 / 18 / 24 dB/oct slopes</li>
-                  <li>Flexible link groups — any-to-any output mirroring (stereo pairs, gang-summed subs, etc.)</li>
-                  <li>One-shot copy from any output to any other</li>
+                  <li>{t('about.featOutput1')}</li>
+                  <li><Trans i18nKey="about.featOutput2" /></li>
+                  <li><Trans i18nKey="about.featOutput3" /></li>
+                  <li>{t('about.featOutput4')}</li>
+                  <li>{t('about.featOutput5')}</li>
                 </ul>
               </Card>
               <Card title={t('about.cardMaster')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
-                  <li>Master volume after all per-output processing</li>
-                  <li>Soft-clip limiter on the final stage</li>
-                  <li>Drift compensation (ASRC) tunable per device</li>
-                  <li>Live CPU-load + buffer-fill telemetry charts</li>
-                  <li>Acoustic-sum visualization — pick output groups, see their complex sum on the response chart</li>
+                  <li>{t('about.featMaster1')}</li>
+                  <li>{t('about.featMaster2')}</li>
+                  <li>{t('about.featMaster3')}</li>
+                  <li>{t('about.featMaster4')}</li>
+                  <li>{t('about.featMaster5')}</li>
                 </ul>
               </Card>
               <Card title={t('about.cardWorkflow')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
-                  <li>Browser preset library in localStorage + JSON import / export</li>
-                  <li>Saved/Modified/Unsaved indicator vs the loaded preset</li>
-                  <li><strong className="text-text-primary">Apply</strong> bulk-pushes the running config to ESP32 RAM</li>
-                  <li><strong className="text-text-primary">Save to Device</strong> commits to NVS so it survives a power cycle</li>
-                  <li>Light / dark theme; per-channel color identity across sidebar / chart / PEQ</li>
+                  <li>{t('about.featWorkflow1')}</li>
+                  <li>{t('about.featWorkflow2')}</li>
+                  <li><Trans i18nKey="about.featWorkflow3" /></li>
+                  <li><Trans i18nKey="about.featWorkflow4" /></li>
+                  <li>{t('about.featWorkflow5')}</li>
                 </ul>
               </Card>
               <Card title={t('about.cardAudioPath')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
-                  <li>USB Audio Class 1.0 — 2 ch in / out, 24-bit, 48 kHz</li>
-                  <li>Dual I2S TX → 2 × PCM5102A (4 channels, 24-bit internal pipeline)</li>
-                  <li>Sample-rate-agnostic biquads (coeffs recomputed if SR changes)</li>
-                  <li>Atomic config swap — parameter updates never click or pop</li>
+                  <li>{t('about.featAudio1')}</li>
+                  <li>{t('about.featAudio2')}</li>
+                  <li>{t('about.featAudio3')}</li>
+                  <li>{t('about.featAudio4')}</li>
                 </ul>
               </Card>
             </div>
@@ -338,28 +337,28 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
             <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>{t('about.signalFlowTitle')}</h2>
             <Card full>
               <div className="flex items-center gap-2 flex-wrap mb-3">
-                <Block tone="src">USB Host<br /><span className="text-[0.65rem] opacity-70">UAC class</span></Block>
+                <Block tone="src">{t('about.sfUSBHost')}<br /><span className="text-[0.65rem] opacity-70">{t('about.sfUSBHostSub')}</span></Block>
                 <Arrow />
-                <Block tone="src">TinyUSB<br /><span className="text-[0.65rem] opacity-70">48 kHz I2S</span></Block>
+                <Block tone="src">{t('about.sfTinyUSB')}<br /><span className="text-[0.65rem] opacity-70">{t('about.sfTinyUSBSub')}</span></Block>
                 <Arrow />
-                <Block tone="plain">Ring Buffer<br /><span className="text-[0.65rem] opacity-70">drift-corrected</span></Block>
+                <Block tone="plain">{t('about.sfRingBuffer')}<br /><span className="text-[0.65rem] opacity-70">{t('about.sfRingBufferSub')}</span></Block>
                 <Arrow />
-                <Block tone="dsp">ASRC<br /><span className="text-[0.65rem] opacity-70">PI controller</span></Block>
+                <Block tone="dsp">{t('about.sfASRC')}<br /><span className="text-[0.65rem] opacity-70">{t('about.sfASRCSub')}</span></Block>
                 <Arrow />
-                <Block tone="dsp">DSP Pipeline<br /><span className="text-[0.65rem] opacity-70">Core 1</span></Block>
+                <Block tone="dsp">{t('about.sfDspPipeline')}<br /><span className="text-[0.65rem] opacity-70">{t('about.sfDspPipelineSub')}</span></Block>
                 <Arrow />
-                <Block tone="out">2× I2S TX → 2× PCM5102A<br /><span className="text-[0.65rem] opacity-70">Out 1–4</span></Block>
+                <Block tone="out">{t('about.sfI2S')}<br /><span className="text-[0.65rem] opacity-70">{t('about.sfI2SSub')}</span></Block>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <Block tone="ctrl">Web UI</Block>
+                <Block tone="ctrl">{t('about.sfWebUI')}</Block>
                 <Arrow />
-                <Block tone="ctrl">Web Serial<br /><span className="text-[0.65rem] opacity-70">USB CDC 115200</span></Block>
+                <Block tone="ctrl">{t('about.sfWebSerial')}<br /><span className="text-[0.65rem] opacity-70">{t('about.sfWebSerialSub')}</span></Block>
                 <Arrow />
-                <Block tone="ctrl">Serial Server<br /><span className="text-[0.65rem] opacity-70">Core 0</span></Block>
+                <Block tone="ctrl">{t('about.sfSerialServer')}<br /><span className="text-[0.65rem] opacity-70">{t('about.sfSerialServerSub')}</span></Block>
                 <Arrow />
-                <Block tone="dsp">Param Engine<br /><span className="text-[0.65rem] opacity-70">atomic swap</span></Block>
+                <Block tone="dsp">{t('about.sfParamEngine')}<br /><span className="text-[0.65rem] opacity-70">{t('about.sfParamEngineSub')}</span></Block>
                 <Arrow />
-                <Block tone="dsp">DSP Pipeline<br /><span className="text-[0.65rem] opacity-70">Core 1</span></Block>
+                <Block tone="dsp">{t('about.sfDspPipeline')}<br /><span className="text-[0.65rem] opacity-70">{t('about.sfDspPipelineSub')}</span></Block>
               </div>
             </Card>
           </section>
@@ -369,30 +368,28 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
             <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>{t('about.pipelineDetailTitle')}</h2>
             <Card full>
               <div className="flex items-center gap-2 flex-wrap mb-3">
-                <Block tone="src">Stereo In<br /><span className="text-[0.65rem] opacity-70">L + R float</span></Block>
+                <Block tone="src">{t('about.pdStereoIn')}<br /><span className="text-[0.65rem] opacity-70">{t('about.pdStereoInSub')}</span></Block>
                 <Arrow />
-                <Block tone="dsp">Input Gain<br />Phase / Mute</Block>
+                <Block tone="dsp">{t('about.pdInputGain')}<br />{t('about.pdInputGainSub')}</Block>
                 <Arrow />
-                <Block tone="dsp">10-band Room EQ<br /><span className="text-[0.65rem] opacity-70">×2 ch</span></Block>
+                <Block tone="dsp">{t('about.pdRoomEq')}<br /><span className="text-[0.65rem] opacity-70">{t('about.pdRoomEqSub')}</span></Block>
                 <Arrow />
-                <Block tone="dsp">10-band Input PEQ<br /><span className="text-[0.65rem] opacity-70">×2 ch</span></Block>
+                <Block tone="dsp">{t('about.pdInputPeq')}<br /><span className="text-[0.65rem] opacity-70">{t('about.pdInputPeqSub')}</span></Block>
                 <Arrow />
-                <Block tone="dsp">2×4 Routing<br />Matrix</Block>
+                <Block tone="dsp">{t('about.pdRouting')}<br />{t('about.pdRoutingSub')}</Block>
                 <Arrow />
-                <Block tone="dsp">Output PEQ<br /><span className="text-[0.65rem] opacity-70">×4 ch</span></Block>
+                <Block tone="dsp">{t('about.pdOutputPeq')}<br /><span className="text-[0.65rem] opacity-70">{t('about.pdOutputPeqSub')}</span></Block>
                 <Arrow />
-                <Block tone="dsp">Crossover<br />HP + LP</Block>
+                <Block tone="dsp">{t('about.pdCrossover')}<br />{t('about.pdCrossoverSub')}</Block>
                 <Arrow />
-                <Block tone="dsp">Gain / Delay<br />Phase / Mute</Block>
+                <Block tone="dsp">{t('about.pdGainDelay')}<br />{t('about.pdGainDelaySub')}</Block>
                 <Arrow />
-                <Block tone="out">4 Outputs<br /><span className="text-[0.65rem] opacity-70">int16 to DAC</span></Block>
+                <Block tone="out">{t('about.pdOutputs')}<br /><span className="text-[0.65rem] opacity-70">{t('about.pdOutputsSub')}</span></Block>
               </div>
               <div className="text-xs text-text-secondary leading-relaxed bg-surface-bg/30 rounded p-3 border-l-2"
                    style={{ borderLeftColor: 'var(--color-output-2)' }}>
-                <strong className="text-text-primary">Typical 2.1 use:</strong> Out 1 = sub (LP 80 Hz),
-                Out 2 = left main (HP 80 Hz), Out 3 = right main (HP 80 Hz), Out 4 = spare.<br />
-                <strong className="text-text-primary">Typical bi-amp use:</strong> Out 1 = woofer (LP 2 kHz),
-                Out 2 = tweeter (HP 2 kHz LR4), mirror for the other channel on Out 3 + 4.
+                <strong className="text-text-primary">{t('about.pdTypical21Title')}</strong> {t('about.pdTypical21')}<br />
+                <strong className="text-text-primary">{t('about.pdTypicalBiampTitle')}</strong> {t('about.pdTypicalBiamp')}
               </div>
             </Card>
           </section>
@@ -404,10 +401,10 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
               <PinDiagram />
               <div className="text-xs text-text-secondary mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-surface-bg/30 rounded p-3 border-l-2" style={{ borderLeftColor: 'var(--color-output-2)' }}>
-                  <strong className="text-text-primary">GY-PCM5102 / TENSTAR ROBOT board:</strong> front-edge pads in order are <code className="value-mono">SCK · BCK · DIN · LCK · GND · VIN</code>. Tie <code className="value-mono">SCK</code> to <code className="value-mono">GND</code> so the chip generates its own MCLK from BCK. On the back, bridge <code className="value-mono">H3L</code> (XSMT) to the <strong>HIGH</strong> side — default position is LOW (soft-mute = silence). Leave <code className="value-mono">H1L FLT</code>, <code className="value-mono">H2L DEMP</code>, <code className="value-mono">H4L FMT</code> in their default LOW positions.
+                  <Trans i18nKey="about.wiringBoard" />
                 </div>
                 <div className="bg-surface-bg/30 rounded p-3 border-l-2" style={{ borderLeftColor: 'var(--color-meter-normal)' }}>
-                  <strong className="text-text-primary">Audio + power:</strong> 3.5 mm jack on the right edge carries L+R line-out (stereo per board). Two boards together draw ≈ 50 mA at 3V3 — comfortably inside the ESP32-S3 dev-board's 3V3 LDO budget. Star-tie GND at the DAC side to keep digital switching noise off the analog output.
+                  <Trans i18nKey="about.wiringPower" />
                 </div>
               </div>
             </Card>
@@ -418,39 +415,39 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
             <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>{t('about.asrcTitle')}</h2>
             <Card full>
               <p className="text-sm text-text-primary leading-relaxed mb-3">
-                The USB host clock and the ESP32 I2S clock are independent — over minutes they drift apart by tens of PPM, which would either over-fill the input ring buffer (clicks from drops) or starve it (clicks from underruns). ASRC re-samples the incoming USB stream by a fractional ratio so the output rate exactly tracks the I2S clock, and a PI controller nudges that ratio to keep the buffer at a target fill.
+                {t('about.asrcIntro')}
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 my-4">
-                <Block tone="src">USB stream<br /><span className="text-[0.65rem] opacity-70">drifts ±20–50 ppm</span></Block>
-                <Block tone="dsp">PI controller<br /><span className="text-[0.65rem] opacity-70">monitors fill %</span></Block>
-                <Block tone="out">I2S stream<br /><span className="text-[0.65rem] opacity-70">DAC clock-locked</span></Block>
+                <Block tone="src">{t('about.asrcBlockUsb')}<br /><span className="text-[0.65rem] opacity-70">{t('about.asrcBlockUsbSub')}</span></Block>
+                <Block tone="dsp">{t('about.asrcBlockPi')}<br /><span className="text-[0.65rem] opacity-70">{t('about.asrcBlockPiSub')}</span></Block>
+                <Block tone="out">{t('about.asrcBlockI2s')}<br /><span className="text-[0.65rem] opacity-70">{t('about.asrcBlockI2sSub')}</span></Block>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-surface-bg/30 rounded p-3 text-xs">
-                  <div className="section-label mb-2" style={{ color: 'var(--color-meter-normal)' }}>Control law</div>
+                  <div className="section-label mb-2" style={{ color: 'var(--color-meter-normal)' }}>{t('about.asrcControlLaw')}</div>
                   <p className="text-text-secondary mb-2">
-                    Each telemetry tick the controller computes the buffer error vs. target (50% fill by default):
+                    {t('about.asrcControlLawText')}
                   </p>
                   <pre className="value-mono text-text-primary text-[0.7rem] bg-app-bg/40 p-2 rounded">{`error = fill − targetFill
 integral += error · dt
 ratio = 1 + Kp·error + Ki·integral
 ratio = clamp(ratio, ±maxPpm)`}</pre>
                   <p className="text-text-dimmed mt-2 italic">
-                    Defaults: Kp = 0.3, Ki = 0.05, target = 50%, max ±200 ppm.
+                    {t('about.asrcDefaults')}
                   </p>
                 </div>
                 <div className="bg-surface-bg/30 rounded p-3 text-xs">
-                  <div className="section-label mb-2" style={{ color: 'var(--color-output-3)' }}>Tuning</div>
+                  <div className="section-label mb-2" style={{ color: 'var(--color-output-3)' }}>{t('about.asrcTuning')}</div>
                   <ul className="text-text-secondary space-y-1.5 list-disc list-inside">
-                    <li><strong className="text-text-primary">Kp too low</strong> → buffer drifts away from target slowly, eventually glitches.</li>
-                    <li><strong className="text-text-primary">Kp too high</strong> → audible warble as the controller hunts.</li>
-                    <li><strong className="text-text-primary">Ki</strong> kills steady-state offset; raise gently if buffer parks at the wrong fill.</li>
-                    <li><strong className="text-text-primary">maxPpm</strong> caps the worst-case correction — set just above your measured drift band.</li>
+                    <li><Trans i18nKey="about.asrcTuning1" /></li>
+                    <li><Trans i18nKey="about.asrcTuning2" /></li>
+                    <li><Trans i18nKey="about.asrcTuning3" /></li>
+                    <li><Trans i18nKey="about.asrcTuning4" /></li>
                   </ul>
                   <p className="text-text-dimmed mt-2 italic">
-                    Tune live in the System panel — drift + jitter charts show the loop converging.
+                    {t('about.asrcTuningTip')}
                   </p>
                 </div>
               </div>
@@ -463,28 +460,28 @@ ratio = clamp(ratio, ±maxPpm)`}</pre>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card title={t('about.cardCore0')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
-                  <li><strong className="text-text-primary">tinyusb_task</strong> — UAC class driver on the native USB-OTG port</li>
-                  <li><strong className="text-text-primary">UART0 / USB-Serial-JTAG</strong> — separate USB-C port; carries the Web Serial control stream</li>
-                  <li><strong className="text-text-primary">serial_rx</strong> — frame parser, dispatches to <code className="value-mono">dsp_param_apply()</code></li>
-                  <li><strong className="text-text-primary">app_main</strong> — NVS init, DSP boot, idle</li>
+                  <li><Trans i18nKey="about.swCore0List1" /></li>
+                  <li><Trans i18nKey="about.swCore0List2" /></li>
+                  <li><Trans i18nKey="about.swCore0List3" /></li>
+                  <li><Trans i18nKey="about.swCore0List4" /></li>
                 </ul>
               </Card>
               <Card title={t('about.cardCore1')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
-                  <li><strong className="text-text-primary">audio_task</strong> — UAC ring buffer → ASRC → DSP → dual I2S</li>
-                  <li>Polls <code className="value-mono">dsp_param_poll_update()</code> between blocks</li>
-                  <li>Atomic config-pointer swap (lock-free)</li>
-                  <li>Highest priority, pinned</li>
+                  <li><Trans i18nKey="about.swCore1List1" /></li>
+                  <li><Trans i18nKey="about.swCore1List2" /></li>
+                  <li>{t('about.swCore1List3')}</li>
+                  <li>{t('about.swCore1List4')}</li>
                 </ul>
               </Card>
               <Card title={t('about.cardParamFlow')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
-                  <li>Edit in UI → diff middleware → Web Serial frame</li>
-                  <li><code className="value-mono">serial_server</code> parses → <code className="value-mono">dsp_param_apply()</code></li>
-                  <li>Stage in shadow buffer, recalc biquad coeffs</li>
-                  <li>Notify audio task → atomic swap on next block</li>
-                  <li><strong className="text-text-primary">Apply</strong> button bulk-pushes everything at once</li>
-                  <li><strong className="text-text-primary">Save to Device</strong> commits NVS (one-shot)</li>
+                  <li>{t('about.swParamFlow1')}</li>
+                  <li><Trans i18nKey="about.swParamFlow2" /></li>
+                  <li>{t('about.swParamFlow3')}</li>
+                  <li>{t('about.swParamFlow4')}</li>
+                  <li><Trans i18nKey="about.swParamFlow5" /></li>
+                  <li><Trans i18nKey="about.swParamFlow6" /></li>
                 </ul>
               </Card>
               <Card title={t('about.cardKeyFiles')}>
@@ -516,21 +513,21 @@ ratio = clamp(ratio, ±maxPpm)`}</pre>
                 </thead>
                 <tbody className="text-text-secondary">
                   {[
-                    ['1', 'Wire both PCM5102A boards (XSMT=3.3V, SCK=GND)', '5 wires + 2 jumpers per board'],
-                    ['2', 'Plug ESP32-S3 USB-C into Mac', 'macOS Audio MIDI Setup shows DQ-DSP as a 2-ch / 2-ch UAC device'],
-                    ['3', 'Play music with the device selected as output', 'Audio comes out both DAC boards (default routing: In 1 → DAC #1, In 2 → DAC #2)'],
-                    ['4', 'Open the web UI in Chrome → Connect Serial', `Status dot turns green, "DQ-DSP" port name shown`],
-                    ['5', 'Edit master volume slider', 'Volume changes live (no Apply needed)'],
-                    ['6', 'Adjust an EQ band', 'Frequency response audibly changes; chart trace updates'],
-                    ['7', 'Click Apply', `Bulk push to RAM; "Applied!" flash`],
-                    ['8', 'Click Save to Device', 'Config commits to NVS; survives unplug + replug'],
-                    ['9', 'Set crossover on Out 1: LP 200 Hz, Out 2: HP 200 Hz', 'Bi-amp split: Out 1 carries bass, Out 2 carries treble'],
-                    ['10', 'Open Console panel', 'CPU load + clock-drift charts populate at 1 Hz'],
-                  ].map(([n, t, e]) => (
+                    ['1', 'about.check1Test', 'about.check1Exp'],
+                    ['2', 'about.check2Test', 'about.check2Exp'],
+                    ['3', 'about.check3Test', 'about.check3Exp'],
+                    ['4', 'about.check4Test', 'about.check4Exp'],
+                    ['5', 'about.check5Test', 'about.check5Exp'],
+                    ['6', 'about.check6Test', 'about.check6Exp'],
+                    ['7', 'about.check7Test', 'about.check7Exp'],
+                    ['8', 'about.check8Test', 'about.check8Exp'],
+                    ['9', 'about.check9Test', 'about.check9Exp'],
+                    ['10', 'about.check10Test', 'about.check10Exp'],
+                  ].map(([n, testKey, expKey]) => (
                     <tr key={n} className="border-b border-surface-bg/30 last:border-0">
                       <td className="py-1.5 px-2 font-mono text-text-dimmed">{n}</td>
-                      <td className="py-1.5 px-2">{t}</td>
-                      <td className="py-1.5 px-2 text-text-dimmed">{e}</td>
+                      <td className="py-1.5 px-2">{t(testKey)}</td>
+                      <td className="py-1.5 px-2 text-text-dimmed">{t(expKey)}</td>
                     </tr>
                   ))}
                 </tbody>

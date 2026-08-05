@@ -46,8 +46,8 @@ function FilterSection({
           disabled={!filter.enabled}
           className="bg-control-bg text-text-primary text-xs px-1.5 py-0.5 rounded border border-surface-bg focus:border-accent focus:outline-none disabled:opacity-40"
         >
-          {CROSSOVER_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>{t.label}</option>
+          {CROSSOVER_TYPES.map((opt) => (
+            <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
           ))}
         </select>
 
