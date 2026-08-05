@@ -1,0 +1,11 @@
+# Playwright MCP временные артефакты
+.playwright-mcp/
+
+# OS
+.DS_Store
+
+# Редакторы
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.swp
