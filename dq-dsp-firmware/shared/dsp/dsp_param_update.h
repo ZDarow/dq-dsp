@@ -69,14 +69,6 @@ void dsp_param_commit(void);
 uint8_t dsp_param_apply_bulk(const uint8_t *data, size_t len);
 
 /**
- * Check if there is a pending parameter update to commit.
- * The audio task polls this between frames.
- *
- * @return true if dsp_param_commit() should be called.
- */
-bool dsp_param_has_pending(void);
-
-/**
  * Notify the audio task that new parameters are available.
  * Called by the BLE task after dsp_param_apply() + coefficient recalc.
  * Posts to an internal FreeRTOS queue.
@@ -90,14 +82,6 @@ void dsp_param_notify_update(void);
  * @return true if an update was pending (caller should call dsp_param_commit).
  */
 bool dsp_param_poll_update(void);
-
-/**
- * Update the sample rate and recalculate all active filter coefficients.
- * Called when A2DP negotiates a different sample rate than configured.
- *
- * @param sample_rate  New sample rate in Hz.
- */
-void dsp_param_set_sample_rate(uint32_t sample_rate);
 
 /**
  * Refresh the CRC32 in a config buffer so a config sent to the host

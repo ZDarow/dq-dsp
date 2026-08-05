@@ -75,6 +75,10 @@ export function useWebSerial() {
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pingSentAtRef = useRef(0);
   const configRequestedRef = useRef(false);
+  // Indirect call to startPingPong from handleDisconnection: the two callbacks
+  // are mutually dependent (ping timeout triggers disconnection, reconnect
+  // restarts ping), so a ref breaks the circular useCallback dependency.
+  const startPingPongRef = useRef<() => void>(() => {});
 
   // RX buffer for frame assembly
   const rxBufferRef = useRef<number[]>([]);
@@ -412,6 +416,10 @@ export function useWebSerial() {
 
           setState((s) => ({ ...s, connected: true, connecting: false }));
           startReadLoop();
+          // Restart ping/pong health monitoring: cleanupConnection() above
+          // cleared the interval/timeouts, and without it a reconnected device
+          // is never monitored again.
+          startPingPongRef.current();
         } catch {
           setState((s) => ({
             ...s,
@@ -447,6 +455,8 @@ export function useWebSerial() {
       }, PONG_TIMEOUT_MS);
     }, PING_INTERVAL_MS);
   }, [handleDisconnection]);
+
+  startPingPongRef.current = startPingPong;
 
   const connect = useCallback(async () => {
     if (!('serial' in navigator)) {

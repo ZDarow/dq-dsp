@@ -140,50 +140,6 @@ static inline uint8_t serial_crc8(const uint8_t *data, size_t length) {
  * ----------------------------------------------------------------------- */
 
 /**
- * Validate a received serial frame.
- *
- * Checks the start marker, that the declared payload length fits within
- * the buffer, and verifies the CRC-8.
- *
- * @param data       Pointer to the raw received bytes.
- * @param data_len   Number of bytes in the buffer.
- * @param out_payload  If non-NULL and frame is valid, set to point at
- *                     the first payload byte inside `data`.
- * @param out_payload_len  If non-NULL and frame is valid, set to the
- *                         payload length.
- * @return 1 if the frame is valid, 0 otherwise.
- */
-static inline int serial_frame_validate(
-    const uint8_t *data,
-    size_t data_len,
-    const uint8_t **out_payload,
-    uint8_t *out_payload_len
-) {
-    /* Minimum frame: header(2) + length(1) + crc(1) = 4 bytes */
-    if (data_len < 4) return 0;
-
-    /* Check start marker */
-    if (data[0] != SERIAL_FRAME_HEADER_0 || data[1] != SERIAL_FRAME_HEADER_1) return 0;
-
-    uint8_t payload_len = data[2];
-
-    /* Check total frame size fits in buffer */
-    size_t expected_size = (size_t)2 + 1 + payload_len + 1;
-    if (data_len < expected_size) return 0;
-
-    /* Verify CRC over [length, ...payload] */
-    uint8_t expected_crc = data[3 + payload_len];
-    uint8_t actual_crc = serial_crc8(&data[2], 1 + payload_len);
-    if (actual_crc != expected_crc) return 0;
-
-    /* Output pointers */
-    if (out_payload) *out_payload = &data[3];
-    if (out_payload_len) *out_payload_len = payload_len;
-
-    return 1;
-}
-
-/**
  * Encode a payload into a serial frame buffer.
  *
  * @param payload      Pointer to the payload bytes.

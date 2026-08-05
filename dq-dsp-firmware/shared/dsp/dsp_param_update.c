@@ -511,11 +511,6 @@ void dsp_param_refresh_crc_in_place(dsp_config_t *cfg)
     cfg->header.crc32 = crc ^ 0xffffffffu;
 }
 
-bool dsp_param_has_pending(void)
-{
-    return pending_update;
-}
-
 void dsp_param_commit(void)
 {
     /* Swap pointers: staging becomes active, old active becomes staging. */
@@ -555,54 +550,6 @@ bool dsp_param_poll_update(void)
 {
     uint8_t dummy;
     return (xQueueReceive(update_queue, &dummy, 0) == pdTRUE);
-}
-
-void dsp_param_set_sample_rate(uint32_t sample_rate)
-{
-    uint32_t old_sr = staging_ptr->global.sample_rate;
-    if (sample_rate == old_sr) {
-        ESP_LOGI(TAG, "Sample rate unchanged (%lu Hz), skipping recalc",
-                 (unsigned long)sample_rate);
-        return;
-    }
-
-    staging_ptr->global.sample_rate = sample_rate;
-    staging_ptr->header.sample_rate = sample_rate;
-
-    ESP_LOGI(TAG, "Sample rate updated to %lu Hz (was %lu), recalculating filters",
-             (unsigned long)sample_rate, (unsigned long)old_sr);
-
-    /* Recalculate all active input EQ bands */
-    for (int ch = 0; ch < DSP_NUM_INPUTS; ch++) {
-        for (int b = 0; b < DSP_MAX_PEQ_BANDS; b++) {
-            if (staging_ptr->inputs[ch].eq_params[b].enabled) {
-                recalc_input_eq_band(ch, b);
-            }
-        }
-        for (int b = 0; b < DSP_MAX_ROOM_EQ_BANDS; b++) {
-            if (staging_ptr->inputs[ch].room_eq_params[b].enabled) {
-                recalc_input_room_eq_band(ch, b);
-            }
-        }
-    }
-
-    /* Recalculate all active output EQ bands and crossovers */
-    for (int ch = 0; ch < DSP_NUM_OUTPUTS; ch++) {
-        for (int b = 0; b < DSP_MAX_PEQ_BANDS; b++) {
-            if (staging_ptr->outputs[ch].eq_params[b].enabled) {
-                recalc_output_eq_band(ch, b);
-            }
-        }
-        if (staging_ptr->outputs[ch].hp_params.enabled) {
-            recalc_output_hp(ch);
-        }
-        if (staging_ptr->outputs[ch].lp_params.enabled) {
-            recalc_output_lp(ch);
-        }
-    }
-
-    dsp_param_commit();
-    dsp_param_notify_update();
 }
 
 uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
@@ -736,14 +683,13 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
             outp->phase_invert = u8_val;
             break;
         case BLE_PARAM_DELAY: {
-            if (!isfinite(f32_val)) {
+            /* Reject NaN/Inf and clamp-to-range BEFORE the float->uint32 cast:
+             * casting a float outside [0, UINT32_MAX] is undefined behaviour. */
+            if (!isfinite(f32_val) || f32_val < 0.0f || f32_val > (float)MAX_DELAY_SAMPLES) {
+                ESP_LOGW(TAG, "Delay out of range: %f (max %d)", (double)f32_val, MAX_DELAY_SAMPLES);
                 return BLE_STATUS_OUT_OF_RANGE;
             }
             uint32_t samples = (uint32_t)f32_val;
-            if (samples > MAX_DELAY_SAMPLES) {
-                ESP_LOGW(TAG, "Delay out of range: %lu (max %d)", (unsigned long)samples, MAX_DELAY_SAMPLES);
-                return BLE_STATUS_OUT_OF_RANGE;
-            }
             outp->delay_samples = samples;
             ESP_LOGI(TAG, "Output[%d] delay = %lu samples (%.2f ms @ %lu Hz)",
                      channel, (unsigned long)samples,
@@ -908,6 +854,17 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
     return BLE_STATUS_OK;
 }
 
+/* Returns true if every float in [p, p+n) is finite. */
+static bool all_finite(const float *p, size_t n)
+{
+    for (size_t i = 0; i < n; i++) {
+        if (!isfinite(p[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 uint8_t dsp_param_apply_bulk(const uint8_t *data, size_t len)
 {
     if (len != sizeof(dsp_config_t)) {
@@ -965,6 +922,93 @@ uint8_t dsp_param_apply_bulk(const uint8_t *data, size_t len)
         }
     }
 
+    /* NaN/Inf guard: the CRC scheme is documented and reproducible, but a
+     * checksummed blob can still carry NaN/Inf floats (host bug, or a preset
+     * edited with a tool that never sanitises). A NaN biquad coefficient or
+     * gain poisons the filter state permanently and only recovers on reboot,
+     * so reject the whole blob up front. */
+    for (int i = 0; i < DSP_NUM_INPUTS; i++) {
+        const dsp_input_t *inp = &incoming->inputs[i];
+        if (!isfinite(inp->gain)) {
+            ESP_LOGW(TAG, "Bulk config has non-finite input gain");
+            return BLE_STATUS_INVALID_PARAM;
+        }
+        for (int b = 0; b < DSP_MAX_PEQ_BANDS; b++) {
+            if (!all_finite(&inp->eq_bands[b].b0, 5)) {
+                ESP_LOGW(TAG, "Bulk config has non-finite input EQ coefficient");
+                return BLE_STATUS_INVALID_PARAM;
+            }
+        }
+        for (int b = 0; b < DSP_MAX_ROOM_EQ_BANDS; b++) {
+            if (!all_finite(&inp->room_eq_bands[b].b0, 5)) {
+                ESP_LOGW(TAG, "Bulk config has non-finite RoomEQ coefficient");
+                return BLE_STATUS_INVALID_PARAM;
+            }
+        }
+    }
+    for (int o = 0; o < DSP_NUM_OUTPUTS; o++) {
+        const dsp_output_t *outp = &incoming->outputs[o];
+        if (!isfinite(outp->gain)) {
+            ESP_LOGW(TAG, "Bulk config has non-finite output gain");
+            return BLE_STATUS_INVALID_PARAM;
+        }
+        for (int b = 0; b < DSP_MAX_PEQ_BANDS; b++) {
+            if (!all_finite(&outp->eq_bands[b].b0, 5)) {
+                ESP_LOGW(TAG, "Bulk config has non-finite output EQ coefficient");
+                return BLE_STATUS_INVALID_PARAM;
+            }
+        }
+        for (int s = 0; s < DSP_MAX_XO_STAGES; s++) {
+            if (!all_finite(&outp->hp_stages[s].b0, 5) ||
+                !all_finite(&outp->lp_stages[s].b0, 5)) {
+                ESP_LOGW(TAG, "Bulk config has non-finite crossover coefficient");
+                return BLE_STATUS_INVALID_PARAM;
+            }
+        }
+    }
+    for (int i = 0; i < DSP_NUM_INPUTS; i++) {
+        for (int o = 0; o < DSP_NUM_OUTPUTS; o++) {
+            if (!isfinite(incoming->routing[i][o].gain)) {
+                ESP_LOGW(TAG, "Bulk config has non-finite routing gain");
+                return BLE_STATUS_INVALID_PARAM;
+            }
+        }
+    }
+    if (!isfinite(incoming->global.master_volume)) {
+        ESP_LOGW(TAG, "Bulk config has non-finite master volume");
+        return BLE_STATUS_INVALID_PARAM;
+    }
+    if (!all_finite(&incoming->system.drift_kp, 4)) {
+        ESP_LOGW(TAG, "Bulk config has non-finite drift coefficients");
+        return BLE_STATUS_INVALID_PARAM;
+    }
+    /* Range checks mirroring the per-param apply path (dsp_param_apply). */
+    if (!is_valid_linear_gain(incoming->global.master_volume, 10.0f)) {
+        ESP_LOGW(TAG, "Bulk config master volume out of range: %f",
+                 (double)incoming->global.master_volume);
+        return BLE_STATUS_OUT_OF_RANGE;
+    }
+    for (int i = 0; i < DSP_NUM_INPUTS; i++) {
+        if (!is_valid_linear_gain(incoming->inputs[i].gain, 10.0f)) {
+            ESP_LOGW(TAG, "Bulk config input gain out of range");
+            return BLE_STATUS_OUT_OF_RANGE;
+        }
+    }
+    for (int o = 0; o < DSP_NUM_OUTPUTS; o++) {
+        if (!is_valid_linear_gain(incoming->outputs[o].gain, 10.0f)) {
+            ESP_LOGW(TAG, "Bulk config output gain out of range");
+            return BLE_STATUS_OUT_OF_RANGE;
+        }
+    }
+    for (int i = 0; i < DSP_NUM_INPUTS; i++) {
+        for (int o = 0; o < DSP_NUM_OUTPUTS; o++) {
+            if (!is_valid_linear_gain(incoming->routing[i][o].gain, 1.0f)) {
+                ESP_LOGW(TAG, "Bulk config routing gain out of range");
+                return BLE_STATUS_OUT_OF_RANGE;
+            }
+        }
+    }
+
     /* Copy to staging */
     memcpy(staging_ptr, data, sizeof(dsp_config_t));
 
@@ -999,8 +1043,10 @@ uint8_t dsp_param_apply_bulk(const uint8_t *data, size_t len)
         }
     }
 
-    /* Commit immediately for bulk updates */
-    dsp_param_commit();
+    /* Hand off to the audio task: it owns dsp_param_commit() (single writer,
+     * polled between audio chunks). Committing from here too would race the
+     * audio task's commit — a double swap where the second commit re-applies
+     * a stale staging buffer after the first already went active. */
     dsp_param_notify_update();
 
     ESP_LOGI(TAG, "Bulk config applied (preset %d, sr %lu Hz)",

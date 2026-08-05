@@ -65,15 +65,6 @@ bool msg_handler_flush_telemetry(void)
     return true;
 }
 
-bool msg_handler_read_telemetry(dsp_telemetry_t *out)
-{
-    if (!s_telemetry_pending) {
-        return false;
-    }
-    memcpy(out, &s_telemetry_snapshot, sizeof(dsp_telemetry_t));
-    return true;
-}
-
 /* -----------------------------------------------------------------------
  * Send Current Config (SYNC_CONFIG Response)
  * ----------------------------------------------------------------------- */
@@ -115,37 +106,15 @@ void msg_handler_process(const uint8_t *payload, uint8_t payload_len)
         return;
     }
 
-    uint8_t first_byte = payload[0];
-
-    /* --- Serial-specific control messages (also usable over BLE) --- */
-    if (first_byte == SERIAL_MSG_PING) {
-        /* Transport handles PONG response directly if needed */
-        if (s_transport->send_ack) {
-            s_transport->send_ack(0, BLE_STATUS_OK);
-        }
-        return;
-    }
-
-    if (first_byte == SERIAL_MSG_SYNC_CONFIG) {
-        send_current_config();
-        return;
-    }
-
-    if (first_byte == SERIAL_MSG_SAVE_CONFIG) {
-        save_config_to_nvs_immediate();
-        if (s_transport->send_ack) {
-            s_transport->send_ack(0, BLE_STATUS_OK);
-        }
-        ESP_LOGI(TAG, "Config saved to NVS (explicit save)");
-        return;
-    }
-
     /*
      * If a bulk transfer is in progress, ALL incoming payloads are
      * continuation data — regardless of what the raw bytes look like.
-     * Complete once we reach the size advertised by the host in the first
-     * frame (validated at BLE_MSG_BULK_CONFIG), so a version-skewed host can
-     * never wedge the device into permanent bulk mode.
+     * This must be checked before the single-byte control messages: bulk
+     * chunks are raw config bytes, and any of them could coincidentally equal
+     * SERIAL_MSG_PING/SYNC_CONFIG/SAVE_CONFIG. Complete once we reach the
+     * size advertised by the host in the first frame (validated at
+     * BLE_MSG_BULK_CONFIG), so a version-skewed host can never wedge the
+     * device into permanent bulk mode.
      */
     if (bulk_offset > 0) {
         if (bulk_offset + payload_len > sizeof(bulk_buffer)) {
@@ -174,6 +143,34 @@ void msg_handler_process(const uint8_t *payload, uint8_t payload_len)
                 }
             }
         }
+        return;
+    }
+
+    uint8_t first_byte = payload[0];
+
+    /* --- Serial-specific control messages (also usable over BLE) ---
+     * Guarded by payload_len == 1: a param update whose msg_id collides with
+     * 0xA0/0xA2/0xA5 (host msg_ids cycle 0..255) always carries a msg_type
+     * byte, so it can never be mistaken for one of these. */
+    if (first_byte == SERIAL_MSG_PING && payload_len == 1) {
+        /* Transport handles PONG response directly if needed */
+        if (s_transport->send_ack) {
+            s_transport->send_ack(0, BLE_STATUS_OK);
+        }
+        return;
+    }
+
+    if (first_byte == SERIAL_MSG_SYNC_CONFIG && payload_len == 1) {
+        send_current_config();
+        return;
+    }
+
+    if (first_byte == SERIAL_MSG_SAVE_CONFIG && payload_len == 1) {
+        save_config_to_nvs_immediate();
+        if (s_transport->send_ack) {
+            s_transport->send_ack(0, BLE_STATUS_OK);
+        }
+        ESP_LOGI(TAG, "Config saved to NVS (explicit save)");
         return;
     }
 

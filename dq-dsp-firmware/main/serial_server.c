@@ -210,7 +210,7 @@ static void rx_process_byte(rx_ctx_t *ctx, uint8_t byte)
 
         if (actual_crc == expected_crc) {
             uint8_t first_byte = ctx->frame_buf[3];
-            if (first_byte == SERIAL_MSG_PING) {
+            if (first_byte == SERIAL_MSG_PING && ctx->payload_len == 1) {
                 send_pong();
             } else {
                 msg_handler_process(&ctx->frame_buf[3], ctx->payload_len);

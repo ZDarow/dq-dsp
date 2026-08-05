@@ -62,13 +62,4 @@ void msg_handler_post_telemetry(const dsp_telemetry_t *stats);
  */
 bool msg_handler_flush_telemetry(void);
 
-/**
- * Read the latest telemetry snapshot (non-destructive).
- *
- * Returns true if there was pending telemetry (copies to *out).
- * Unlike flush, this does NOT send through the transport.
- * Used by BLE server to send telemetry independently.
- */
-bool msg_handler_read_telemetry(dsp_telemetry_t *out);
-
 #endif /* MSG_HANDLER_H */

@@ -43,14 +43,29 @@ import {
 } from '../types/ble-protocol';
 import type { FilterType, CrossoverFilterType, CrossoverSlope } from '../types/filter';
 import { dbToLinear } from '../dsp/utils';
+import { SERIAL_MSG_PING, SERIAL_MSG_SYNC_CONFIG, SERIAL_MSG_SAVE_CONFIG } from '../types/serial-protocol';
 
 /** Rolling message ID counter (0..255) */
 let nextMsgId = 0;
 
+/**
+ * Serial message IDs that share the first payload byte with a param update's
+ * msg_id. The firmware treats single-byte payloads of 0xA0/0xA2/0xA5 as
+ * control messages, and guards against collisions with payload_len == 1; the
+ * UI avoids the collision outright so msg_ids stay unambiguous.
+ */
+const RESERVED_MSG_IDS = new Set<number>([
+  SERIAL_MSG_PING,
+  SERIAL_MSG_SYNC_CONFIG,
+  SERIAL_MSG_SAVE_CONFIG,
+]);
+
 /** Get next message ID and advance the counter */
 export function getNextMsgId(): number {
   const id = nextMsgId;
-  nextMsgId = (nextMsgId + 1) % BLE_MSG_ID_MAX;
+  do {
+    nextMsgId = (nextMsgId + 1) % BLE_MSG_ID_MAX;
+  } while (RESERVED_MSG_IDS.has(nextMsgId));
   return id;
 }
 
