@@ -26,11 +26,11 @@ dependencies:
   idf:
     source:
       type: idf
-    version: 5.2.5
+    version: 6.0.2
 direct_dependencies:
 - espressif/cmake_utilities
 - espressif/tinyusb
 - idf
 manifest_hash: a0c5d0cbaea90a451fce5c3efe45055052bc17d6a3f853462b873a9d695aa91b
 target: esp32s3
-version: 2.0.0
+version: 3.0.0

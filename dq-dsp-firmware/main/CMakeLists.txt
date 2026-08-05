@@ -9,7 +9,9 @@ idf_component_register(SRCS "main.c"
                             "${SHARED_DIR}/dsp_param_update.c"
                             "${SHARED_DIR}/msg_handler.c"
                     INCLUDE_DIRS "." "${SHARED_DIR}"
-                    PRIV_REQUIRES driver nvs_flash esp_psram esp_timer
+                    PRIV_REQUIRES driver esp_driver_i2s esp_driver_uart
+                                  esp_ringbuf
+                                  nvs_flash esp_psram esp_timer
                                   esp_hw_support
                                   usb_device_uac
                                   espressif__tinyusb)
