@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useDSPStore } from '../../store/dsp-store';
 import { getInputColor } from '../../utils/colors';
 import { GainSlider } from '../controls/GainSlider';
@@ -13,6 +14,7 @@ interface InputChannelStripProps {
 }
 
 export function InputChannelStrip({ index }: InputChannelStripProps) {
+  const { t } = useTranslation();
   const input = useDSPStore((s) => s.inputs[index]);
   const sampleRate = useDSPStore((s) => s.sampleRate);
   const setInputGain = useDSPStore((s) => s.setInputGain);
@@ -34,7 +36,7 @@ export function InputChannelStrip({ index }: InputChannelStripProps) {
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
         <h3 className="text-sm font-bold" style={{ color }}>
-          Input {index + 1}
+          {t('nav.input', { n: index + 1 })}
         </h3>
         <MuteButton muted={input.mute} onClick={() => toggleInputMute(index)} />
         <PhaseButton inverted={input.phaseInvert} onClick={() => toggleInputPhase(index)} />
@@ -42,21 +44,21 @@ export function InputChannelStrip({ index }: InputChannelStripProps) {
         <LinkButton
           linked={inputsLinked}
           onClick={toggleInputsLinked}
-          label={inputsLinked ? 'In 1 ↔ 2 Linked' : 'Link In 1 ↔ 2'}
-          title="Link mirrors gain, mute, phase, and PEQ between Input 1 and Input 2 in real time. Use for true stereo source where both channels need identical processing."
+          label={inputsLinked ? t('input.linkOn') : t('input.link')}
+          title={t('input.linkTitle')}
         />
         <CopyPicker
           currentIndex={index}
           others={others}
           onCopy={(target) => copyInput(index, target)}
-          channelLabel="In"
+          channelLabel={t('input.channelIn')}
         />
       </div>
 
       {/* Linked indicator with hint */}
       {inputsLinked && (
         <div className="text-xs text-accent/80 bg-accent/5 px-2 py-1 rounded border border-accent/15">
-          Stereo link active — gain, mute, phase, and PEQ apply to both inputs
+          {t('input.linkActive')}
         </div>
       )}
 
@@ -65,7 +67,7 @@ export function InputChannelStrip({ index }: InputChannelStripProps) {
 
       {/* PEQ */}
       <div>
-        <h4 className="text-xs text-text-secondary mb-2">Parametric EQ (10 bands)</h4>
+        <h4 className="text-xs text-text-secondary mb-2">{t('input.paramEq')}</h4>
         <PEQEditor
           bands={input.eqBands}
           sampleRate={sampleRate}

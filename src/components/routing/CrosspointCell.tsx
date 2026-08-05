@@ -1,4 +1,5 @@
 import type { CrosspointGain } from '../../types/dsp';
+import { useTranslation } from 'react-i18next';
 import { Tooltip } from '../ui/Tooltip';
 
 interface CrosspointCellProps {
@@ -19,10 +20,11 @@ export function CrosspointCell({
   onToggle,
   onGainChange,
 }: CrosspointCellProps) {
-  const routeLabel = `Input ${inputIndex + 1} → Output ${outputIndex + 1}`;
+  const { t } = useTranslation();
+  const routeLabel = t('routing.routeLabel', { input: inputIndex + 1, output: outputIndex + 1 });
   const tooltip = crosspoint.enabled
-    ? `${routeLabel} routed at ${Math.round(crosspoint.gain * 100)}%. Click cell to mute this route; drag the slider for partial mix (e.g. 50/50 mono blend).`
-    : `${routeLabel} disabled. Click to enable routing — input audio will mix into this output channel.`;
+    ? t('routing.routedTooltip', { route: routeLabel, pct: Math.round(crosspoint.gain * 100) })
+    : t('routing.disabledTooltip', { route: routeLabel });
   return (
     <Tooltip content={tooltip} wrapperClassName="block">
     <div
@@ -67,7 +69,7 @@ export function CrosspointCell({
             ['--slider-fill' as string]: crosspoint.gain * 100,
             ['--slider-color' as string]: outputColor,
           }}
-          aria-label={`${routeLabel} gain`}
+          aria-label={t('routing.gainAria', { route: routeLabel })}
         />
       )}
 

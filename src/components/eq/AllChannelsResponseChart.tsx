@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDSPStore } from '../../store/dsp-store';
 import {
   generateFrequencyPoints,
@@ -28,6 +29,7 @@ interface ChannelDef {
 }
 
 export function AllChannelsResponseChart() {
+  const { t } = useTranslation();
   const inputs = useDSPStore((s) => s.inputs);
   const outputs = useDSPStore((s) => s.outputs);
   const routing = useDSPStore((s) => s.routing);
@@ -54,13 +56,13 @@ export function AllChannelsResponseChart() {
   const [fixedVisible, setFixedVisible] = useState<boolean[]>([true, true, true, true, true, true]);
 
   const fixedChannels: ChannelDef[] = useMemo(() => [
-    { label: 'In 1', color: INPUT_COLORS[0] },
-    { label: 'In 2', color: INPUT_COLORS[1] },
-    { label: 'Out 1', color: OUTPUT_COLORS[0] },
-    { label: 'Out 2', color: OUTPUT_COLORS[1] },
-    { label: 'Out 3', color: OUTPUT_COLORS[2] },
-    { label: 'Out 4', color: OUTPUT_COLORS[3] },
-  ], []);
+    { label: t('nav.input', { n: 1 }), color: INPUT_COLORS[0] },
+    { label: t('nav.input', { n: 2 }), color: INPUT_COLORS[1] },
+    { label: t('nav.output', { n: 1 }), color: OUTPUT_COLORS[0] },
+    { label: t('nav.output', { n: 2 }), color: OUTPUT_COLORS[1] },
+    { label: t('nav.output', { n: 3 }), color: OUTPUT_COLORS[2] },
+    { label: t('nav.output', { n: 4 }), color: OUTPUT_COLORS[3] },
+  ], [t]);
   const FIXED_COUNT = fixedChannels.length;
 
   const frequencies = useMemo(
@@ -193,9 +195,9 @@ export function AllChannelsResponseChart() {
     <div className="glass-panel mx-4 my-3" style={{ borderRadius: 'var(--radius-panel)' }}>
       {/* Toggle buttons */}
       <div className="flex items-center gap-1.5 px-4 py-1.5 flex-wrap">
-        <span className="section-label mr-1">Response</span>
+        <span className="section-label mr-1">{t('charts.response')}</span>
         {fixedChannels.map((ch, i) => (
-          <Tooltip key={i} content={`${fixedVisible[i] ? 'Hide' : 'Show'} ${ch.label} response trace on the chart. Toggling here only affects the visualization, not the actual signal flow.`}>
+          <Tooltip key={i} content={t('charts.toggleTrace', { action: fixedVisible[i] ? t('charts.hide') : t('charts.show'), name: ch.label })}>
             <button
               onClick={() => toggleFixed(i)}
               className="pill-badge is-toggleable"
@@ -210,7 +212,7 @@ export function AllChannelsResponseChart() {
 
         {/* Custom sum pills (toggle visibility via CustomSum.enabled) */}
         {customSums.map((sum) => (
-          <Tooltip key={sum.id} content={`${sum.name} = Σ ${sum.outputIndices.map((i) => `Out ${i + 1}`).join(' + ') || '(empty)'}`}>
+          <Tooltip key={sum.id} content={t('customSum.sumOf', { name: sum.name, outputs: sum.outputIndices.map((i) => t('nav.output', { n: i + 1 })).join(' + ') || t('customSum.emptyOutputs') })}>
             <button
               onClick={() => updateCustomSum(sum.id, { enabled: !sum.enabled })}
               className="pill-badge is-toggleable"
@@ -224,7 +226,7 @@ export function AllChannelsResponseChart() {
         ))}
 
         {/* Manage-sums entry point */}
-        <Tooltip content="Manage user-defined acoustic sum curves — pick a set of outputs and visualize their summed response (e.g. left tweeter + woofer to verify the crossover blend).">
+        <Tooltip content={t('customSum.manageTooltip')}>
           <button
             onClick={() => setEditorOpen(true)}
             className="text-xs px-2 py-0.5 rounded-full border border-dashed border-surface-bg text-text-dimmed hover:text-text-primary hover:border-text-dimmed transition-colors"

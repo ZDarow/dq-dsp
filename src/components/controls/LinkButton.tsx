@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Tooltip } from '../ui/Tooltip';
 
 interface LinkButtonProps {
@@ -8,8 +9,9 @@ interface LinkButtonProps {
 }
 
 export function LinkButton({ linked, onClick, label, title }: LinkButtonProps) {
+  const { t } = useTranslation();
   return (
-    <Tooltip content={title ?? label ?? (linked ? 'Unlink channels' : 'Link channels')}>
+    <Tooltip content={title ?? label ?? (linked ? t('linkButton.unlinkChannels') : t('linkButton.linkChannels'))}>
     <button
       onClick={onClick}
       className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border transition-all ${
@@ -34,7 +36,7 @@ export function LinkButton({ linked, onClick, label, title }: LinkButtonProps) {
           </>
         )}
       </svg>
-      {label ?? (linked ? 'Linked' : 'Link')}
+      {label ?? (linked ? t('linkButton.linked') : t('linkButton.link'))}
     </button>
     </Tooltip>
   );

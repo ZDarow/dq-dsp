@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { EQBand, FilterType } from '../../types/filter';
 import { FilterTypeSelect } from '../controls/FilterTypeSelect';
 import { formatFrequency } from '../../utils/format';
@@ -13,8 +14,9 @@ interface EQBandControlProps {
 }
 
 export function EQBandControl({ band, index, selected, color, onChange, onSelect }: EQBandControlProps) {
+  const { t } = useTranslation();
   return (
-    <Tooltip content={`Band ${index + 1} — click row to focus the draggable handle on the graph; toggle the checkbox to bypass without losing settings.`} wrapperClassName="block">
+    <Tooltip content={t('eq.bandTooltip', { n: index + 1 })} wrapperClassName="block">
     <div
       className={`flex items-center gap-2 px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
         selected ? 'bg-surface-bg' : 'hover:bg-surface-bg/50'
@@ -31,7 +33,7 @@ export function EQBandControl({ band, index, selected, color, onChange, onSelect
         }}
         className="accent-current"
         style={{ accentColor: color }}
-        aria-label={`Enable band ${index + 1}`}
+        aria-label={t('eq.enableBand', { n: index + 1 })}
       />
 
       {/* Band number */}
@@ -54,7 +56,7 @@ export function EQBandControl({ band, index, selected, color, onChange, onSelect
         onChange={(e) => onChange({ frequency: Number(e.target.value) })}
         onClick={(e) => e.stopPropagation()}
         className="bg-control-bg text-text-primary text-xs px-1.5 py-0.5 rounded w-16 border border-surface-bg focus:border-accent focus:outline-none font-mono text-right"
-        aria-label={`Band ${index + 1} frequency`}
+        aria-label={t('eq.bandFreq', { n: index + 1 })}
       />
       <span className="text-text-dimmed text-xs w-6">{formatFrequency(band.frequency).includes('k') ? 'kHz' : 'Hz'}</span>
 
@@ -68,7 +70,7 @@ export function EQBandControl({ band, index, selected, color, onChange, onSelect
         onChange={(e) => onChange({ gain: Number(e.target.value) })}
         onClick={(e) => e.stopPropagation()}
         className="bg-control-bg text-text-primary text-xs px-1.5 py-0.5 rounded w-14 border border-surface-bg focus:border-accent focus:outline-none font-mono text-right"
-        aria-label={`Band ${index + 1} gain`}
+        aria-label={t('eq.bandGain', { n: index + 1 })}
       />
       <span className="text-text-dimmed text-xs">dB</span>
 
@@ -82,7 +84,7 @@ export function EQBandControl({ band, index, selected, color, onChange, onSelect
         onChange={(e) => onChange({ q: Number(e.target.value) })}
         onClick={(e) => e.stopPropagation()}
         className="bg-control-bg text-text-primary text-xs px-1.5 py-0.5 rounded w-14 border border-surface-bg focus:border-accent focus:outline-none font-mono text-right"
-        aria-label={`Band ${index + 1} Q`}
+        aria-label={t('eq.bandQ', { n: index + 1 })}
       />
       <span className="text-text-dimmed text-xs">Q</span>
     </div>

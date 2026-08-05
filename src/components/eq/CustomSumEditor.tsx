@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useDSPStore } from '../../store/dsp-store';
 import { CUSTOM_SUM_COLORS } from '../../types/custom-sum';
 import { OUTPUT_COLORS } from '../../utils/colors';
@@ -10,6 +11,7 @@ interface Props {
 const NUM_OUTPUTS = 4;
 
 export function CustomSumEditor({ onClose }: Props) {
+  const { t } = useTranslation();
   const customSums = useDSPStore((s) => s.customSums);
   const addCustomSum = useDSPStore((s) => s.addCustomSum);
   const removeCustomSum = useDSPStore((s) => s.removeCustomSum);
@@ -28,7 +30,7 @@ export function CustomSumEditor({ onClose }: Props) {
     const used = new Set(customSums.map((s) => s.color));
     const color = CUSTOM_SUM_COLORS.find((c) => !used.has(c)) ?? CUSTOM_SUM_COLORS[customSums.length % CUSTOM_SUM_COLORS.length];
     addCustomSum({
-      name: `Σ Sum ${customSums.length + 1}`,
+      name: `Σ ${t('customSum.sum')} ${customSums.length + 1}`,
       color,
       outputIndices: [],
       enabled: true,
@@ -46,21 +48,21 @@ export function CustomSumEditor({ onClose }: Props) {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-surface-bg">
-          <h2 className="text-sm font-semibold text-text-primary">Custom Sums</h2>
+          <h2 className="text-sm font-semibold text-text-primary">{t('customSum.title')}</h2>
           <div className="flex items-center gap-2">
-            <Tooltip content="Create a new acoustic-sum curve. Pick which outputs contribute, and the chart will plot their complex sum (handles phase + crossover overlap properly).">
+            <Tooltip content={t('customSum.addTooltip')}>
               <button
                 onClick={handleAdd}
                 className="text-xs px-3 py-1 rounded border border-accent text-accent hover:bg-accent/20 transition-colors"
               >
-                + Add
+                + {t('customSum.add')}
               </button>
             </Tooltip>
-            <Tooltip content="Close (Esc)">
+            <Tooltip content={t('about.closeTooltip')}>
               <button
                 onClick={onClose}
                 className="text-text-dimmed hover:text-text-primary text-lg leading-none px-2"
-                aria-label="Close"
+                aria-label={t('common.close')}
               >
                 ×
               </button>
@@ -72,7 +74,7 @@ export function CustomSumEditor({ onClose }: Props) {
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
           {customSums.length === 0 && (
             <div className="text-center text-text-dimmed text-sm py-8">
-              No custom sums yet. Click <span className="text-accent">+ Add</span> to create one.
+              {t('customSum.empty')} <span className="text-accent">+ {t('customSum.add')}</span>
             </div>
           )}
 
@@ -84,20 +86,20 @@ export function CustomSumEditor({ onClose }: Props) {
             >
               {/* Top row: name + color + delete */}
               <div className="flex items-center gap-2">
-                <Tooltip content="Display name shown on the response chart pill (e.g. ‘Left main’, ‘Sub mix’, ‘System’)." wrapperClassName="flex-1">
+                <Tooltip content={t('customSum.nameTooltip')} wrapperClassName="flex-1">
                   <input
                     type="text"
                     value={sum.name}
                     onChange={(e) => updateCustomSum(sum.id, { name: e.target.value })}
                     className="w-full bg-surface-bg/50 border border-surface-bg rounded px-2 py-1 text-sm text-text-primary focus:outline-none focus:border-accent"
-                    placeholder="Sum name"
+                    placeholder={t('customSum.namePlaceholder')}
                   />
                 </Tooltip>
 
                 {/* Color swatches */}
                 <div className="flex items-center gap-1">
                   {CUSTOM_SUM_COLORS.map((c) => (
-                    <Tooltip key={c} content={`Use ${c} as the chart trace colour for this sum`}>
+                    <Tooltip key={c} content={t('customSum.colorTooltip', { color: c })}>
                       <button
                         onClick={() => updateCustomSum(sum.id, { color: c })}
                         className="w-5 h-5 rounded-full border-2 transition-transform hover:scale-110"
@@ -105,17 +107,17 @@ export function CustomSumEditor({ onClose }: Props) {
                           backgroundColor: c,
                           borderColor: sum.color === c ? '#ffffff' : 'transparent',
                         }}
-                        aria-label={`Pick color ${c}`}
+                        aria-label={t('customSum.pickColor', { color: c })}
                       />
                     </Tooltip>
                   ))}
                 </div>
 
-                <Tooltip content="Delete this sum">
+                <Tooltip content={t('customSum.deleteTooltip')}>
                   <button
                     onClick={() => removeCustomSum(sum.id)}
                     className="text-text-dimmed hover:text-red-400 transition-colors px-2"
-                    aria-label="Delete"
+                    aria-label={t('customSum.delete')}
                   >
                     🗑
                   </button>
@@ -124,11 +126,11 @@ export function CustomSumEditor({ onClose }: Props) {
 
               {/* Output checkboxes */}
               <div className="flex items-center gap-3 text-xs">
-                <span className="text-text-dimmed uppercase tracking-wider">Outputs:</span>
+                <span className="text-text-dimmed uppercase tracking-wider">{t('customSum.outputs')}:</span>
                 {Array.from({ length: NUM_OUTPUTS }, (_, oi) => {
                   const checked = sum.outputIndices.includes(oi);
                   return (
-                    <Tooltip key={oi} content={`${checked ? 'Remove' : 'Include'} Output ${oi + 1} in this acoustic sum`}>
+                    <Tooltip key={oi} content={t('customSum.toggleOutput', { action: checked ? t('customSum.remove') : t('customSum.include'), n: oi + 1 })}>
                       <label
                         className="flex items-center gap-1 cursor-pointer select-none"
                         style={{ color: checked ? OUTPUT_COLORS[oi] : 'var(--color-text-dimmed)' }}
@@ -138,9 +140,9 @@ export function CustomSumEditor({ onClose }: Props) {
                           checked={checked}
                           onChange={() => handleToggleOutput(sum.id, oi, sum.outputIndices)}
                           className="accent-current"
-                          aria-label={`Include Output ${oi + 1}`}
+                          aria-label={t('customSum.includeOutput', { n: oi + 1 })}
                         />
-                        Out {oi + 1}
+                        {t('nav.output', { n: oi + 1 })}
                       </label>
                     </Tooltip>
                   );
@@ -152,7 +154,7 @@ export function CustomSumEditor({ onClose }: Props) {
 
         {/* Footer help */}
         <div className="px-4 py-2 border-t border-surface-bg text-xs text-text-dimmed">
-          Sums are computed as complex (acoustic) addition. Saved with each preset and in localStorage.
+          {t('customSum.footer')}
         </div>
       </div>
     </div>

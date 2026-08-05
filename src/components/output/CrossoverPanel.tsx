@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { CrossoverConfig, CrossoverFilterType, CrossoverSlope } from '../../types/filter';
 import { CROSSOVER_TYPES, CROSSOVER_SLOPES } from '../../constants/filter-options';
 import { Tooltip } from '../ui/Tooltip';
@@ -24,6 +25,7 @@ function FilterSection({
   longName: string;
   description: string;
 }) {
+  const { t } = useTranslation();
   return (
     <Tooltip content={description} wrapperClassName="block">
       <div className="flex items-center gap-2 p-2 rounded bg-panel-bg">
@@ -32,7 +34,7 @@ function FilterSection({
           checked={filter.enabled}
           onChange={(e) => onChange({ enabled: e.target.checked })}
           style={{ accentColor: color }}
-          aria-label={`Enable ${longName}`}
+          aria-label={t('crossover.enable', { name: longName })}
         />
         <span className="text-xs font-bold w-6" style={{ color: filter.enabled ? color : '#55556a' }}>
           {label}
@@ -76,26 +78,27 @@ function FilterSection({
 }
 
 export function CrossoverPanel({ crossover, onHPChange, onLPChange, color }: CrossoverPanelProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-1">
-      <Tooltip content="Per-output crossover stage — splits the band each driver should reproduce. HP keeps content above cutoff (tweeter/mid); LP keeps content below (sub/woofer). Combine HP+LP for a bandpass.">
-        <h4 className="text-xs text-text-secondary">Crossover</h4>
+      <Tooltip content={t('crossover.titleTooltip')}>
+        <h4 className="text-xs text-text-secondary">{t('crossover.title')}</h4>
       </Tooltip>
       <FilterSection
-        label="HP"
+        label={t('crossover.hp')}
         filter={crossover.highPass}
         onChange={onHPChange}
         color={color}
-        longName="High Pass"
-        description="High Pass — attenuates content below the cutoff. Use for tweeters, mids, and protecting any driver from low-frequency excursion."
+        longName={t('crossover.hpLong')}
+        description={t('crossover.hpDesc')}
       />
       <FilterSection
-        label="LP"
+        label={t('crossover.lp')}
         filter={crossover.lowPass}
         onChange={onLPChange}
         color={color}
-        longName="Low Pass"
-        description="Low Pass — attenuates content above the cutoff. Use for woofers and subwoofers to keep mids/highs out of bass drivers."
+        longName={t('crossover.lpLong')}
+        description={t('crossover.lpDesc')}
       />
     </div>
   );

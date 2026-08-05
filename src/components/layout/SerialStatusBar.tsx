@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDSPStore } from '../../store/dsp-store';
 import { useWebSerial } from '../../hooks/useWebSerial';
 import { createSerialMiddleware } from '../../serial/serial-middleware';
@@ -8,6 +9,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { useSerialSupport } from '../../hooks/useSerialSupport';
 
 export function SerialStatusBar() {
+  const { t } = useTranslation();
   const serialConnected = useDSPStore((s) => s.serialConnected);
   const serialConnecting = useDSPStore((s) => s.serialConnecting);
   const serialPortName = useDSPStore((s) => s.serialPortName);
@@ -75,10 +77,10 @@ export function SerialStatusBar() {
   useEffect(() => {
     return onStatus((msg) => {
       if (msg.msgType === 0x82) {
-        setSerialError(`Device error: code ${msg.statusCode}`);
+        setSerialError(t('serial.deviceError', { code: msg.statusCode }));
       }
     });
-  }, [onStatus, setSerialError]);
+  }, [onStatus, setSerialError, t]);
 
   // Subscribe to ESP_LOG messages
   useEffect(() => {
@@ -95,17 +97,17 @@ export function SerialStatusBar() {
   useEffect(() => {
     return onConfig((config) => {
       applyDeviceConfig(config);
-      addSerialLog('[sync] Device config applied to UI');
+      addSerialLog(t('serial.syncAppliedLog'));
     });
-  }, [onConfig, applyDeviceConfig, addSerialLog]);
+  }, [onConfig, applyDeviceConfig, addSerialLog, t]);
 
   // Manual sync only — auto-pull on connect raced with user actions
   // (Load Preset, in-flight tweaks) and overwrote local state with the
   // device's stale RAM. The user pulls explicitly via the Sync button.
   const handleSync = useCallback(() => {
     requestConfig();
-    addSerialLog('[sync] Pulling config from device…');
-  }, [requestConfig, addSerialLog]);
+    addSerialLog(t('serial.syncLog'));
+  }, [requestConfig, addSerialLog, t]);
 
   const handleConnect = useCallback(async () => {
     await serialConnect();
@@ -152,10 +154,10 @@ export function SerialStatusBar() {
       {/* Port name or status */}
       <span className="text-text-secondary text-xs truncate max-w-[6.25rem]">
         {serialConnected
-          ? serialPortName || 'Connected'
+          ? serialPortName || t('serial.connected')
           : serialConnecting
-            ? 'Connecting...'
-            : 'Serial'}
+            ? t('serial.connecting')
+            : t('serial.serial')}
       </span>
 
       {/* Latency display */}
@@ -170,12 +172,12 @@ export function SerialStatusBar() {
        * the firmware's actual state, including device-fixed fields like
        * sample rate. */}
       {serialConnected && (
-        <Tooltip content="Sync: pull the device's current configuration into the UI. Use after Connect to mirror the firmware's actual state (sample rate, EQ, routing). Overwrites local UI state.">
+        <Tooltip content={t('serial.syncTooltip')}>
           <button
             onClick={handleSync}
             className="text-xs px-2 py-0.5 rounded border bg-control-bg text-text-secondary border-surface-bg hover:text-text-primary hover:border-mute transition-colors"
           >
-            Sync
+            {t('serial.sync')}
           </button>
         </Tooltip>
       )}
@@ -184,7 +186,7 @@ export function SerialStatusBar() {
        * device's running RAM. Useful after loading a preset; individual
        * tweaks already auto-stream live. Does NOT persist across reboot. */}
       {serialConnected && (
-        <Tooltip content="Apply: push the entire current configuration to the device's runtime RAM. Live for as long as the ESP32 is powered. Use after loading a preset; individual edits already stream automatically.">
+        <Tooltip content={t('serial.applyTooltip')}>
           <button
             onClick={handleUpload}
             disabled={uploading}
@@ -194,7 +196,7 @@ export function SerialStatusBar() {
                 : 'bg-accent text-white border-accent hover:brightness-110'
             } disabled:opacity-50`}
           >
-            {uploading ? 'Applying…' : uploadSuccess ? 'Applied!' : 'Apply'}
+            {uploading ? t('common.applying') : uploadSuccess ? t('common.applied') : t('common.apply')}
           </button>
         </Tooltip>
       )}
@@ -202,19 +204,19 @@ export function SerialStatusBar() {
       {/* Save to Device — write current device-side RAM config into NVS
        * flash so it survives a power cycle. May briefly interrupt audio. */}
       {serialConnected && (
-        <Tooltip content="Save to Device: commit the running configuration into the ESP32's flash so it survives reboot/power-cycle. Audio may stutter briefly during the write.">
+        <Tooltip content={t('serial.saveTooltip')}>
           <button
             onClick={() => sendParam(encodeSerialFrame(new Uint8Array([SERIAL_MSG_SAVE_CONFIG])))}
             className="text-xs px-2 py-0.5 rounded border bg-control-bg text-text-secondary border-surface-bg hover:text-text-primary hover:border-mute transition-colors"
           >
-            Save to Device
+            {t('serial.saveToDevice')}
           </button>
         </Tooltip>
       )}
 
       {/* Console toggle */}
       {serialConnected && (
-        <Tooltip content="Toggle the serial console panel — shows ESP_LOG output from the device plus CPU load and clock-drift charts.">
+        <Tooltip content={t('serial.consoleTooltip')}>
           <button
             onClick={toggleSerialConsole}
             className={`text-xs px-2 py-0.5 rounded border transition-colors ${
@@ -223,26 +225,26 @@ export function SerialStatusBar() {
                 : 'bg-control-bg text-text-dimmed border-surface-bg'
             }`}
           >
-            Console
+            {t('serial.console')}
           </button>
         </Tooltip>
       )}
 
       {/* Connect / Disconnect button */}
       {serialConnected ? (
-        <Tooltip content="Close the serial port. The device keeps running with its last applied config; reconnect any time to resume live control.">
+        <Tooltip content={t('serial.disconnectTooltip')}>
           <button
             onClick={handleDisconnect}
             className="text-xs px-2 py-0.5 rounded bg-control-bg text-text-secondary border border-surface-bg hover:text-text-primary hover:border-mute transition-colors"
           >
-            Disconnect
+            {t('serial.disconnect')}
           </button>
         </Tooltip>
       ) : (
         <Tooltip
           content={
             serialSupport.supported
-              ? 'Open a Web Serial connection to the ESP32 (Chrome/Edge only). Once connected, parameter edits stream to the device live.'
+              ? t('serial.connectTooltip')
               : `${serialSupport.headline} — ${serialSupport.message}`
           }
         >
@@ -256,10 +258,10 @@ export function SerialStatusBar() {
             }`}
           >
             {!serialSupport.supported
-              ? 'Serial unavailable'
+              ? t('serial.unavailable')
               : serialConnecting
-                ? 'Connecting...'
-                : 'Connect Serial'}
+                ? t('serial.connecting')
+                : t('serial.connect')}
           </button>
         </Tooltip>
       )}

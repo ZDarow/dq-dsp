@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { DSPTelemetry } from '../../types/serial-protocol';
 
 interface DriftChartProps {
@@ -18,6 +19,7 @@ const COLOR_DANGER = 'var(--color-mute)';
 const COLOR_WARN = 'var(--color-meter-caution)';
 
 export function DriftChart({ history }: DriftChartProps) {
+  const { t } = useTranslation();
   const empty = history.length === 0;
   const latest = empty ? null : history[history.length - 1];
   const fill = latest?.bufferFillPct ?? 0;
@@ -33,7 +35,7 @@ export function DriftChart({ history }: DriftChartProps) {
   return (
     <div className="flex flex-col">
       <div className="flex items-center gap-1.5 px-2 py-1.5 flex-wrap">
-        <span className="section-label mr-1">Clock Drift</span>
+        <span className="section-label mr-1">{t('charts.clockDrift')}</span>
         <span className="pill-badge" style={{ ['--pill-color' as string]: fillStatusColor }}>
           <span className="status-dot" style={{ backgroundColor: fillStatusColor, marginRight: 0 }} />
           Buf <span className="value-mono">{empty ? '--' : `${fill}%`}</span>

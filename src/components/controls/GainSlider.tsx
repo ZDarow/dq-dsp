@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { formatDb } from '../../utils/format';
 import { Tooltip } from '../ui/Tooltip';
 
@@ -17,9 +18,11 @@ export function GainSlider({
   max = 12,
   step = 0.5,
   onChange,
-  label = 'Gain',
+  label,
   color,
 }: GainSliderProps) {
+  const { t } = useTranslation();
+  const resolvedLabel = label ?? t('controls.gain');
   const pct = ((value - min) / (max - min)) * 100;
   const isMuted = value <= min;
   const fillColor = isMuted ? 'var(--color-text-dimmed)' : (color || 'var(--color-accent)');
@@ -27,7 +30,7 @@ export function GainSlider({
   return (
     <div className="rounded-lg border border-surface-bg bg-panel-bg p-3">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-text-secondary text-xs font-medium">{label}</span>
+        <span className="text-text-secondary text-xs font-medium">{resolvedLabel}</span>
         <span
           className="text-sm font-mono font-semibold"
           style={{ color: isMuted ? 'var(--color-text-dimmed)' : (color || 'var(--color-text-primary)') }}
@@ -36,7 +39,7 @@ export function GainSlider({
         </span>
       </div>
       <Tooltip
-        content={`${label}: ${formatDb(value)} (range ${min} to ${max} dB). Drag to adjust; bottom of range silences the channel.`}
+        content={t('controls.gainTooltip', { label: resolvedLabel, value: formatDb(value), min, max })}
         wrapperClassName="block"
       >
         <input
@@ -51,7 +54,7 @@ export function GainSlider({
             ['--slider-fill' as string]: pct,
             ['--slider-color' as string]: fillColor,
           }}
-          aria-label={`${label} ${formatDb(value)}`}
+          aria-label={`${resolvedLabel} ${formatDb(value)}`}
         />
       </Tooltip>
     </div>

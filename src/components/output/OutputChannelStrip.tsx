@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useDSPStore } from '../../store/dsp-store';
 import { getOutputColor } from '../../utils/colors';
 import { GainSlider } from '../controls/GainSlider';
@@ -18,6 +19,7 @@ interface OutputChannelStripProps {
 const OUTPUT_COUNT = 4;
 
 export function OutputChannelStrip({ index }: OutputChannelStripProps) {
+  const { t } = useTranslation();
   const output = useDSPStore((s) => s.outputs[index]);
   const sampleRate = useDSPStore((s) => s.sampleRate);
   const setOutputGain = useDSPStore((s) => s.setOutputGain);
@@ -41,7 +43,7 @@ export function OutputChannelStrip({ index }: OutputChannelStripProps) {
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
         <h3 className="text-sm font-bold" style={{ color }}>
-          Output {index + 1}
+          {t('nav.output', { n: index + 1 })}
         </h3>
         <MuteButton muted={output.mute} onClick={() => toggleOutputMute(index)} />
         <PhaseButton inverted={output.phaseInvert} onClick={() => toggleOutputPhase(index)} />
@@ -51,28 +53,27 @@ export function OutputChannelStrip({ index }: OutputChannelStripProps) {
           others={others}
           linkedPartners={partners}
           onToggle={(other) => toggleOutputLinkMember(index, other)}
-          channelLabel="Out"
+          channelLabel={t('output.channelOut')}
         />
 
         <CopyPicker
           currentIndex={index}
           others={others}
           onCopy={(target) => copyOutput(index, target)}
-          channelLabel="Out"
+          channelLabel={t('output.channelOut')}
         />
       </div>
 
       {/* Linked indicator with hint */}
       {partners.length > 0 && (
         <div className="text-xs text-accent/80 bg-accent/5 px-2 py-1 rounded border border-accent/15">
-          Mirroring with {partners.map((p) => `Out ${p + 1}`).join(', ')} —
-          gain, mute, phase, delay, PEQ, and crossover stay in sync
+          {t('output.mirroring', { names: partners.map((p) => t('nav.output', { n: p + 1 })).join(', ') })}
         </div>
       )}
 
       {/* PEQ */}
       <div>
-        <h4 className="text-xs text-text-secondary mb-2">Parametric EQ (10 bands)</h4>
+        <h4 className="text-xs text-text-secondary mb-2">{t('output.paramEq')}</h4>
         <PEQEditor
           bands={output.eqBands}
           sampleRate={sampleRate}

@@ -1,18 +1,19 @@
+import { useTranslation } from 'react-i18next';
 import { useDSPStore } from '../../store/dsp-store';
 import type { SelectedBlock } from '../../types/dsp';
 import { INPUT_COLORS, OUTPUT_COLORS } from '../../utils/colors';
 import { Tooltip } from '../ui/Tooltip';
 
-const NAV_ITEMS: { block: SelectedBlock; label: string; color: string }[] = [
-  { block: { type: 'roomEq' }, label: 'Room EQ', color: '#22cccc' },
-  { block: { type: 'system' }, label: 'System', color: '#888888' },
-  { block: { type: 'input', index: 0 }, label: 'Input 1', color: INPUT_COLORS[0] },
-  { block: { type: 'input', index: 1 }, label: 'Input 2', color: INPUT_COLORS[1] },
-  { block: { type: 'routing' }, label: 'Routing', color: '#4466ff' },
-  { block: { type: 'output', index: 0 }, label: 'Output 1', color: OUTPUT_COLORS[0] },
-  { block: { type: 'output', index: 1 }, label: 'Output 2', color: OUTPUT_COLORS[1] },
-  { block: { type: 'output', index: 2 }, label: 'Output 3', color: OUTPUT_COLORS[2] },
-  { block: { type: 'output', index: 3 }, label: 'Output 4', color: OUTPUT_COLORS[3] },
+const NAV_ITEMS: { block: SelectedBlock; labelKey: string; labelParams?: Record<string, number>; color: string }[] = [
+  { block: { type: 'roomEq' }, labelKey: 'nav.roomEq', color: '#22cccc' },
+  { block: { type: 'system' }, labelKey: 'nav.system', color: '#888888' },
+  { block: { type: 'input', index: 0 }, labelKey: 'nav.input', labelParams: { n: 1 }, color: INPUT_COLORS[0] },
+  { block: { type: 'input', index: 1 }, labelKey: 'nav.input', labelParams: { n: 2 }, color: INPUT_COLORS[1] },
+  { block: { type: 'routing' }, labelKey: 'nav.routing', color: '#4466ff' },
+  { block: { type: 'output', index: 0 }, labelKey: 'nav.output', labelParams: { n: 1 }, color: OUTPUT_COLORS[0] },
+  { block: { type: 'output', index: 1 }, labelKey: 'nav.output', labelParams: { n: 2 }, color: OUTPUT_COLORS[1] },
+  { block: { type: 'output', index: 2 }, labelKey: 'nav.output', labelParams: { n: 3 }, color: OUTPUT_COLORS[2] },
+  { block: { type: 'output', index: 3 }, labelKey: 'nav.output', labelParams: { n: 4 }, color: OUTPUT_COLORS[3] },
 ];
 
 function blocksEqual(a: SelectedBlock, b: SelectedBlock): boolean {
@@ -37,6 +38,7 @@ function LinkIndicator() {
 }
 
 export function SignalFlowNav() {
+  const { t } = useTranslation();
   const selectedBlock = useDSPStore((s) => s.selectedBlock);
   const setSelectedBlock = useDSPStore((s) => s.setSelectedBlock);
   const inputsLinked = useDSPStore((s) => s.inputsLinked);
@@ -87,15 +89,15 @@ export function SignalFlowNav() {
                 opacity: item.block?.type === 'roomEq' && !roomEqEnabled ? 0.55 : 1,
               }}
             >
-              {item.label}
+              {item.labelKey && t(item.labelKey, item.labelParams)}
             </button>
             {item.block?.type === 'roomEq' && (
-              <Tooltip content={roomEqEnabled ? 'Room EQ ON — click to disable' : 'Room EQ OFF — click to enable'}>
+              <Tooltip content={roomEqEnabled ? t('nav.roomEqOn') : t('nav.roomEqOff')}>
                 <button
                   type="button"
                   role="switch"
                   aria-checked={roomEqEnabled}
-                  aria-label={roomEqEnabled ? 'Disable Room EQ' : 'Enable Room EQ'}
+                  aria-label={roomEqEnabled ? t('nav.disableRoomEq') : t('nav.enableRoomEq')}
                   onClick={() => setRoomEqEnabled(!roomEqEnabled)}
                   className="ml-1 mr-1 inline-flex items-center w-7 h-4 rounded-full transition-colors cursor-pointer flex-shrink-0"
                   style={{

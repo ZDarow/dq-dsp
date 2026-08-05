@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDSPStore } from '../../store/dsp-store';
 import { downloadPreset, readPresetFiles } from '../../utils/preset-io';
 import type { PresetData } from '../../store/slices/preset-slice';
 import { Tooltip } from '../ui/Tooltip';
 
 export function PresetManager() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
@@ -58,7 +60,7 @@ export function PresetManager() {
     if (!files || files.length === 0) return;
     const imported = await readPresetFiles(files);
     if (imported.length === 0) {
-      alert('No valid preset files found.');
+      alert(t('preset.noValidFiles'));
       return;
     }
     const presetData: PresetData[] = imported.map((p) => ({
@@ -66,7 +68,7 @@ export function PresetManager() {
       config: p.config,
     }));
     addPresets(presetData);
-  }, [addPresets]);
+  }, [addPresets, t]);
 
   const handleSaveToFile = () => {
     const config = exportConfig();
@@ -88,7 +90,7 @@ export function PresetManager() {
   const selectedLabel =
     presetIndex >= 0 && presets[presetIndex]
       ? presets[presetIndex].name
-      : presetName || 'Unsaved';
+      : presetName || t('preset.unsaved');
 
   // Status pill — three states:
   //   • Saved      — preset loaded, no diff
@@ -103,19 +105,19 @@ export function PresetManager() {
     : status === 'modified' ? 'var(--color-meter-caution)'
     : 'var(--color-mute)';
   const statusLabel =
-    status === 'saved' ? 'Saved'
-    : status === 'modified' ? 'Modified'
-    : 'Unsaved';
+    status === 'saved' ? t('preset.statusSaved')
+    : status === 'modified' ? t('preset.statusModified')
+    : t('preset.unsaved');
   const statusTitle =
-    status === 'saved' ? 'Current state matches the loaded preset'
-    : status === 'modified' ? 'You have unsaved changes — click Save to overwrite this preset, or Save New to keep both versions'
-    : 'No preset selected — click Save New to store this configuration';
+    status === 'saved' ? t('preset.savedTitle')
+    : status === 'modified' ? t('preset.modifiedTitle')
+    : t('preset.unsavedTitle');
 
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Trigger button */}
       <div className="flex items-center gap-1">
-        <label className="text-text-secondary text-xs">Preset:</label>
+        <label className="text-text-secondary text-xs">{t('preset.label')}</label>
         <Tooltip content={statusTitle}>
           <button
             onClick={() => setOpen(!open)}
@@ -139,7 +141,7 @@ export function PresetManager() {
           {/* Current preset name editor + status badge */}
           <div className="px-3 py-2 border-b border-surface-bg">
             <div className="flex items-center justify-between mb-1">
-              <label className="text-xs text-text-dimmed">Current Name</label>
+              <label className="text-xs text-text-dimmed">{t('preset.currentName')}</label>
               <Tooltip content={statusTitle}>
                 <span
                   className="pill-badge"
@@ -158,13 +160,13 @@ export function PresetManager() {
               value={presetName}
               onChange={(e) => setPresetName(e.target.value)}
               className="w-full bg-control-bg text-text-primary text-xs px-2 py-1 rounded border border-surface-bg focus:border-accent focus:outline-none"
-              placeholder="Preset name..."
+              placeholder={t('preset.placeholder')}
             />
           </div>
 
           {/* Action buttons */}
           <div className="flex gap-1 px-3 py-2 border-b border-surface-bg flex-wrap">
-            <Tooltip content="Append the current configuration as a new preset entry in this browser's localStorage. Doesn't touch the device — use Apply / Save to Device for that.">
+            <Tooltip content={t('preset.saveNewTooltip')}>
               <button
                 onClick={() => {
                   saveCurrentAsPreset();
@@ -172,13 +174,13 @@ export function PresetManager() {
                 }}
                 className="text-xs px-2 py-1 rounded bg-accent/10 text-accent border border-accent/20 hover:bg-accent/20 transition-colors"
               >
-                Save New
+                {t('preset.saveNew')}
               </button>
             </Tooltip>
             {presetIndex >= 0 && (
               <Tooltip content={dirty
-                ? `Overwrite "${presets[presetIndex]?.name ?? ''}" in this browser's localStorage with the current configuration. Doesn't touch the device — use Apply / Save to Device for that.`
-                : 'No changes to save — current state matches the loaded preset'}>
+                ? t('preset.saveTooltipDirty', { name: presets[presetIndex]?.name ?? '' })
+                : t('preset.saveTooltipClean')}>
                 <button
                   onClick={() => {
                     savePreset(presetIndex);
@@ -191,33 +193,33 @@ export function PresetManager() {
                       : 'bg-control-bg text-text-dimmed border-surface-bg cursor-not-allowed opacity-60'
                   }`}
                 >
-                  Save
+                  {t('preset.save')}
                 </button>
               </Tooltip>
             )}
-            <Tooltip content="Download the current configuration as a JSON file you can re-import on another machine or check into git. Browser localStorage is unaffected.">
+            <Tooltip content={t('preset.saveToFileTooltip')}>
               <button
                 onClick={handleSaveToFile}
                 className="text-xs px-2 py-1 rounded bg-control-bg text-text-secondary border border-surface-bg hover:border-mute transition-colors"
               >
-                Save to File
+                {t('preset.saveToFile')}
               </button>
             </Tooltip>
             <div className="w-px h-4 bg-surface-bg self-center" />
-            <Tooltip content="Pick one or more JSON preset files to import. Each file becomes a new preset entry; current state isn't replaced unless you click one.">
+            <Tooltip content={t('preset.loadFilesTooltip')}>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="text-xs px-2 py-1 rounded bg-control-bg text-text-secondary border border-surface-bg hover:border-mute transition-colors"
               >
-                Load File(s)
+                {t('preset.loadFiles')}
               </button>
             </Tooltip>
-            <Tooltip content="Pick a folder; every .json preset inside gets imported as a new preset entry. Useful for batch-loading a preset library.">
+            <Tooltip content={t('preset.loadFolderTooltip')}>
               <button
                 onClick={() => folderInputRef.current?.click()}
                 className="text-xs px-2 py-1 rounded bg-control-bg text-text-secondary border border-surface-bg hover:border-mute transition-colors"
               >
-                Load Folder
+                {t('preset.loadFolder')}
               </button>
             </Tooltip>
           </div>
@@ -226,7 +228,7 @@ export function PresetManager() {
           <div className="flex-1 overflow-y-auto">
             {presets.length === 0 ? (
               <div className="px-3 py-4 text-xs text-text-dimmed text-center">
-                No saved presets yet. Click "Save New" to save the current config.
+                {t('preset.empty')}
               </div>
             ) : (
               presets.map((preset, i) => (
@@ -250,7 +252,7 @@ export function PresetManager() {
                       className="flex-1 bg-control-bg text-text-primary text-xs px-1.5 py-0.5 rounded border border-accent focus:outline-none"
                     />
                   ) : (
-                    <Tooltip content={`Load "${preset.name}" — replaces the current configuration`} wrapperClassName="flex-1 inline-flex">
+                    <Tooltip content={t('preset.loadTooltip', { name: preset.name })} wrapperClassName="flex-1 inline-flex">
                       <button
                         onClick={() => {
                           loadPreset(i);
@@ -268,33 +270,33 @@ export function PresetManager() {
 
                   {/* Row actions — visible on hover */}
                   <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    <Tooltip content="Download as .json — share or check into git">
+                    <Tooltip content={t('preset.downloadTooltip')}>
                       <button
                         onClick={() => downloadPreset(preset.name, preset.config)}
                         className="text-text-dimmed hover:text-text-secondary p-0.5"
-                        aria-label="Download preset"
+                        aria-label={t('preset.downloadAria')}
                       >
                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M8 2v8M5 7l3 3 3-3M3 12h10" />
                         </svg>
                       </button>
                     </Tooltip>
-                    <Tooltip content="Rename this preset">
+                    <Tooltip content={t('preset.renameTooltip')}>
                       <button
                         onClick={() => handleStartRename(i, preset.name)}
                         className="text-text-dimmed hover:text-text-secondary p-0.5"
-                        aria-label="Rename preset"
+                        aria-label={t('preset.renameAria')}
                       >
                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M10 3l3 3-8 8H2v-3l8-8z" />
                         </svg>
                       </button>
                     </Tooltip>
-                    <Tooltip content="Delete this preset (current state isn't affected)">
+                    <Tooltip content={t('preset.deleteTooltip')}>
                       <button
                         onClick={() => deletePreset(i)}
                         className="text-text-dimmed hover:text-mute p-0.5"
-                        aria-label="Delete preset"
+                        aria-label={t('preset.deleteAria')}
                       >
                         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                           <path d="M4 4l8 8M12 4l-8 8" />
@@ -310,7 +312,9 @@ export function PresetManager() {
           {/* Preset count */}
           {presets.length > 0 && (
             <div className="px-3 py-1.5 border-t border-surface-bg text-xs text-text-dimmed">
-              {presets.length} preset{presets.length !== 1 ? 's' : ''} saved
+              {presets.length === 1
+                ? t('preset.count', { count: 1 })
+                : t('preset.countPlural', { count: presets.length })}
             </div>
           )}
         </div>

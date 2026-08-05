@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Logo } from '../layout/Logo';
 import { Tooltip } from '../ui/Tooltip';
 
@@ -226,6 +227,7 @@ function PinDiagram() {
 }
 
 export function AboutDialog({ onClose }: AboutDialogProps) {
+  const { t } = useTranslation();
   return (
     <div
       className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center overflow-y-auto p-6"
@@ -239,11 +241,11 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface-bg/50">
           <Logo />
-          <Tooltip content="Close (Esc)">
+          <Tooltip content={t('about.closeTooltip')}>
             <button
               onClick={onClose}
               className="text-text-dimmed hover:text-text-primary text-2xl leading-none px-2 transition-colors"
-              aria-label="Close About"
+              aria-label={t('about.closeAria')}
             >
               ×
             </button>
@@ -254,7 +256,7 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
         <div className="px-6 py-5 space-y-6">
           {/* About blurb + author */}
           <section>
-            <h2 className="section-label mb-2" style={{ color: 'var(--color-accent)' }}>About DQ-DSP</h2>
+            <h2 className="section-label mb-2" style={{ color: 'var(--color-accent)' }}>{t('about.title')}</h2>
             <p className="text-text-primary text-sm leading-relaxed">
               DQ-DSP is a flexible 2-in / 4-out audio DSP firmware-and-UI for the ESP32-S3, built around USB
               UAC class-compliant audio plus live serial control. The web UI streams every parameter
@@ -262,7 +264,7 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
               preset loads and Save-to-Device for NVS persistence.
             </p>
             <div className="mt-3 flex items-center gap-2 text-xs text-text-secondary">
-              <span className="section-label">Author</span>
+              <span className="section-label">{t('about.author')}</span>
               <a
                 href="https://tamduongs.com/"
                 target="_blank"
@@ -276,9 +278,9 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
 
           {/* DSP Features */}
           <section>
-            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>What the DSP Can Do</h2>
+            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>{t('about.featuresTitle')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card title="Per-Input Processing (×2)">
+              <Card title={t('about.cardPerInput')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
                   <li>Gain (−72 to +12 dB), mute, polarity invert</li>
                   <li><strong className="text-text-primary">10-band parametric EQ</strong> — peak / shelf / HP / LP / notch</li>
@@ -286,14 +288,14 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
                   <li>Stereo link mirrors edits across both inputs</li>
                 </ul>
               </Card>
-              <Card title="2 × 4 Routing Matrix">
+              <Card title={t('about.cardRouting')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
                   <li>Per-crosspoint enable + linear gain (0–100 %)</li>
                   <li>Mono-sum, balance, route a single sub off both channels</li>
                   <li>Live diff-sent on every edit — no recompile, no reflash</li>
                 </ul>
               </Card>
-              <Card title="Per-Output Processing (×4)">
+              <Card title={t('about.cardPerOutput')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
                   <li>Gain, mute, polarity invert, delay (0–10 ms, sample-accurate)</li>
                   <li><strong className="text-text-primary">10-band parametric EQ</strong> per output</li>
@@ -302,7 +304,7 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
                   <li>One-shot copy from any output to any other</li>
                 </ul>
               </Card>
-              <Card title="Master & System">
+              <Card title={t('about.cardMaster')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
                   <li>Master volume after all per-output processing</li>
                   <li>Soft-clip limiter on the final stage</li>
@@ -311,7 +313,7 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
                   <li>Acoustic-sum visualization — pick output groups, see their complex sum on the response chart</li>
                 </ul>
               </Card>
-              <Card title="Workflow & Persistence">
+              <Card title={t('about.cardWorkflow')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
                   <li>Browser preset library in localStorage + JSON import / export</li>
                   <li>Saved/Modified/Unsaved indicator vs the loaded preset</li>
@@ -320,7 +322,7 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
                   <li>Light / dark theme; per-channel color identity across sidebar / chart / PEQ</li>
                 </ul>
               </Card>
-              <Card title="Audio Path">
+              <Card title={t('about.cardAudioPath')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
                   <li>USB Audio Class 1.0 — 2 ch in / out, 24-bit, 48 kHz</li>
                   <li>Dual I2S TX → 2 × PCM5102A (4 channels, 24-bit internal pipeline)</li>
@@ -333,7 +335,7 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
 
           {/* Signal Flow Overview */}
           <section>
-            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>Signal Flow Overview</h2>
+            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>{t('about.signalFlowTitle')}</h2>
             <Card full>
               <div className="flex items-center gap-2 flex-wrap mb-3">
                 <Block tone="src">USB Host<br /><span className="text-[0.65rem] opacity-70">UAC class</span></Block>
@@ -364,7 +366,7 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
 
           {/* DSP Pipeline Detail */}
           <section>
-            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>DSP Pipeline Detail</h2>
+            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>{t('about.pipelineDetailTitle')}</h2>
             <Card full>
               <div className="flex items-center gap-2 flex-wrap mb-3">
                 <Block tone="src">Stereo In<br /><span className="text-[0.65rem] opacity-70">L + R float</span></Block>
@@ -397,7 +399,7 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
 
           {/* Wiring Diagram */}
           <section>
-            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>Wiring — ESP32-S3 → 2× PCM5102A</h2>
+            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>{t('about.wiringTitle')}</h2>
             <Card full>
               <PinDiagram />
               <div className="text-xs text-text-secondary mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -413,7 +415,7 @@ export function AboutDialog({ onClose }: AboutDialogProps) {
 
           {/* ASRC algorithm */}
           <section>
-            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>ASRC — Asynchronous Sample-Rate Conversion</h2>
+            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>{t('about.asrcTitle')}</h2>
             <Card full>
               <p className="text-sm text-text-primary leading-relaxed mb-3">
                 The USB host clock and the ESP32 I2S clock are independent — over minutes they drift apart by tens of PPM, which would either over-fill the input ring buffer (clicks from drops) or starve it (clicks from underruns). ASRC re-samples the incoming USB stream by a fractional ratio so the output rate exactly tracks the I2S clock, and a PI controller nudges that ratio to keep the buffer at a target fill.
@@ -457,9 +459,9 @@ ratio = clamp(ratio, ±maxPpm)`}</pre>
 
           {/* Software Architecture */}
           <section>
-            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>Software Architecture</h2>
+            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>{t('about.softwareTitle')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card title="Core 0 — Control & USB">
+              <Card title={t('about.cardCore0')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
                   <li><strong className="text-text-primary">tinyusb_task</strong> — UAC class driver on the native USB-OTG port</li>
                   <li><strong className="text-text-primary">UART0 / USB-Serial-JTAG</strong> — separate USB-C port; carries the Web Serial control stream</li>
@@ -467,7 +469,7 @@ ratio = clamp(ratio, ±maxPpm)`}</pre>
                   <li><strong className="text-text-primary">app_main</strong> — NVS init, DSP boot, idle</li>
                 </ul>
               </Card>
-              <Card title="Core 1 — Real-Time Audio">
+              <Card title={t('about.cardCore1')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
                   <li><strong className="text-text-primary">audio_task</strong> — UAC ring buffer → ASRC → DSP → dual I2S</li>
                   <li>Polls <code className="value-mono">dsp_param_poll_update()</code> between blocks</li>
@@ -475,7 +477,7 @@ ratio = clamp(ratio, ±maxPpm)`}</pre>
                   <li>Highest priority, pinned</li>
                 </ul>
               </Card>
-              <Card title="Parameter Update Flow">
+              <Card title={t('about.cardParamFlow')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside">
                   <li>Edit in UI → diff middleware → Web Serial frame</li>
                   <li><code className="value-mono">serial_server</code> parses → <code className="value-mono">dsp_param_apply()</code></li>
@@ -485,7 +487,7 @@ ratio = clamp(ratio, ±maxPpm)`}</pre>
                   <li><strong className="text-text-primary">Save to Device</strong> commits NVS (one-shot)</li>
                 </ul>
               </Card>
-              <Card title="Key Files">
+              <Card title={t('about.cardKeyFiles')}>
                 <ul className="text-xs text-text-secondary space-y-1.5 list-disc list-inside font-mono">
                   <li><code className="value-mono">firmware-s3/main/main.c</code></li>
                   <li><code className="value-mono">firmware-s3/main/usb_audio.c</code></li>
@@ -502,14 +504,14 @@ ratio = clamp(ratio, ±maxPpm)`}</pre>
 
           {/* Quick Test Checklist */}
           <section>
-            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>Quick Test Checklist</h2>
+            <h2 className="section-label mb-3" style={{ color: 'var(--color-output-3)' }}>{t('about.checklistTitle')}</h2>
             <Card full>
               <table className="w-full text-xs">
                 <thead>
                   <tr className="text-left border-b border-surface-bg/50">
                     <th className="py-1.5 px-2 text-accent font-semibold w-8">#</th>
-                    <th className="py-1.5 px-2 text-accent font-semibold">Test</th>
-                    <th className="py-1.5 px-2 text-accent font-semibold">Expected</th>
+                    <th className="py-1.5 px-2 text-accent font-semibold">{t('about.checklistTest')}</th>
+                    <th className="py-1.5 px-2 text-accent font-semibold">{t('about.checklistExpected')}</th>
                   </tr>
                 </thead>
                 <tbody className="text-text-secondary">
@@ -541,7 +543,7 @@ ratio = clamp(ratio, ±maxPpm)`}</pre>
         <div className="px-6 py-3 border-t border-surface-bg/50 flex items-center justify-between text-xs text-text-dimmed gap-4 flex-wrap">
           <span>DQ-DSP — ESP32-S3 + USB UAC + 2× PCM5102A</span>
           <span className="flex items-center gap-3 value-mono">
-            <Tooltip content={`Build commit ${__APP_COMMIT__} · ${__APP_BUILD_DATE__}`} placement="top">
+            <Tooltip content={t('footer.buildCommit', { commit: __APP_COMMIT__, date: __APP_BUILD_DATE__ })} placement="top">
               <span>
                 v{__APP_VERSION__}
                 <span className="text-text-dimmed/60 ml-1">

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useDSPStore } from '../../store/dsp-store';
 import { INPUT_COLORS, OUTPUT_COLORS } from '../../utils/colors';
 import { ProcessingBlock } from './ProcessingBlock';
@@ -5,6 +6,7 @@ import { ConnectionLine } from './ConnectionLine';
 import { LevelMeter } from './LevelMeter';
 
 export function SignalFlowDiagram() {
+  const { t } = useTranslation();
   const selectedBlock = useDSPStore((s) => s.selectedBlock);
   const setSelectedBlock = useDSPStore((s) => s.setSelectedBlock);
   const inputs = useDSPStore((s) => s.inputs);
@@ -56,8 +58,8 @@ export function SignalFlowDiagram() {
           y={y}
           width={blockW}
           height={blockH}
-          label={`Input ${i + 1}`}
-          sublabel="Gain/PEQ"
+          label={t('nav.input', { n: i + 1 })}
+          sublabel={t('signalflow.gainPeq')}
           color={INPUT_COLORS[i]}
           selected={selectedBlock?.type === 'input' && selectedBlock.index === i}
           muted={inputs[i].mute}
@@ -84,8 +86,8 @@ export function SignalFlowDiagram() {
         y={H / 2 - 25}
         width={120}
         height={50}
-        label="Routing 2x4"
-        sublabel="Matrix"
+        label={t('signalflow.routing2x4')}
+        sublabel={t('signalflow.matrix')}
         color="var(--color-accent)"
         selected={selectedBlock?.type === 'routing'}
         onClick={() => setSelectedBlock({ type: 'routing' })}
@@ -123,8 +125,8 @@ export function SignalFlowDiagram() {
           y={y}
           width={140}
           height={blockH}
-          label={`Output ${i + 1}`}
-          sublabel="PEQ/XO/Gain/Delay"
+          label={t('nav.output', { n: i + 1 })}
+          sublabel={t('signalflow.peqXoGainDelay')}
           color={OUTPUT_COLORS[i]}
           selected={selectedBlock?.type === 'output' && selectedBlock.index === i}
           muted={outputs[i].mute}
@@ -167,7 +169,7 @@ export function SignalFlowDiagram() {
 
       {/* Signal flow label */}
       <text x={W / 2} y={H - 6} textAnchor="middle" fill="var(--color-text-dimmed)" fontSize={9}>
-        Signal Flow: ADC → Input Processing → Routing Matrix → Output Processing → DAC
+        {t('signalflow.flowLabel')}
       </text>
     </svg>
   );

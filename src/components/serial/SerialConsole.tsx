@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDSPStore } from '../../store/dsp-store';
 import { JitterChart } from './JitterChart';
 import { DriftChart } from './DriftChart';
@@ -8,6 +9,7 @@ const MAX_WIDTH = 1000;
 const DEFAULT_WIDTH = 400;
 
 export function SerialConsole() {
+  const { t } = useTranslation();
   const logs = useDSPStore((s) => s.serialLogs);
   const telemetry = useDSPStore((s) => s.serialTelemetry);
   const telemetryHistory = useDSPStore((s) => s.serialTelemetryHistory);
@@ -79,7 +81,7 @@ export function SerialConsole() {
 
       {/* Log header: section-label + blocks/s + clear */}
       <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-surface-bg/60">
-        <span className="section-label mr-1">Serial Log</span>
+        <span className="section-label mr-1">{t('console.serialLog')}</span>
         {telemetry && (
           <span className="pill-badge" style={{ ['--pill-color' as string]: 'var(--color-text-dimmed)', opacity: 0.75 }}>
             <span className="value-mono">{telemetry.blocksProcessed}</span> blk/s
@@ -89,15 +91,14 @@ export function SerialConsole() {
           onClick={clearLogs}
           className="ml-auto text-xs px-2 py-0.5 rounded bg-control-bg text-text-dimmed border border-surface-bg hover:text-text-primary transition-colors shrink-0"
         >
-          Clear
+          {t('console.clear')}
         </button>
       </div>
-
       {/* Log area — flex-1 + min-h-0 lets the container actually shrink so the
        * overflow-auto kicks in instead of pushing parent past its bounds. */}
       <div ref={logContainerRef} className="flex-1 min-h-0 overflow-auto p-2 font-mono text-[0.7rem] leading-tight text-text-primary">
         {logs.length === 0 ? (
-          <span className="text-text-dimmed">Waiting for logs...</span>
+          <span className="text-text-dimmed">{t('console.waitingLogs')}</span>
         ) : (
           logs.map((line, i) => (
             <div key={i} className="whitespace-pre-wrap break-all">

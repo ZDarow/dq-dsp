@@ -110,9 +110,11 @@ describe('binary encoder', () => {
     const view = new DataView(buffer);
 
     // Find routing matrix offset
-    // Header(16) + 2 inputs * (4 + 4 + MAX_PEQ_BANDS * 20)
-    // Input: gain(4) + mute(1) + phase(1) + numEq(1) + reserved(1) + 10 * biquad(20) = 208
-    const inputSize = 4 + 4 + 10 * 20; // 208
+    // Header(16) + 2 inputs * 728 bytes per input.
+    // Input layout: gain(4) + mute/phase/numEq/numRoom(4) + align(0) = 8
+    //   + EQ biquads (10*20=200) + EQ params (10*16=160)
+    //   + RoomEQ biquads (10*20=200) + RoomEQ params (10*16=160) = 728
+    const inputSize = 8 + 10 * 20 + 10 * 16 + 10 * 20 + 10 * 16; // 728
     const routingStart = 16 + 2 * inputSize;
 
     // In1->Out1 should be enabled (1)

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Tooltip } from '../ui/Tooltip';
 
 interface PhaseButtonProps {
@@ -7,16 +8,17 @@ interface PhaseButtonProps {
 }
 
 export function PhaseButton({ inverted, onClick, size = 'md' }: PhaseButtonProps) {
+  const { t } = useTranslation();
   const px = size === 'sm' ? 'px-2 py-0.5' : 'px-3 py-1';
   const text = size === 'sm' ? 'text-xs' : 'text-xs';
 
   return (
     <Tooltip content={inverted
-      ? 'Phase inverted (180°) — click to restore normal polarity'
-      : 'Invert phase by 180° — useful for fixing wiring polarity or aligning a sub with the mains'}>
+      ? t('controls.phaseRestoreTooltip')
+      : t('controls.phaseInvertTooltip')}>
       <button
         onClick={onClick}
-        aria-label={inverted ? 'Disable phase invert' : 'Invert phase'}
+        aria-label={inverted ? t('controls.phaseRestore') : t('controls.phaseInvert')}
         className={`${px} ${text} rounded transition-colors flex items-center justify-center ${
           inverted
             ? 'bg-phase text-black'

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useSerialSupport, useBannerDismissed } from '../../hooks/useSerialSupport';
 
 /**
@@ -6,6 +7,7 @@ import { useSerialSupport, useBannerDismissed } from '../../hooks/useSerialSuppo
  * the banner is dismissible per session.
  */
 export function BrowserSupportBanner() {
+  const { t } = useTranslation();
   const support = useSerialSupport();
   const [dismissed, dismiss] = useBannerDismissed();
 
@@ -43,14 +45,13 @@ export function BrowserSupportBanner() {
           {support.headline}
         </div>
         <div className="text-text-secondary mt-0.5 leading-snug">
-          {support.message} You can still browse and tweak the UI — just
-          can't push parameters to a connected device from here.
+          {support.message} {t('banner.messageSuffix')}
         </div>
       </div>
       <button
         onClick={dismiss}
         className="text-text-dimmed hover:text-text-primary text-sm leading-none px-2 shrink-0 transition-colors"
-        aria-label="Dismiss browser support warning"
+        aria-label={t('banner.dismiss')}
       >
         ×
       </button>

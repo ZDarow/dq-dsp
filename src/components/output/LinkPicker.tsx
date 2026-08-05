@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Tooltip } from '../ui/Tooltip';
 
 interface LinkPickerProps {
@@ -9,6 +10,7 @@ interface LinkPickerProps {
 }
 
 export function LinkPicker({ others, linkedPartners, onToggle, channelLabel }: LinkPickerProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -24,12 +26,12 @@ export function LinkPicker({ others, linkedPartners, onToggle, channelLabel }: L
 
   const isActive = linkedPartners.length > 0;
   const summary = isActive
-    ? `Linked: ${linkedPartners.map((p) => `${channelLabel} ${p + 1}`).join(', ')}`
-    : 'Link with…';
+    ? `${t('linkPicker.linked')}: ${linkedPartners.map((p) => `${channelLabel} ${p + 1}`).join(', ')}`
+    : t('linkPicker.linkWith');
 
   return (
     <div ref={wrapperRef} className="relative">
-      <Tooltip content={`Link mirrors changes (gain, mute, phase, delay, PEQ, crossover) across selected ${channelLabel.toLowerCase()}s in real time. Use for stereo pairs or grouping multiple amps to a single sub.`}>
+      <Tooltip content={t('linkPicker.tooltip', { channels: channelLabel.toLowerCase() })}>
       <button
         onClick={() => setOpen((v) => !v)}
         className={`text-xs px-2 py-0.5 rounded border transition-colors flex items-center gap-1 ${
@@ -52,7 +54,7 @@ export function LinkPicker({ others, linkedPartners, onToggle, channelLabel }: L
       {open && (
         <div className="glass-panel-strong absolute z-30 mt-1 left-0 min-w-[10rem] py-1"
              style={{ borderRadius: 'var(--radius-panel)' }}>
-          <div className="px-3 py-1 section-label">Mirror with</div>
+          <div className="px-3 py-1 section-label">{t('linkPicker.mirrorWith')}</div>
           {others.map((i) => {
             const isLinked = linkedPartners.includes(i);
             return (
@@ -69,7 +71,7 @@ export function LinkPicker({ others, linkedPartners, onToggle, channelLabel }: L
             );
           })}
           <div className="px-3 pt-1.5 pb-1 text-[0.65rem] text-text-dimmed border-t border-surface-bg/40 mt-1">
-            Tip: Link {channelLabel} 1+2 for a stereo pair, or all four to gang multiple amps onto one sub channel.
+            {t('linkPicker.tip', { channel: channelLabel })}
           </div>
         </div>
       )}

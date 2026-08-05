@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Tooltip } from '../ui/Tooltip';
 
 interface CopyPickerProps {
@@ -9,6 +10,7 @@ interface CopyPickerProps {
 }
 
 export function CopyPicker({ currentIndex, others, onCopy, channelLabel }: CopyPickerProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [flash, setFlash] = useState<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -31,7 +33,7 @@ export function CopyPicker({ currentIndex, others, onCopy, channelLabel }: CopyP
 
   return (
     <div ref={wrapperRef} className="relative">
-      <Tooltip content={`One-shot copy: snapshot the current ${channelLabel.toLowerCase()}'s settings (gain, mute, phase, delay, PEQ, crossover) onto a target channel. Unlike Link, the channels stay independent afterwards.`}>
+      <Tooltip content={t('copyPicker.tooltip', { channel: channelLabel.toLowerCase() })}>
       <button
         onClick={() => setOpen((v) => !v)}
         className="text-xs px-2 py-0.5 rounded border bg-control-bg text-text-dimmed border-surface-bg hover:text-text-secondary transition-colors flex items-center gap-1"
@@ -41,7 +43,7 @@ export function CopyPicker({ currentIndex, others, onCopy, channelLabel }: CopyP
           <rect x="4" y="4" width="9" height="9" rx="1" />
           <path d="M2 11V3a1 1 0 0 1 1-1h8" />
         </svg>
-        {flash !== null ? `Copied → ${channelLabel} ${flash + 1}` : 'Copy →'}
+        {flash !== null ? `${t('copyPicker.copied')} → ${channelLabel} ${flash + 1}` : `${t('copyPicker.copy')} →`}
         <span className="opacity-60">▾</span>
       </button>
       </Tooltip>
@@ -49,7 +51,7 @@ export function CopyPicker({ currentIndex, others, onCopy, channelLabel }: CopyP
       {open && (
         <div className="glass-panel-strong absolute z-30 mt-1 left-0 min-w-[8rem] py-1"
              style={{ borderRadius: 'var(--radius-panel)' }}>
-          <div className="px-3 py-1 section-label">Copy to</div>
+          <div className="px-3 py-1 section-label">{t('copyPicker.copyTo')}</div>
           {others.map((i) => (
             <button key={i}
               onClick={() => handleCopy(i)}
@@ -58,7 +60,7 @@ export function CopyPicker({ currentIndex, others, onCopy, channelLabel }: CopyP
             </button>
           ))}
           <div className="px-3 pt-1.5 pb-1 text-[0.65rem] text-text-dimmed border-t border-surface-bg/40 mt-1">
-            Replaces the target's settings with a snapshot of {channelLabel} {currentIndex + 1}.
+            {t('copyPicker.footer', { channel: channelLabel, n: currentIndex + 1 })}
           </div>
         </div>
       )}

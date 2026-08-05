@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import i18n from '../i18n';
 
 export interface SerialSupport {
   /** Web Serial API is callable in this environment. */
@@ -12,12 +13,13 @@ export interface SerialSupport {
 }
 
 function detect(): SerialSupport {
+  const t = i18n.t.bind(i18n);
   if (typeof navigator === 'undefined' || typeof window === 'undefined') {
     return {
       supported: false,
       kind: 'other',
-      headline: 'Serial control unavailable',
-      message: 'Browser environment not detected.',
+      headline: t('banner.headline'),
+      message: t('banner.message'),
     };
   }
 
@@ -31,8 +33,8 @@ function detect(): SerialSupport {
     return {
       supported: false,
       kind: 'insecure',
-      headline: 'This page is loaded over HTTP — Web Serial needs HTTPS',
-      message: `Web Serial only runs on secure contexts (HTTPS or localhost). Reopen the page at ${httpsUrl} to enable the Connect button.`,
+      headline: t('banner.insecureHeadline'),
+      message: t('banner.insecureMessage', { url: httpsUrl }),
     };
   }
 
@@ -48,15 +50,15 @@ function detect(): SerialSupport {
       return {
         supported: false,
         kind: 'mobile',
-        headline: 'Mobile browsers can\'t pair serial devices',
-        message: 'Web Serial pairing requires a desktop machine. Open this page on a Mac, Windows, or Linux laptop to connect to the ESP32-S3.',
+        headline: t('banner.mobileHeadline'),
+        message: t('banner.mobileMessage'),
       };
     }
     return {
       supported: true,
       kind: 'supported',
-      headline: 'Web Serial available',
-      message: 'Web Serial API is supported in this browser.',
+      headline: t('banner.supportedHeadline'),
+      message: t('banner.supportedMessage'),
     };
   }
 
@@ -64,31 +66,31 @@ function detect(): SerialSupport {
     return {
       supported: false,
       kind: 'mobile',
-      headline: 'Mobile browsers can\'t pair serial devices',
-      message: 'Web Serial pairing requires a desktop machine. Open this page on a Mac, Windows, or Linux laptop to connect to the ESP32-S3.',
+      headline: t('banner.mobileHeadline'),
+      message: t('banner.mobileMessage'),
     };
   }
   if (/firefox/.test(uaL)) {
     return {
       supported: false,
       kind: 'firefox',
-      headline: 'Firefox doesn\'t support Web Serial',
-      message: 'Firefox hasn\'t implemented the Web Serial API. Reopen this page in Chrome, Edge, Brave, or Opera to talk to the device.',
+      headline: t('banner.firefoxHeadline'),
+      message: t('banner.firefoxMessage'),
     };
   }
   if (/safari/.test(uaL) && !/chrome|chromium/.test(uaL)) {
     return {
       supported: false,
       kind: 'safari',
-      headline: 'Safari doesn\'t support Web Serial',
-      message: 'Safari hasn\'t shipped the Web Serial API. Reopen this page in Chrome, Edge, Brave, or Opera to talk to the device.',
+      headline: t('banner.safariHeadline'),
+      message: t('banner.safariMessage'),
     };
   }
   return {
     supported: false,
     kind: 'other',
-    headline: 'Serial control unavailable',
-    message: 'This browser doesn\'t expose the Web Serial API. Reopen the page in a Chromium-based desktop browser (Chrome, Edge, Brave, Opera).',
+    headline: t('banner.otherHeadline'),
+    message: t('banner.otherMessage'),
   };
 }
 

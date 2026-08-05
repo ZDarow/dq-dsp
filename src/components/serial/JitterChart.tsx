@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { DSPTelemetry } from '../../types/serial-protocol';
 
 interface JitterChartProps {
@@ -16,6 +17,7 @@ const COLOR_WARN = 'var(--color-meter-caution)';
 const COLOR_DANGER = 'var(--color-mute)';
 
 export function JitterChart({ history }: JitterChartProps) {
+  const { t } = useTranslation();
   const empty = history.length === 0;
   const latest = empty ? null : history[history.length - 1];
   const deadlineUs = latest && latest.blocksProcessed > 0
@@ -30,7 +32,7 @@ export function JitterChart({ history }: JitterChartProps) {
   return (
     <div className="flex flex-col">
       <div className="flex items-center gap-1.5 px-2 py-1.5 flex-wrap">
-        <span className="section-label mr-1">CPU Load</span>
+        <span className="section-label mr-1">{t('charts.cpuLoad')}</span>
         <span className="pill-badge" style={{ ['--pill-color' as string]: loadStatusColor }}>
           <span className="status-dot" style={{ backgroundColor: loadStatusColor, marginRight: 0 }} />
           Avg <span className="value-mono">{empty ? '--' : `${loadPct}%`}</span>

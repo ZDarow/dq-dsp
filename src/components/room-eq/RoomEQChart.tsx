@@ -1,4 +1,5 @@
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDSPStore } from '../../store/dsp-store';
 import { generateFrequencyPoints, eqBandsResponse } from '../../dsp/frequency-response';
 import { smoothOctave } from '../../utils/smoothing';
@@ -18,6 +19,7 @@ interface RoomEQChartProps {
 }
 
 export function RoomEQChart({ inputIndex }: RoomEQChartProps) {
+  const { t } = useTranslation();
   const roomMeasurement = useDSPStore((s) => s.roomMeasurement);
   const roomSmoothing = useDSPStore((s) => s.roomSmoothing);
   const roomTargetCurve = useDSPStore((s) => s.roomTargetCurve);
@@ -302,10 +304,10 @@ export function RoomEQChart({ inputIndex }: RoomEQChartProps) {
 
       {/* Legend */}
       <div className="absolute top-1 right-10 flex gap-3 text-xs items-center">
-        <span style={{ color: 'var(--color-chart-measurement)' }}>Measurement</span>
-        <span style={{ color: 'var(--color-chart-eq)' }}>Room EQ</span>
-        <span style={{ color: 'var(--color-chart-predicted)' }}>Predicted</span>
-        <span style={{ color: 'var(--color-chart-target)' }}>Target</span>
+        <span style={{ color: 'var(--color-chart-measurement)' }}>{t('charts.measurement')}</span>
+        <span style={{ color: 'var(--color-chart-eq)' }}>{t('charts.roomEq')}</span>
+        <span style={{ color: 'var(--color-chart-predicted)' }}>{t('charts.predicted')}</span>
+        <span style={{ color: 'var(--color-chart-target)' }}>{t('charts.target')}</span>
         <button
           onClick={() => setShowPhase((p) => !p)}
           className="px-1.5 py-0.5 rounded border transition-colors"

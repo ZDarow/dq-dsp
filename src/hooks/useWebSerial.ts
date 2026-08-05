@@ -71,6 +71,7 @@ export function useWebSerial() {
 
   const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pongTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pingSentAtRef = useRef(0);
   const configRequestedRef = useRef(false);
 
@@ -340,6 +341,10 @@ export function useWebSerial() {
       clearTimeout(pongTimeoutRef.current);
       pongTimeoutRef.current = null;
     }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
 
     // Clean up in-flight messages
     for (const timeout of ackTimeoutsRef.current.values()) {
@@ -361,8 +366,15 @@ export function useWebSerial() {
     setState((s) => ({ ...s, connected: false }));
     cleanupConnection();
 
+    // Don't stack reconnect timers if a disconnection fires repeatedly.
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+
     if (!disconnectIntentionalRef.current && portRef.current) {
-      setTimeout(async () => {
+      reconnectTimeoutRef.current = setTimeout(async () => {
+        reconnectTimeoutRef.current = null;
         try {
           setState((s) => ({ ...s, connecting: true, error: null }));
 
@@ -585,6 +597,7 @@ export function useWebSerial() {
 
   // Cleanup on unmount
   useEffect(() => {
+    const ackTimeouts = ackTimeoutsRef.current;
     return () => {
       disconnectIntentionalRef.current = true;
       readLoopActiveRef.current = false;
@@ -594,7 +607,10 @@ export function useWebSerial() {
       if (pongTimeoutRef.current) {
         clearTimeout(pongTimeoutRef.current);
       }
-      for (const timeout of ackTimeoutsRef.current.values()) {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      for (const timeout of ackTimeouts.values()) {
         clearTimeout(timeout);
       }
       if (readerRef.current) {
