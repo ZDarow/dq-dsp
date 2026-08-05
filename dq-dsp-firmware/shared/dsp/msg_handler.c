@@ -14,8 +14,7 @@
 #include "esp_log.h"
 #include <string.h>
 
-/* NVS save functions from main.c */
-extern void save_config_to_nvs_debounced(void);
+/* NVS save function from main.c */
 extern void save_config_to_nvs_immediate(void);
 
 static const char *TAG = "msg_handler";

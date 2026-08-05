@@ -34,7 +34,6 @@
 #define BLE_MSG_PARAM_UPDATE  0x01
 #define BLE_MSG_BULK_CONFIG   0x02
 #define BLE_MSG_ACK           0x80
-#define BLE_MSG_STATUS        0x81
 #define BLE_MSG_ERROR         0x82
 
 /* -----------------------------------------------------------------------

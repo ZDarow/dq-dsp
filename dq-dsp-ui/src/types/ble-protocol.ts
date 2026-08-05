@@ -36,14 +36,12 @@ export const BLE_CHAR_DEVICE_INFO_UUID = '0000ff05-0000-1000-8000-00805f9b34fb';
 export const BLE_MSG_PARAM_UPDATE = 0x01 as const;
 export const BLE_MSG_BULK_CONFIG = 0x02 as const;
 export const BLE_MSG_ACK         = 0x80 as const;
-export const BLE_MSG_STATUS      = 0x81 as const;
 export const BLE_MSG_ERROR       = 0x82 as const;
 
 export type BLEMessageType =
   | typeof BLE_MSG_PARAM_UPDATE
   | typeof BLE_MSG_BULK_CONFIG
   | typeof BLE_MSG_ACK
-  | typeof BLE_MSG_STATUS
   | typeof BLE_MSG_ERROR;
 
 // ---------------------------------------------------------------------------

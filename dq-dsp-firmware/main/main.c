@@ -13,7 +13,6 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "esp_timer.h"
 
 #include "dsp_config.h"
 #include "dsp_param_update.h"
@@ -30,10 +29,6 @@ extern void dsp_pipeline_init(void);
  * ----------------------------------------------------------------------- */
 
 static dsp_config_t initial_config __attribute__((aligned(4)));
-
-/* NVS save debounce timer */
-static esp_timer_handle_t nvs_save_timer = NULL;
-#define NVS_SAVE_DEBOUNCE_MS 2000
 
 /* -----------------------------------------------------------------------
  * NVS Config Load/Save (shared with msg_handler via extern)
@@ -92,19 +87,8 @@ static void nvs_save_timer_cb(void *arg)
     }
 }
 
-void save_config_to_nvs_debounced(void)
-{
-    if (nvs_save_timer) {
-        esp_timer_stop(nvs_save_timer);
-        esp_timer_start_once(nvs_save_timer, NVS_SAVE_DEBOUNCE_MS * 1000);
-    }
-}
-
 void save_config_to_nvs_immediate(void)
 {
-    if (nvs_save_timer) {
-        esp_timer_stop(nvs_save_timer);
-    }
     nvs_save_timer_cb(NULL);
 }
 
@@ -190,16 +174,6 @@ void app_main(void)
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to init param update engine: %d", err);
         return;
-    }
-
-    /* 3a. NVS save debounce timer */
-    const esp_timer_create_args_t nvs_timer_args = {
-        .callback = nvs_save_timer_cb,
-        .name = "nvs_save",
-    };
-    err = esp_timer_create(&nvs_timer_args, &nvs_save_timer);
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "Failed to create NVS save timer: %s", esp_err_to_name(err));
     }
 
     /* 4. Initialize DSP pipeline state */

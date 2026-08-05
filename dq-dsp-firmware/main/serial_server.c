@@ -156,76 +156,99 @@ typedef enum {
     RX_STATE_CRC,
 } rx_state_t;
 
+typedef struct {
+    uint8_t frame_buf[SERIAL_MAX_FRAME_SIZE];
+    rx_state_t state;
+    uint8_t payload_len;
+    uint8_t payload_idx;
+} rx_ctx_t;
+
+static void rx_process_byte(rx_ctx_t *ctx, uint8_t byte)
+{
+    switch (ctx->state) {
+    case RX_STATE_SYNC0:
+        if (byte == SERIAL_FRAME_HEADER_0) {
+            ctx->frame_buf[0] = byte;
+            ctx->state = RX_STATE_SYNC1;
+        }
+        break;
+
+    case RX_STATE_SYNC1:
+        if (byte == SERIAL_FRAME_HEADER_1) {
+            ctx->frame_buf[1] = byte;
+            ctx->state = RX_STATE_LENGTH;
+        } else if (byte == SERIAL_FRAME_HEADER_0) {
+            ctx->frame_buf[0] = byte;
+        } else {
+            ctx->state = RX_STATE_SYNC0;
+        }
+        break;
+
+    case RX_STATE_LENGTH:
+        ctx->payload_len = byte;
+        ctx->frame_buf[2] = byte;
+        ctx->payload_idx = 0;
+        if (ctx->payload_len > SERIAL_MAX_PAYLOAD_SIZE) {
+            ctx->state = RX_STATE_SYNC0;
+        } else if (ctx->payload_len == 0) {
+            ctx->state = RX_STATE_CRC;
+        } else {
+            ctx->state = RX_STATE_PAYLOAD;
+        }
+        break;
+
+    case RX_STATE_PAYLOAD:
+        ctx->frame_buf[3 + ctx->payload_idx] = byte;
+        ctx->payload_idx++;
+        if (ctx->payload_idx >= ctx->payload_len) ctx->state = RX_STATE_CRC;
+        break;
+
+    case RX_STATE_CRC: {
+        ctx->frame_buf[3 + ctx->payload_len] = byte;
+        uint8_t expected_crc = byte;
+        uint8_t actual_crc = serial_crc8(&ctx->frame_buf[2], 1 + ctx->payload_len);
+
+        if (actual_crc == expected_crc) {
+            uint8_t first_byte = ctx->frame_buf[3];
+            if (first_byte == SERIAL_MSG_PING) {
+                send_pong();
+            } else {
+                msg_handler_process(&ctx->frame_buf[3], ctx->payload_len);
+            }
+        }
+        ctx->state = RX_STATE_SYNC0;
+        break;
+    }
+    }
+}
+
 static void serial_rx_task(void *pvParameters)
 {
     ESP_LOGI(TAG, "Serial RX task started on core %d", xPortGetCoreID());
 
-    uint8_t frame_buf[SERIAL_MAX_FRAME_SIZE];
-    rx_state_t state = RX_STATE_SYNC0;
-    uint8_t payload_len = 0;
-    uint8_t payload_idx = 0;
+    rx_ctx_t ctx = { .state = RX_STATE_SYNC0 };
 
     while (rx_task_running) {
         msg_handler_flush_telemetry();
 
-        uint8_t byte;
-        int read = uart_read_bytes(SERIAL_UART_NUM, &byte, 1, pdMS_TO_TICKS(20));
-        if (read <= 0) continue;
-
-        switch (state) {
-        case RX_STATE_SYNC0:
-            if (byte == SERIAL_FRAME_HEADER_0) {
-                frame_buf[0] = byte;
-                state = RX_STATE_SYNC1;
+        /* Batch reads: frames are at most 256 bytes, so pull whatever is
+         * buffered in one uart_read_bytes() call and feed the byte state
+         * machine — one syscall per frame instead of one per byte. */
+        uint8_t buf[SERIAL_MAX_FRAME_SIZE];
+        size_t avail = 0;
+        uart_get_buffered_data_len(SERIAL_UART_NUM, &avail);
+        if (avail == 0) {
+            uint8_t b;
+            if (uart_read_bytes(SERIAL_UART_NUM, &b, 1, pdMS_TO_TICKS(20)) > 0) {
+                rx_process_byte(&ctx, b);
             }
-            break;
-
-        case RX_STATE_SYNC1:
-            if (byte == SERIAL_FRAME_HEADER_1) {
-                frame_buf[1] = byte;
-                state = RX_STATE_LENGTH;
-            } else if (byte == SERIAL_FRAME_HEADER_0) {
-                frame_buf[0] = byte;
-            } else {
-                state = RX_STATE_SYNC0;
-            }
-            break;
-
-        case RX_STATE_LENGTH:
-            payload_len = byte;
-            frame_buf[2] = byte;
-            payload_idx = 0;
-            if (payload_len > SERIAL_MAX_PAYLOAD_SIZE) {
-                state = RX_STATE_SYNC0;
-            } else if (payload_len == 0) {
-                state = RX_STATE_CRC;
-            } else {
-                state = RX_STATE_PAYLOAD;
-            }
-            break;
-
-        case RX_STATE_PAYLOAD:
-            frame_buf[3 + payload_idx] = byte;
-            payload_idx++;
-            if (payload_idx >= payload_len) state = RX_STATE_CRC;
-            break;
-
-        case RX_STATE_CRC: {
-            frame_buf[3 + payload_len] = byte;
-            uint8_t expected_crc = byte;
-            uint8_t actual_crc = serial_crc8(&frame_buf[2], 1 + payload_len);
-
-            if (actual_crc == expected_crc) {
-                uint8_t first_byte = frame_buf[3];
-                if (first_byte == SERIAL_MSG_PING) {
-                    send_pong();
-                } else {
-                    msg_handler_process(&frame_buf[3], payload_len);
-                }
-            }
-            state = RX_STATE_SYNC0;
-            break;
+            continue;
         }
+        if (avail > sizeof(buf)) avail = sizeof(buf);
+        int n = uart_read_bytes(SERIAL_UART_NUM, buf, avail, 0);
+        if (n <= 0) continue;
+        for (int i = 0; i < n; i++) {
+            rx_process_byte(&ctx, buf[i]);
         }
     }
 
