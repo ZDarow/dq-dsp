@@ -14,6 +14,18 @@
 - **UI:** `cd dq-dsp-ui && npm install && npm run dev`
 - **Прошивка:** см. `dq-dsp-firmware/README.md` (требуется ESP-IDF)
 
+## Техническая документация
+
+Подробная документация — в каталоге [`docs/`](docs):
+
+| Документ | Содержание |
+|---|---|
+| [`docs/firmware-architecture.md`](docs/firmware-architecture.md) | Архитектура прошивки: потоки, double-buffer, DSP-конвейер, ASRC, модули |
+| [`docs/wire-protocol.md`](docs/wire-protocol.md) | Спецификация serial/BLE-протокола, layout конфига, CRC |
+| [`docs/ui-architecture.md`](docs/ui-architecture.md) | Архитектура UI: store, middleware, Web Serial, экспорт/импорт |
+| [`docs/build-and-flash.md`](docs/build-and-flash.md) | Сборка, прошивка, команды верификации |
+| [`docs/audit-2026-08.md`](docs/audit-2026-08.md) | Аудит: находки, применённые фиксы, оставшиеся рекомендации |
+
 ## История
 
 Оба проекта импортированы в единый репозиторий через `git subtree` с сохранением их исходной истории коммитов.
