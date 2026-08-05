@@ -31,7 +31,6 @@
 #include "sdkconfig.h"
 
 extern void dsp_pipeline_process(const dsp_config_t *cfg, float in_l, float in_r, float out[4]);
-extern void dsp_pipeline_reset_filter_states(void);
 
 /* -----------------------------------------------------------------------
  * Sample format helpers — gated on CONFIG_UAC_BIT_DEPTH (Kconfig).
@@ -226,24 +225,13 @@ static void usb_audio_task(void *arg)
             continue;
         }
 
-        /* If Core 0 is recalculating coefficients, output silence.
-         * Silence size mirrors the input duration but in I2S output units
-         * (8 bytes/pair: stereo int32). */
-        if (dsp_param_is_recalculating()) {
-            size_t silence_pairs = item_size / UAC_BYTES_PER_PAIR;
-            size_t silence_bytes = silence_pairs * 8;
-            if (silence_bytes > USB_AUDIO_DMA_BUF_SIZE) silence_bytes = USB_AUDIO_DMA_BUF_SIZE;
-            memset(s_buf_i2s0, 0, silence_bytes);
-            memset(s_buf_i2s1, 0, silence_bytes);
-            i2s_audio_write_dual(s_buf_i2s0, s_buf_i2s1, silence_bytes);
-            vRingbufferReturnItem(s_ringbuf, (void *)data);
-            continue;
-        }
-
-        /* DSP parameter update: commit + reset filter states. */
+        /* DSP parameter update: commit the staging config. No full filter-state
+         * reset here: commit swaps config atomically, and DF-II transposed
+         * biquads morph smoothly under new coefficients. Zeroing every state on
+         * each slider move caused hard clicks; the residual coefficient-change
+         * transient decays in a few samples. */
         if (dsp_param_poll_update()) {
             dsp_param_commit();
-            dsp_pipeline_reset_filter_states();
         }
 
         const dsp_config_t *cfg = dsp_param_get_active();

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist, type StorageValue } from 'zustand/middleware';
+import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware';
 import { createDefaultEQBands } from '../constants/defaults';
 import { createInputSlice, type InputSlice } from './slices/input-slice';
 import { createRoutingSlice, type RoutingSlice } from './slices/routing-slice';
@@ -14,6 +14,48 @@ import { createCustomSumSlice, type CustomSumSlice } from './slices/custom-sum-s
 import { createDefaultCustomSums } from '../constants/defaults';
 
 export type DSPStore = InputSlice & RoutingSlice & OutputSlice & GlobalSlice & PresetSlice & LinkSlice & SerialSlice & RoomEQSlice & DriftSlice & CustomSumSlice;
+
+const PERSIST_DEBOUNCE_MS = 300;
+
+/**
+ * localStorage adapter that coalesces writes: slider drags fire a store update
+ * per pointer move, so a naive synchronous JSON.stringify + setItem runs on
+ * every frame. Here the newest write wins and is flushed 300 ms after the last
+ * change (data is still lost on an immediate tab close — acceptable for a
+ * live-tuned config, and the same tradeoff the review recommended).
+ */
+function createDebouncedLocalStorage<T>(): PersistStorage<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let pending: StorageValue<T> | null = null;
+
+  return {
+    getItem: (name) => {
+      const raw = localStorage.getItem(name);
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw) as StorageValue<T>;
+      } catch {
+        return null;
+      }
+    },
+    setItem: (name, value) => {
+      pending = value;
+      if (timer !== null) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        const v = pending;
+        pending = null;
+        if (v !== null) localStorage.setItem(name, JSON.stringify(v));
+      }, PERSIST_DEBOUNCE_MS);
+    },
+    removeItem: (name) => {
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+      pending = null;
+      localStorage.removeItem(name);
+    },
+  };
+}
 
 export const useDSPStore = create<DSPStore>()(
   persist(
@@ -31,6 +73,7 @@ export const useDSPStore = create<DSPStore>()(
     }),
     {
       name: 'esp32-dsp-config',
+      storage: createDebouncedLocalStorage<Partial<DSPStore>>(),
       partialize: (state) => ({
         inputs: state.inputs,
         routing: state.routing,

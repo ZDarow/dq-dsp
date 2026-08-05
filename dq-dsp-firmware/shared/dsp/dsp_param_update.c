@@ -38,9 +38,6 @@ static QueueHandle_t update_queue = NULL;
 /* Flag: staging has uncommitted changes. */
 static volatile bool pending_update = false;
 
-/* Flag: Core 0 is recalculating coefficients — audio task should output silence. */
-static volatile bool s_recalc_busy = false;
-
 /* Shadow EQ/XO params are now stored directly in dsp_config_t
  * (eq_band_params_t and xo_params_t in dsp_config.h).
  * No separate static arrays needed. */
@@ -270,10 +267,8 @@ static void recalc_input_eq_band(int ch, int band)
         biquad_identity(c);
         return;
     }
-    s_recalc_busy = true;
     calc_biquad(p->filter_type, p->frequency, get_sample_rate(),
                 p->gain_db, p->q, c);
-    s_recalc_busy = false;
 }
 
 /** Recalculate a single Room EQ band for an input channel in the staging config. */
@@ -284,15 +279,13 @@ static void recalc_input_room_eq_band(int ch, int band)
 
     if (!p->enabled || p->frequency <= 0.0f || p->q <= 0.0f) {
         biquad_identity(c);
-        ESP_LOGI(TAG, "RoomEQ ch=%d band=%d -> IDENTITY (en=%d freq=%.1f q=%.2f)",
+        ESP_LOGV(TAG, "RoomEQ ch=%d band=%d -> IDENTITY (en=%d freq=%.1f q=%.2f)",
                  ch, band, p->enabled, p->frequency, p->q);
         return;
     }
-    s_recalc_busy = true;
     calc_biquad(p->filter_type, p->frequency, get_sample_rate(),
                 p->gain_db, p->q, c);
-    s_recalc_busy = false;
-    ESP_LOGI(TAG, "RoomEQ ch=%d band=%d -> recalc (type=%d freq=%.1f gain=%.1fdB q=%.2f) b0=%.4f",
+    ESP_LOGV(TAG, "RoomEQ ch=%d band=%d -> recalc (type=%d freq=%.1f gain=%.1fdB q=%.2f) b0=%.4f",
              ch, band, p->filter_type, p->frequency, p->gain_db, p->q, c->b0);
 }
 
@@ -306,10 +299,8 @@ static void recalc_output_eq_band(int ch, int band)
         biquad_identity(c);
         return;
     }
-    s_recalc_busy = true;
     calc_biquad(p->filter_type, p->frequency, get_sample_rate(),
                 p->gain_db, p->q, c);
-    s_recalc_busy = false;
 }
 
 /** Recalculate HP crossover stages for an output channel. */
@@ -324,12 +315,10 @@ static void recalc_output_hp(int ch)
             biquad_identity(&outp->hp_stages[i]);
         return;
     }
-    s_recalc_busy = true;
     int n = calc_crossover_stages(true, p->filter_type, p->slope,
                                   p->frequency, get_sample_rate(),
                                   outp->hp_stages);
     outp->num_hp_stages = (uint8_t)n;
-    s_recalc_busy = false;
 }
 
 /** Recalculate LP crossover stages for an output channel. */
@@ -344,12 +333,10 @@ static void recalc_output_lp(int ch)
             biquad_identity(&outp->lp_stages[i]);
         return;
     }
-    s_recalc_busy = true;
     int n = calc_crossover_stages(false, p->filter_type, p->slope,
                                   p->frequency, get_sample_rate(),
                                   outp->lp_stages);
     outp->num_lp_stages = (uint8_t)n;
-    s_recalc_busy = false;
 }
 
 /* -----------------------------------------------------------------------
@@ -544,8 +531,8 @@ void dsp_param_commit(void)
     staging_ptr = old_active;
     pending_update = false;
 
-    /* Diagnostic: print which Room EQ bands are active in the new config so
-     * we can confirm coefficients made it from staging to the audio task. */
+    /* Commit happens on every param change (including slider drags), so keep
+     * per-commit diagnostics out of the hot path: LOGV only. */
     const dsp_config_t *act = (const dsp_config_t *)atomic_load(&active_ptr);
     int active_count = 0;
     for (int i = 0; i < DSP_NUM_INPUTS; i++) {
@@ -553,7 +540,7 @@ void dsp_param_commit(void)
             if (act->inputs[i].room_eq_params[b].enabled) active_count++;
         }
     }
-    ESP_LOGI(TAG, "Commit: active RoomEQ bands enabled = %d", active_count);
+    ESP_LOGV(TAG, "Commit: active RoomEQ bands enabled = %d", active_count);
 }
 
 void dsp_param_notify_update(void)
@@ -568,11 +555,6 @@ bool dsp_param_poll_update(void)
 {
     uint8_t dummy;
     return (xQueueReceive(update_queue, &dummy, 0) == pdTRUE);
-}
-
-bool dsp_param_is_recalculating(void)
-{
-    return s_recalc_busy;
 }
 
 void dsp_param_set_sample_rate(uint32_t sample_rate)

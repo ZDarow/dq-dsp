@@ -100,13 +100,6 @@ bool dsp_param_poll_update(void);
 void dsp_param_set_sample_rate(uint32_t sample_rate);
 
 /**
- * Check if Core 0 is currently recalculating biquad coefficients.
- * Audio task should output silence while this returns true to avoid
- * committing a half-written staging config.
- */
-bool dsp_param_is_recalculating(void);
-
-/**
  * Refresh the CRC32 in a config buffer so a config sent to the host
  * (SYNC_CONFIG) always carries a valid checksum, even after live parameter
  * edits. The caller passes a snapshot buffer (NOT the active config, which

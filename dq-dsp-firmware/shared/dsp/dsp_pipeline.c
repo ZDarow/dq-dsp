@@ -73,18 +73,6 @@ void dsp_pipeline_init(void) {
 }
 
 /**
- * Reset all biquad filter states (z1, z2) without touching delay lines.
- * Called after coefficient changes to prevent transient clicks.
- */
-void dsp_pipeline_reset_filter_states(void) {
-    memset(input_eq_state, 0, sizeof(input_eq_state));
-    memset(input_room_eq_state, 0, sizeof(input_room_eq_state));
-    memset(output_eq_state, 0, sizeof(output_eq_state));
-    memset(output_hp_state, 0, sizeof(output_hp_state));
-    memset(output_lp_state, 0, sizeof(output_lp_state));
-}
-
-/**
  * Process one frame of audio (one sample per channel).
  *
  * @param cfg      Pointer to the DSP configuration

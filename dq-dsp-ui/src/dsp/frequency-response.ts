@@ -81,20 +81,18 @@ export function eqBandsResponse(
   frequencies: number[],
   sampleRate: number,
 ): FrequencyPoint[] {
+  // Coefficients depend only on (filterType, frequency, gain, q) — not on the
+  // evaluation point — so compute them once per band instead of per frequency.
+  const coeffs = bands
+    .filter((b) => b.enabled)
+    .map((b) => calculateBiquadCoefficients(b.filterType, b.frequency, sampleRate, b.gain, b.q));
+
   return frequencies.map((freq) => {
     let totalRe = 1;
     let totalIm = 0;
 
-    for (const band of bands) {
-      if (!band.enabled) continue;
-      const coeffs = calculateBiquadCoefficients(
-        band.filterType,
-        band.frequency,
-        sampleRate,
-        band.gain,
-        band.q,
-      );
-      const h = evaluateBiquad(coeffs, freq, sampleRate);
+    for (const c of coeffs) {
+      const h = evaluateBiquad(c, freq, sampleRate);
       // Multiply complex numbers
       const newRe = totalRe * h.re - totalIm * h.im;
       const newIm = totalRe * h.im + totalIm * h.re;
@@ -138,19 +136,15 @@ export function eqBandsComplexResponse(
   frequencies: number[],
   sampleRate: number,
 ): { re: number; im: number }[] {
+  const coeffs = bands
+    .filter((b) => b.enabled)
+    .map((b) => calculateBiquadCoefficients(b.filterType, b.frequency, sampleRate, b.gain, b.q));
+
   return frequencies.map((freq) => {
     let re = 1;
     let im = 0;
-    for (const band of bands) {
-      if (!band.enabled) continue;
-      const coeffs = calculateBiquadCoefficients(
-        band.filterType,
-        band.frequency,
-        sampleRate,
-        band.gain,
-        band.q,
-      );
-      const h = evaluateBiquad(coeffs, freq, sampleRate);
+    for (const c of coeffs) {
+      const h = evaluateBiquad(c, freq, sampleRate);
       const newRe = re * h.re - im * h.im;
       const newIm = re * h.im + im * h.re;
       re = newRe;
