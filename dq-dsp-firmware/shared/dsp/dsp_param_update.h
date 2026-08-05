@@ -106,4 +106,13 @@ void dsp_param_set_sample_rate(uint32_t sample_rate);
  */
 bool dsp_param_is_recalculating(void);
 
+/**
+ * Refresh the CRC32 in a config buffer so a config sent to the host
+ * (SYNC_CONFIG) always carries a valid checksum, even after live parameter
+ * edits. The caller passes a snapshot buffer (NOT the active config, which
+ * the audio task reads lock-free), fills it via memcpy, then calls this
+ * before serializing.
+ */
+void dsp_param_refresh_crc_in_place(dsp_config_t *cfg);
+
 #endif /* DSP_PARAM_UPDATE_H */

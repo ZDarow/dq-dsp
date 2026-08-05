@@ -43,6 +43,7 @@ const MAX_RETRIES = 3;
 const AUTO_RECONNECT_DELAY_MS = 2000;
 const PING_INTERVAL_MS = 5000;
 const PONG_TIMEOUT_MS = 2000;
+const BULK_RX_TIMEOUT_MS = 5000;
 
 export function useWebSerial() {
   const [state, setState] = useState<WebSerialState>({
@@ -82,6 +83,7 @@ export function useWebSerial() {
   const bulkRxBufferRef = useRef<Uint8Array | null>(null);
   const bulkRxExpectedSizeRef = useRef(0);
   const bulkRxOffsetRef = useRef(0);
+  const bulkRxStartedAtRef = useRef(0);
 
   // Process outgoing queue: send buffered messages respecting in-flight limit
   const processQueue = useCallback(() => {
@@ -133,6 +135,27 @@ export function useWebSerial() {
     }
   }, []);
 
+  // Finish an assembled bulk receive: decode defensively so a malformed or
+  // truncated buffer can never throw out of the read loop and kill it.
+  const completeBulkReceive = useCallback(() => {
+    const buf = bulkRxBufferRef.current;
+    bulkRxBufferRef.current = null;
+    bulkRxOffsetRef.current = 0;
+    bulkRxExpectedSizeRef.current = 0;
+
+    if (!buf) return;
+    try {
+      const config = decodeDSPConfig(buf.buffer as ArrayBuffer);
+      if (config) {
+        for (const cb of configCallbacksRef.current) {
+          cb(config);
+        }
+      }
+    } catch (err) {
+      console.error('[Serial] Bulk config decode failed, discarding buffer', err);
+    }
+  }, []);
+
   // Handle a decoded payload from the serial frame parser
   const handleRxPayload = useCallback((payload: Uint8Array) => {
     if (payload.length === 0) return;
@@ -181,55 +204,9 @@ export function useWebSerial() {
       return;
     }
 
-    // Handle incoming BULK_CONFIG (device -> host, e.g. SYNC_CONFIG response)
-    // First frame: [msg_id, BLE_MSG_BULK_CONFIG, size_lo, size_hi, ...data]
-    if (payload.length >= 4 && payload[1] === BLE_MSG_BULK_CONFIG) {
-      const totalSize = payload[2] | (payload[3] << 8);
-      if (totalSize > 0 && totalSize < 65536) {
-        bulkRxBufferRef.current = new Uint8Array(totalSize);
-        bulkRxExpectedSizeRef.current = totalSize;
-        bulkRxOffsetRef.current = 0;
-
-        const chunk = payload.slice(4);
-        if (chunk.length > 0) {
-          bulkRxBufferRef.current.set(chunk, 0);
-          bulkRxOffsetRef.current = chunk.length;
-        }
-
-        // Check if complete in one frame
-        if (bulkRxOffsetRef.current >= totalSize) {
-          const config = decodeDSPConfig(bulkRxBufferRef.current.buffer as ArrayBuffer);
-          bulkRxBufferRef.current = null;
-          if (config) {
-            for (const cb of configCallbacksRef.current) {
-              cb(config);
-            }
-          }
-        }
-      }
-      return;
-    }
-
-    // Handle bulk continuation frames (raw data, no msg_type header)
-    if (bulkRxBufferRef.current && bulkRxOffsetRef.current < bulkRxExpectedSizeRef.current) {
-      const remaining = bulkRxExpectedSizeRef.current - bulkRxOffsetRef.current;
-      const chunk = payload.slice(0, Math.min(payload.length, remaining));
-      bulkRxBufferRef.current.set(chunk, bulkRxOffsetRef.current);
-      bulkRxOffsetRef.current += chunk.length;
-
-      if (bulkRxOffsetRef.current >= bulkRxExpectedSizeRef.current) {
-        const config = decodeDSPConfig(bulkRxBufferRef.current.buffer as ArrayBuffer);
-        bulkRxBufferRef.current = null;
-        if (config) {
-          for (const cb of configCallbacksRef.current) {
-            cb(config);
-          }
-        }
-      }
-      return;
-    }
-
-    // Handle ACK / ERROR (BLE-format status messages inside serial frame)
+    // Handle ACK / ERROR (BLE-format status messages inside serial frame).
+    // Checked FIRST so ACKs/errors interleaved with bulk continuation frames
+    // are never swallowed as raw config bytes.
     // Wire format: [msg_id, msg_type, status_code, ...optional detail]
     if (payload.length >= 3 && (payload[1] === BLE_MSG_ACK || payload[1] === BLE_MSG_ERROR)) {
       const msgId = payload[0];
@@ -267,8 +244,56 @@ export function useWebSerial() {
 
       // Process more queued messages
       processQueue();
+      return;
     }
-  }, [processQueue]);
+
+    // Handle incoming BULK_CONFIG (device -> host, e.g. SYNC_CONFIG response)
+    // First frame: [msg_id, BLE_MSG_BULK_CONFIG, size_lo, size_hi, ...data]
+    if (payload.length >= 4 && payload[1] === BLE_MSG_BULK_CONFIG) {
+      const totalSize = payload[2] | (payload[3] << 8);
+      if (totalSize > 0 && totalSize < 65536) {
+        bulkRxBufferRef.current = new Uint8Array(totalSize);
+        bulkRxExpectedSizeRef.current = totalSize;
+        bulkRxOffsetRef.current = 0;
+        bulkRxStartedAtRef.current = performance.now();
+
+        const chunk = payload.slice(4);
+        if (chunk.length > 0) {
+          bulkRxBufferRef.current.set(chunk, 0);
+          bulkRxOffsetRef.current = chunk.length;
+        }
+
+        // Check if complete in one frame
+        if (bulkRxOffsetRef.current >= totalSize) {
+          completeBulkReceive();
+        }
+      }
+      return;
+    }
+
+    // Handle bulk continuation frames (raw data, no msg_type header)
+    if (bulkRxBufferRef.current && bulkRxOffsetRef.current < bulkRxExpectedSizeRef.current) {
+      // Abandon a stalled bulk transfer (e.g. version-skewed host never
+      // finishes) so the read loop stays healthy.
+      if (performance.now() - bulkRxStartedAtRef.current > BULK_RX_TIMEOUT_MS) {
+        console.warn('[Serial] Bulk receive timed out, discarding partial buffer');
+        bulkRxBufferRef.current = null;
+        bulkRxOffsetRef.current = 0;
+        bulkRxExpectedSizeRef.current = 0;
+        return;
+      }
+
+      const remaining = bulkRxExpectedSizeRef.current - bulkRxOffsetRef.current;
+      const chunk = payload.slice(0, Math.min(payload.length, remaining));
+      bulkRxBufferRef.current.set(chunk, bulkRxOffsetRef.current);
+      bulkRxOffsetRef.current += chunk.length;
+
+      if (bulkRxOffsetRef.current >= bulkRxExpectedSizeRef.current) {
+        completeBulkReceive();
+      }
+      return;
+    }
+  }, [processQueue, completeBulkReceive]);
 
   // Frame parser: feed bytes into rxBuffer and extract complete frames
   const feedRxBytes = useCallback((bytes: Uint8Array) => {

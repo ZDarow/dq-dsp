@@ -3,6 +3,7 @@ import type { EQBand, CrossoverFilter, CrossoverConfig } from '../types/filter';
 import { ESP32_MAGIC, ESP32_CONFIG_VERSION, MAX_PEQ_BANDS, MAX_CROSSOVER_STAGES } from '../types/esp32';
 import { BLE_TO_FILTER_TYPE, BLE_TO_CROSSOVER_TYPE, BLE_TO_CROSSOVER_SLOPE } from '../types/ble-protocol';
 import { linearToDb } from '../dsp/utils';
+import { crc32 } from './checksum';
 
 class BinaryReader {
   private view: DataView;
@@ -13,31 +14,46 @@ class BinaryReader {
     this.offset = 0;
   }
 
+  /** Guard every read against running past the end of the buffer. */
+  private ensure(bytes: number): void {
+    if (this.offset + bytes > this.view.byteLength) {
+      throw new RangeError(
+        `BinaryReader: out of bounds at offset ${this.offset}, ` +
+        `need ${bytes}, size ${this.view.byteLength}`,
+      );
+    }
+  }
+
   readUint8(): number {
+    this.ensure(1);
     const v = this.view.getUint8(this.offset);
     this.offset += 1;
     return v;
   }
 
   readUint16(): number {
+    this.ensure(2);
     const v = this.view.getUint16(this.offset, true);
     this.offset += 2;
     return v;
   }
 
   readUint32(): number {
+    this.ensure(4);
     const v = this.view.getUint32(this.offset, true);
     this.offset += 4;
     return v;
   }
 
   readFloat32(): number {
+    this.ensure(4);
     const v = this.view.getFloat32(this.offset, true);
     this.offset += 4;
     return v;
   }
 
   skip(bytes: number) {
+    this.ensure(bytes);
     this.offset += bytes;
   }
 
@@ -73,7 +89,25 @@ export function decodeDSPConfig(data: ArrayBuffer): DecodedDSPConfig | null {
 
   const presetIndex = reader.readUint16();
   const sampleRate = reader.readUint32();
-  reader.skip(4); // crc32
+  const storedCrc = reader.readUint32();
+
+  // Verify CRC32 (IEEE 802.3, over the whole blob with the crc field zeroed —
+  // same scheme as binary-encoder.ts). Enforced only for the current layout;
+  // legacy v3 blobs predate the drift section and are accepted as-is.
+  // storedCrc === 0 is treated as "not computed" (old firmware never sets the
+  // field) and decoded anyway, so a UI update doesn't require reflashing the
+  // device.
+  if (version === ESP32_CONFIG_VERSION && storedCrc !== 0) {
+    const crcOffset = 12;
+    const zeroed = new Uint8Array(data);
+    zeroed[crcOffset] = 0;
+    zeroed[crcOffset + 1] = 0;
+    zeroed[crcOffset + 2] = 0;
+    zeroed[crcOffset + 3] = 0;
+    if (crc32(zeroed) !== storedCrc) {
+      return null;
+    }
+  }
 
   // === Input Channels (2) ===
   const inputs: [InputChannel, InputChannel] = [

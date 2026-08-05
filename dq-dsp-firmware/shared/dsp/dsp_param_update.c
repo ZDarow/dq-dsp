@@ -14,6 +14,7 @@
 #include "freertos/queue.h"
 #include <math.h>
 #include <string.h>
+#include <stddef.h>
 #include <stdatomic.h>
 
 static const char *TAG = "dsp_param";
@@ -199,6 +200,15 @@ static int calc_crossover_stages(bool is_hp, uint8_t xo_type, uint8_t slope_stag
     uint8_t filter_type = is_hp ? BLE_FILTER_HIGH_PASS : BLE_FILTER_LOW_PASS;
     int num_stages = 0;
 
+    /* Reject non-valid slope values (defence-in-depth). Valid values are
+     * BLE_XO_SLOPE_12 (1), BLE_XO_SLOPE_24 (2) and BLE_XO_SLOPE_48 (4).
+     * Without this, a corrupted/injected value would make num_stages exceed
+     * DSP_MAX_XO_STAGES and drive out-of-bounds reads/writes in the audio task. */
+    if (slope_stages != BLE_XO_SLOPE_12 && slope_stages != BLE_XO_SLOPE_24 &&
+        slope_stages != BLE_XO_SLOPE_48) {
+        slope_stages = BLE_XO_SLOPE_12;
+    }
+
     /* Set all stages to identity first */
     for (int i = 0; i < DSP_MAX_XO_STAGES; i++) {
         biquad_identity(&stages_out[i]);
@@ -236,6 +246,8 @@ static int calc_crossover_stages(bool is_hp, uint8_t xo_type, uint8_t slope_stag
         }
     }
 
+    /* num_stages is bounded to {1,2,4} by the slope guard above, all
+     * <= DSP_MAX_XO_STAGES. */
     return num_stages;
 }
 
@@ -357,6 +369,71 @@ static uint8_t read_u8(const uint8_t *p)
 }
 
 /* -----------------------------------------------------------------------
+ * Value validation helpers
+ *
+ * All floats entering the config from the wire must be finite and within
+ * sane physical ranges. NaN/Inf bypass "<=" guards in recalc helpers and
+ * would produce NaN biquad coefficients (garbage/DC on the audio output),
+ * so every f32 write point is guarded with isfinite() + range checks.
+ * ----------------------------------------------------------------------- */
+
+static bool is_valid_freq(float v)
+{
+    return isfinite(v) && v >= 10.0f && v <= 20000.0f;
+}
+
+static bool is_valid_eq_gain_db(float v)
+{
+    return isfinite(v) && v >= -30.0f && v <= 30.0f;
+}
+
+static bool is_valid_q(float v)
+{
+    return isfinite(v) && v >= 0.01f && v <= 40.0f;
+}
+
+static bool is_valid_linear_gain(float v, float max)
+{
+    return isfinite(v) && v >= 0.0f && v <= max;
+}
+
+static bool is_valid_filter_type(uint8_t v)
+{
+    return v <= BLE_FILTER_ALL_PASS;
+}
+
+static bool is_valid_xo_type(uint8_t v)
+{
+    return v == BLE_XO_BUTTERWORTH || v == BLE_XO_LINKWITZ_RILEY;
+}
+
+static bool is_valid_xo_slope(uint8_t v)
+{
+    return v == BLE_XO_SLOPE_12 || v == BLE_XO_SLOPE_24 || v == BLE_XO_SLOPE_48;
+}
+
+static bool is_valid_drift(float v, float min, float max)
+{
+    return isfinite(v) && v >= min && v <= max;
+}
+
+/* -----------------------------------------------------------------------
+ * CRC32 (IEEE 802.3, reflected, poly 0xEDB88320, init/final XOR 0xFFFFFFFF)
+ * Matches src/export/checksum.ts in the web UI.
+ * ----------------------------------------------------------------------- */
+
+static uint32_t crc32_ieee(const uint8_t *data, size_t len, uint32_t crc)
+{
+    for (size_t i = 0; i < len; i++) {
+        crc ^= data[i];
+        for (int j = 0; j < 8; j++) {
+            crc = (crc & 1u) ? (crc >> 1) ^ 0xedb88320u : (crc >> 1);
+        }
+    }
+    return crc;
+}
+
+/* -----------------------------------------------------------------------
  * Public API
  * ----------------------------------------------------------------------- */
 
@@ -426,6 +503,25 @@ esp_err_t dsp_param_init(const dsp_config_t *initial)
 const dsp_config_t *dsp_param_get_active(void)
 {
     return atomic_load(&active_ptr);
+}
+
+void dsp_param_refresh_crc_in_place(dsp_config_t *cfg)
+{
+    if (!cfg) return;
+
+    /* CRC32 over the whole blob with the crc field treated as zero,
+     * matching the web UI's checksum.ts / binary-encoder.ts. Operates on a
+     * caller-provided buffer (a snapshot), never on the active config that
+     * the audio task reads lock-free. */
+    const uint8_t *bytes = (const uint8_t *)cfg;
+    const size_t crc_off = offsetof(dsp_config_t, header.crc32);
+    static const uint8_t zero_field[4] = { 0, 0, 0, 0 };
+
+    uint32_t crc = 0xffffffffu;
+    crc = crc32_ieee(bytes, crc_off, crc);
+    crc = crc32_ieee(zero_field, 4, crc);
+    crc = crc32_ieee(bytes + crc_off + 4, sizeof(dsp_config_t) - crc_off - 4, crc);
+    cfg->header.crc32 = crc ^ 0xffffffffu;
 }
 
 bool dsp_param_has_pending(void)
@@ -563,6 +659,8 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
 
         switch (param) {
         case BLE_PARAM_GAIN:
+            if (!is_valid_linear_gain(f32_val, 10.0f))
+                return BLE_STATUS_OUT_OF_RANGE;
             inp->gain = f32_val;
             break;
         case BLE_PARAM_MUTE:
@@ -578,21 +676,25 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
             break;
         case BLE_PARAM_EQ_BAND_FREQ:
             if (index >= DSP_MAX_PEQ_BANDS) return BLE_STATUS_OUT_OF_RANGE;
+            if (!is_valid_freq(f32_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->inputs[channel].eq_params[index].frequency = f32_val;
             recalc_input_eq_band(channel, index);
             break;
         case BLE_PARAM_EQ_BAND_GAIN:
             if (index >= DSP_MAX_PEQ_BANDS) return BLE_STATUS_OUT_OF_RANGE;
+            if (!is_valid_eq_gain_db(f32_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->inputs[channel].eq_params[index].gain_db = f32_val;
             recalc_input_eq_band(channel, index);
             break;
         case BLE_PARAM_EQ_BAND_Q:
             if (index >= DSP_MAX_PEQ_BANDS) return BLE_STATUS_OUT_OF_RANGE;
+            if (!is_valid_q(f32_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->inputs[channel].eq_params[index].q = f32_val;
             recalc_input_eq_band(channel, index);
             break;
         case BLE_PARAM_EQ_BAND_TYPE:
             if (index >= DSP_MAX_PEQ_BANDS) return BLE_STATUS_OUT_OF_RANGE;
+            if (!is_valid_filter_type(u8_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->inputs[channel].eq_params[index].filter_type = u8_val;
             recalc_input_eq_band(channel, index);
             break;
@@ -605,21 +707,25 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
             break;
         case BLE_PARAM_ROOM_EQ_BAND_FREQ:
             if (index >= DSP_MAX_ROOM_EQ_BANDS) return BLE_STATUS_OUT_OF_RANGE;
+            if (!is_valid_freq(f32_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->inputs[channel].room_eq_params[index].frequency = f32_val;
             recalc_input_room_eq_band(channel, index);
             break;
         case BLE_PARAM_ROOM_EQ_BAND_GAIN:
             if (index >= DSP_MAX_ROOM_EQ_BANDS) return BLE_STATUS_OUT_OF_RANGE;
+            if (!is_valid_eq_gain_db(f32_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->inputs[channel].room_eq_params[index].gain_db = f32_val;
             recalc_input_room_eq_band(channel, index);
             break;
         case BLE_PARAM_ROOM_EQ_BAND_Q:
             if (index >= DSP_MAX_ROOM_EQ_BANDS) return BLE_STATUS_OUT_OF_RANGE;
+            if (!is_valid_q(f32_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->inputs[channel].room_eq_params[index].q = f32_val;
             recalc_input_room_eq_band(channel, index);
             break;
         case BLE_PARAM_ROOM_EQ_BAND_TYPE:
             if (index >= DSP_MAX_ROOM_EQ_BANDS) return BLE_STATUS_OUT_OF_RANGE;
+            if (!is_valid_filter_type(u8_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->inputs[channel].room_eq_params[index].filter_type = u8_val;
             recalc_input_room_eq_band(channel, index);
             break;
@@ -637,6 +743,8 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
 
         switch (param) {
         case BLE_PARAM_GAIN:
+            if (!is_valid_linear_gain(f32_val, 10.0f))
+                return BLE_STATUS_OUT_OF_RANGE;
             outp->gain = f32_val;
             break;
         case BLE_PARAM_MUTE:
@@ -646,6 +754,9 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
             outp->phase_invert = u8_val;
             break;
         case BLE_PARAM_DELAY: {
+            if (!isfinite(f32_val)) {
+                return BLE_STATUS_OUT_OF_RANGE;
+            }
             uint32_t samples = (uint32_t)f32_val;
             if (samples > MAX_DELAY_SAMPLES) {
                 ESP_LOGW(TAG, "Delay out of range: %lu (max %d)", (unsigned long)samples, MAX_DELAY_SAMPLES);
@@ -667,21 +778,25 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
             break;
         case BLE_PARAM_EQ_BAND_FREQ:
             if (index >= DSP_MAX_PEQ_BANDS) return BLE_STATUS_OUT_OF_RANGE;
+            if (!is_valid_freq(f32_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->outputs[channel].eq_params[index].frequency = f32_val;
             recalc_output_eq_band(channel, index);
             break;
         case BLE_PARAM_EQ_BAND_GAIN:
             if (index >= DSP_MAX_PEQ_BANDS) return BLE_STATUS_OUT_OF_RANGE;
+            if (!is_valid_eq_gain_db(f32_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->outputs[channel].eq_params[index].gain_db = f32_val;
             recalc_output_eq_band(channel, index);
             break;
         case BLE_PARAM_EQ_BAND_Q:
             if (index >= DSP_MAX_PEQ_BANDS) return BLE_STATUS_OUT_OF_RANGE;
+            if (!is_valid_q(f32_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->outputs[channel].eq_params[index].q = f32_val;
             recalc_output_eq_band(channel, index);
             break;
         case BLE_PARAM_EQ_BAND_TYPE:
             if (index >= DSP_MAX_PEQ_BANDS) return BLE_STATUS_OUT_OF_RANGE;
+            if (!is_valid_filter_type(u8_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->outputs[channel].eq_params[index].filter_type = u8_val;
             recalc_output_eq_band(channel, index);
             break;
@@ -692,14 +807,17 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
             recalc_output_hp(channel);
             break;
         case BLE_PARAM_CROSSOVER_HP_FREQ:
+            if (!is_valid_freq(f32_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->outputs[channel].hp_params.frequency = f32_val;
             recalc_output_hp(channel);
             break;
         case BLE_PARAM_CROSSOVER_HP_TYPE:
+            if (!is_valid_xo_type(u8_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->outputs[channel].hp_params.filter_type = u8_val;
             recalc_output_hp(channel);
             break;
         case BLE_PARAM_CROSSOVER_HP_SLOPE:
+            if (!is_valid_xo_slope(u8_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->outputs[channel].hp_params.slope = u8_val;
             recalc_output_hp(channel);
             break;
@@ -710,14 +828,17 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
             recalc_output_lp(channel);
             break;
         case BLE_PARAM_CROSSOVER_LP_FREQ:
+            if (!is_valid_freq(f32_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->outputs[channel].lp_params.frequency = f32_val;
             recalc_output_lp(channel);
             break;
         case BLE_PARAM_CROSSOVER_LP_TYPE:
+            if (!is_valid_xo_type(u8_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->outputs[channel].lp_params.filter_type = u8_val;
             recalc_output_lp(channel);
             break;
         case BLE_PARAM_CROSSOVER_LP_SLOPE:
+            if (!is_valid_xo_slope(u8_val)) return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->outputs[channel].lp_params.slope = u8_val;
             recalc_output_lp(channel);
             break;
@@ -742,6 +863,8 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
             cp->enabled = u8_val;
             break;
         case BLE_PARAM_ROUTING_GAIN:
+            if (!is_valid_linear_gain(f32_val, 1.0f))
+                return BLE_STATUS_OUT_OF_RANGE;
             cp->gain = f32_val;
             break;
         default:
@@ -754,6 +877,9 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
     case BLE_BLOCK_GLOBAL: {
         switch (param) {
         case BLE_PARAM_MASTER_VOLUME:
+            /* UI allows -72..+12 dB -> dbToLinear(12) ~= 3.98 */
+            if (!is_valid_linear_gain(f32_val, 10.0f))
+                return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->global.master_volume = f32_val;
             break;
         default:
@@ -766,15 +892,23 @@ uint8_t dsp_param_apply(const uint8_t *msg, uint16_t len)
     case BLE_BLOCK_SYSTEM: {
         switch (param) {
         case BLE_PARAM_SYSTEM_DRIFT_KP:
+            if (!is_valid_drift(f32_val, 0.0f, 100.0f))
+                return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->system.drift_kp = f32_val;
             break;
         case BLE_PARAM_SYSTEM_DRIFT_KI:
+            if (!is_valid_drift(f32_val, 0.0f, 100.0f))
+                return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->system.drift_ki = f32_val;
             break;
         case BLE_PARAM_SYSTEM_DRIFT_TARGET:
+            if (!is_valid_drift(f32_val, 0.0f, 1.0f))
+                return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->system.drift_target_fill = f32_val;
             break;
         case BLE_PARAM_SYSTEM_DRIFT_MAX_PPM:
+            if (!is_valid_drift(f32_val, 0.0f, 100000.0f))
+                return BLE_STATUS_OUT_OF_RANGE;
             staging_ptr->system.drift_max_ppm = f32_val;
             break;
         default:
@@ -807,6 +941,46 @@ uint8_t dsp_param_apply_bulk(const uint8_t *data, size_t len)
         ESP_LOGW(TAG, "Bulk config invalid magic: 0x%08lx",
                  (unsigned long)incoming->header.magic);
         return BLE_STATUS_INVALID_PARAM;
+    }
+
+    /* Validate version: layout must match this build (prevents silent
+     * mis-decoding when host and firmware protocol versions diverge). */
+    if (incoming->header.version != DSP_VERSION) {
+        ESP_LOGW(TAG, "Bulk config version mismatch: %u vs expected %u",
+                 (unsigned)incoming->header.version, (unsigned)DSP_VERSION);
+        return BLE_STATUS_INVALID_PARAM;
+    }
+
+    /* Validate CRC32 over the whole blob with the crc field treated as zero
+     * (same scheme as the web UI's binary-encoder). */
+    {
+        uint32_t crc = 0xffffffffu;
+        static const uint8_t zero_crc_field[4] = { 0, 0, 0, 0 };
+        crc = crc32_ieee(data, offsetof(dsp_config_t, header.crc32), crc);
+        crc = crc32_ieee(zero_crc_field, 4, crc);
+        crc = crc32_ieee(data + offsetof(dsp_config_t, header.crc32) + 4,
+                         sizeof(dsp_config_t) - offsetof(dsp_config_t, header.crc32) - 4, crc);
+        crc ^= 0xffffffffu;
+        if (incoming->header.crc32 != crc) {
+            ESP_LOGW(TAG, "Bulk config CRC mismatch: got 0x%08lx, expected 0x%08lx",
+                     (unsigned long)incoming->header.crc32, (unsigned long)crc);
+            return BLE_STATUS_CRC_ERROR;
+        }
+    }
+
+    /* Defence-in-depth: never let a malicious/corrupted blob drive the audio
+     * task out of bounds via num_hp_stages / num_lp_stages / delay_samples. */
+    for (int o = 0; o < DSP_NUM_OUTPUTS; o++) {
+        if (incoming->outputs[o].num_hp_stages > DSP_MAX_XO_STAGES ||
+            incoming->outputs[o].num_lp_stages > DSP_MAX_XO_STAGES) {
+            ESP_LOGW(TAG, "Bulk config has invalid crossover stage count");
+            return BLE_STATUS_INVALID_PARAM;
+        }
+        if (incoming->outputs[o].delay_samples > MAX_DELAY_SAMPLES) {
+            ESP_LOGW(TAG, "Bulk config has invalid delay: %lu (max %d)",
+                     (unsigned long)incoming->outputs[o].delay_samples, MAX_DELAY_SAMPLES);
+            return BLE_STATUS_OUT_OF_RANGE;
+        }
     }
 
     /* Copy to staging */

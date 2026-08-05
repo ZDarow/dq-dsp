@@ -29,6 +29,7 @@ static const msg_transport_t *s_transport = NULL;
 /** Bulk config receive buffer. */
 static uint8_t bulk_buffer[sizeof(dsp_config_t)];
 static size_t  bulk_offset = 0;
+static size_t  bulk_expected = sizeof(dsp_config_t);
 
 /** Telemetry shared state (written by audio task, read by transport task). */
 static volatile bool s_telemetry_pending = false;
@@ -88,8 +89,15 @@ static void send_current_config(void)
         return;
     }
 
+    /* Snapshot into a local buffer and refresh the CRC there: the bytes that
+     * go out must always match their checksum, and the active config buffer
+     * (read lock-free by the audio task) is never written from here. */
+    static dsp_config_t snapshot;
+    memcpy(&snapshot, cfg, sizeof(snapshot));
+    dsp_param_refresh_crc_in_place(&snapshot);
+
     if (s_transport->send_config) {
-        s_transport->send_config((const uint8_t *)cfg, sizeof(dsp_config_t));
+        s_transport->send_config((const uint8_t *)&snapshot, sizeof(snapshot));
     }
 
     if (s_transport->send_ack) {
@@ -136,6 +144,9 @@ void msg_handler_process(const uint8_t *payload, uint8_t payload_len)
     /*
      * If a bulk transfer is in progress, ALL incoming payloads are
      * continuation data — regardless of what the raw bytes look like.
+     * Complete once we reach the size advertised by the host in the first
+     * frame (validated at BLE_MSG_BULK_CONFIG), so a version-skewed host can
+     * never wedge the device into permanent bulk mode.
      */
     if (bulk_offset > 0) {
         if (bulk_offset + payload_len > sizeof(bulk_buffer)) {
@@ -150,8 +161,8 @@ void msg_handler_process(const uint8_t *payload, uint8_t payload_len)
         memcpy(bulk_buffer + bulk_offset, payload, payload_len);
         bulk_offset += payload_len;
 
-        if (bulk_offset == sizeof(dsp_config_t)) {
-            uint8_t status = dsp_param_apply_bulk(bulk_buffer, bulk_offset);
+        if (bulk_offset >= bulk_expected) {
+            uint8_t status = dsp_param_apply_bulk(bulk_buffer, bulk_expected);
             bulk_offset = 0;
             if (status == BLE_STATUS_OK) {
                 if (s_transport->send_ack) {
@@ -199,7 +210,27 @@ void msg_handler_process(const uint8_t *payload, uint8_t payload_len)
     }
 
     case BLE_MSG_BULK_CONFIG: {
+        /* First frame: [msg_id, msg_type, size_lo, size_hi, ...data] */
+        if (payload_len < 4) {
+            if (s_transport->send_error) {
+                s_transport->send_error(msg_id, BLE_STATUS_INVALID_PARAM, 0);
+            }
+            break;
+        }
+
+        size_t advertised = payload[2] | ((size_t)payload[3] << 8);
+        if (advertised != sizeof(dsp_config_t)) {
+            ESP_LOGW(TAG, "Bulk config size mismatch: host %d vs firmware %d",
+                     (int)advertised, (int)sizeof(dsp_config_t));
+            bulk_offset = 0;
+            if (s_transport->send_error) {
+                s_transport->send_error(msg_id, BLE_STATUS_INVALID_PARAM, 0);
+            }
+            break;
+        }
+
         bulk_offset = 0;
+        bulk_expected = advertised;
 
         if (payload_len > 4) {
             size_t chunk = payload_len - 4;
@@ -210,8 +241,8 @@ void msg_handler_process(const uint8_t *payload, uint8_t payload_len)
         }
         ESP_LOGI(TAG, "Bulk config transfer started (%d initial bytes)", (int)bulk_offset);
 
-        if (bulk_offset == sizeof(dsp_config_t)) {
-            uint8_t status = dsp_param_apply_bulk(bulk_buffer, bulk_offset);
+        if (bulk_offset >= bulk_expected) {
+            uint8_t status = dsp_param_apply_bulk(bulk_buffer, bulk_expected);
             bulk_offset = 0;
             if (status == BLE_STATUS_OK) {
                 if (s_transport->send_ack) {
