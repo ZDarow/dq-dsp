@@ -12,6 +12,7 @@
 | [`dsp-algorithms.md`](dsp-algorithms.md) | Математика DSP: биквад DF-IIT, Audio EQ Cookbook, кроссоверы Butterworth/Linkwitz-Riley, ASRC, PI-компенсатор, soft-clip, диапазоны валидации. |
 | [`api-reference.md`](api-reference.md) | API-справочник: публичные функции FW и UI с сигнатурами и константами. |
 | [`ui-architecture.md`](ui-architecture.md) | Архитектура веб-UI: слои, Zustand-стор и слайсы, serial-middleware, useWebSerial, экспорт/импорт конфига, пресеты + диаграммы retry/RX/reconnect. |
+| [`DOCUMENTATION.md`](DOCUMENTATION.md) | Полное руководство: архитектура (mermaid), установка, API с примерами, сценарии использования, troubleshooting и FAQ. Рекомендуется начать здесь. |
 | [`build-and-flash.md`](build-and-flash.md) | Сборка, прошивка и проверки (ESP-IDF 6 / Vite): команды, окружение, порядок верификации. |
 | [`audit-2026-08.md`](audit-2026-08.md) | Результаты комплексного аудита (2026-08): найденные проблемы, применённые фиксы, оставшиеся рекомендации. |
 
