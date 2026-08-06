@@ -62,6 +62,14 @@ export function useWebSerial() {
 
   const inFlightRef = useRef<Map<number, PendingMessage>>(new Map());
   const sendQueueRef = useRef<Uint8Array[]>([]);
+  // Bulk gate (audit R2): while a bulk config transfer is in flight, live param
+  // updates are buffered in sendQueueRef but not flushed, so bulk frames can
+  // never interleave with single-param frames.
+  const bulkTxActiveRef = useRef(false);
+  // Indirect call to sendPending from processQueue: both callbacks reference
+  // each other (processQueue pulls from the queue, sendPending re-queues on
+  // retry), so a ref breaks the circular useCallback dependency.
+  const sendPendingRef = useRef<(msg: PendingMessage) => void>(() => {});
   const statusCallbacksRef = useRef<StatusCallback[]>([]);
   const logCallbacksRef = useRef<((text: string) => void)[]>([]);
   const telemetryCallbacksRef = useRef<((data: DSPTelemetry) => void)[]>([]);
@@ -94,6 +102,7 @@ export function useWebSerial() {
     while (
       sendQueueRef.current.length > 0 &&
       inFlightRef.current.size < MAX_IN_FLIGHT &&
+      !bulkTxActiveRef.current &&
       writerRef.current
     ) {
       const data = sendQueueRef.current.shift()!;
@@ -108,36 +117,59 @@ export function useWebSerial() {
         retries: 0,
       };
       inFlightRef.current.set(msgId, pending);
-
-      writerRef.current.write(data).catch((err: unknown) => {
-        inFlightRef.current.delete(msgId);
-        console.error('[Serial] Write failed:', err);
-      });
-
-      // Set ACK timeout
-      const timeout = setTimeout(() => {
-        const msg = inFlightRef.current.get(msgId);
-        if (!msg) return;
-
-        if (msg.retries < MAX_RETRIES) {
-          msg.retries++;
-          msg.sentAt = performance.now();
-          writerRef.current?.write(msg.data).catch(() => {
-            inFlightRef.current.delete(msgId);
-          });
-          const nextTimeout = setTimeout(() => {
-            inFlightRef.current.delete(msgId);
-            processQueue();
-          }, ACK_TIMEOUT_MS);
-          ackTimeoutsRef.current.set(msgId, nextTimeout);
-        } else {
-          inFlightRef.current.delete(msgId);
-          processQueue();
-        }
-      }, ACK_TIMEOUT_MS);
-      ackTimeoutsRef.current.set(msgId, timeout);
+      sendPendingRef.current(pending);
     }
   }, []);
+
+  // Send a message and drive its retry budget. Both a failed write and an ACK
+  // timeout consume one retry and re-queue the message, so the total number of
+  // attempts is MAX_RETRIES + 1 (initial + retries). Previously a write error
+  // dropped the message without retry and the post-retry timeout deleted it
+  // unconditionally, yielding only 2 attempts instead of 4 (audit H4).
+  const sendPending = useCallback((msg: PendingMessage) => {
+    const msgId = msg.msgId;
+
+    const drop = () => {
+      inFlightRef.current.delete(msgId);
+      ackTimeoutsRef.current.delete(msgId);
+      processQueue();
+    };
+
+    const attemptWrite = () => {
+      if (!writerRef.current) {
+        drop();
+        return;
+      }
+      msg.sentAt = performance.now();
+      writerRef.current.write(msg.data).catch((err: unknown) => {
+        console.error('[Serial] Write failed:', err);
+        // A failed write is a retryable failure too — reuse the same budget.
+        if (msg.retries < MAX_RETRIES) {
+          msg.retries++;
+          attemptWrite();
+        } else {
+          drop();
+        }
+      });
+    };
+
+    attemptWrite();
+
+    // ACK timeout: retry until the budget is exhausted, then drop.
+    const timeout = setTimeout(() => {
+      const live = inFlightRef.current.get(msgId);
+      if (!live) return;
+      if (live.retries < MAX_RETRIES) {
+        live.retries++;
+        sendPendingRef.current(live);
+      } else {
+        drop();
+      }
+    }, ACK_TIMEOUT_MS);
+    ackTimeoutsRef.current.set(msgId, timeout);
+  }, [processQueue]);
+
+  sendPendingRef.current = sendPending;
 
   // Finish an assembled bulk receive: decode defensively so a malformed or
   // truncated buffer can never throw out of the read loop and kill it.
@@ -163,6 +195,32 @@ export function useWebSerial() {
   // Handle a decoded payload from the serial frame parser
   const handleRxPayload = useCallback((payload: Uint8Array) => {
     if (payload.length === 0) return;
+
+    // Bulk continuation frames are raw data with no msg_type header, so their
+    // bytes can collide with the ACK/ERROR/BULK-START signatures below. While a
+    // bulk receive is active we must consume every frame as continuation data
+    // FIRST, otherwise ~30% of SYNC_CONFIG blobs get corrupted (audit H3).
+    if (bulkRxBufferRef.current && bulkRxOffsetRef.current < bulkRxExpectedSizeRef.current) {
+      // Abandon a stalled bulk transfer (e.g. version-skewed host never
+      // finishes) so the read loop stays healthy.
+      if (performance.now() - bulkRxStartedAtRef.current > BULK_RX_TIMEOUT_MS) {
+        console.warn('[Serial] Bulk receive timed out, discarding partial buffer');
+        bulkRxBufferRef.current = null;
+        bulkRxOffsetRef.current = 0;
+        bulkRxExpectedSizeRef.current = 0;
+        return;
+      }
+
+      const remaining = bulkRxExpectedSizeRef.current - bulkRxOffsetRef.current;
+      const chunk = payload.slice(0, Math.min(payload.length, remaining));
+      bulkRxBufferRef.current.set(chunk, bulkRxOffsetRef.current);
+      bulkRxOffsetRef.current += chunk.length;
+
+      if (bulkRxOffsetRef.current >= bulkRxExpectedSizeRef.current) {
+        completeBulkReceive();
+      }
+      return;
+    }
 
     const msgType = payload[0];
 
@@ -274,29 +332,6 @@ export function useWebSerial() {
       }
       return;
     }
-
-    // Handle bulk continuation frames (raw data, no msg_type header)
-    if (bulkRxBufferRef.current && bulkRxOffsetRef.current < bulkRxExpectedSizeRef.current) {
-      // Abandon a stalled bulk transfer (e.g. version-skewed host never
-      // finishes) so the read loop stays healthy.
-      if (performance.now() - bulkRxStartedAtRef.current > BULK_RX_TIMEOUT_MS) {
-        console.warn('[Serial] Bulk receive timed out, discarding partial buffer');
-        bulkRxBufferRef.current = null;
-        bulkRxOffsetRef.current = 0;
-        bulkRxExpectedSizeRef.current = 0;
-        return;
-      }
-
-      const remaining = bulkRxExpectedSizeRef.current - bulkRxOffsetRef.current;
-      const chunk = payload.slice(0, Math.min(payload.length, remaining));
-      bulkRxBufferRef.current.set(chunk, bulkRxOffsetRef.current);
-      bulkRxOffsetRef.current += chunk.length;
-
-      if (bulkRxOffsetRef.current >= bulkRxExpectedSizeRef.current) {
-        completeBulkReceive();
-      }
-      return;
-    }
   }, [processQueue, completeBulkReceive]);
 
   // Frame parser: feed bytes into rxBuffer and extract complete frames
@@ -382,6 +417,7 @@ export function useWebSerial() {
     ackTimeoutsRef.current.clear();
     inFlightRef.current.clear();
     sendQueueRef.current = [];
+    bulkTxActiveRef.current = false;
     rxBufferRef.current = [];
     latencySamplesRef.current = [];
     bulkRxBufferRef.current = null;
@@ -551,7 +587,13 @@ export function useWebSerial() {
       setState((s) => ({ ...s, error: 'Not connected' }));
       return false;
     }
+    // Refuse a second bulk transfer while one is already in flight.
+    if (bulkTxActiveRef.current) {
+      setState((s) => ({ ...s, error: 'Bulk config already in progress' }));
+      return false;
+    }
 
+    bulkTxActiveRef.current = true;
     try {
       const drift = useDSPStore.getState().drift;
       const binary = encodeDSPConfig(config, drift);
@@ -588,8 +630,13 @@ export function useWebSerial() {
         error: err instanceof Error ? err.message : 'Bulk config send failed',
       }));
       return false;
+    } finally {
+      // Release the bulk gate and flush any live params buffered meanwhile so
+      // they are never interleaved with the bulk frames (audit R2).
+      bulkTxActiveRef.current = false;
+      processQueue();
     }
-  }, []);
+  }, [processQueue]);
 
   /** Subscribe to status/ACK notifications */
   const onStatus = useCallback((callback: StatusCallback) => {
