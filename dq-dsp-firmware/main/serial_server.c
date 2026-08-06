@@ -16,11 +16,13 @@
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 #include "freertos/task.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 static const char *TAG = "serial_server";
 
@@ -33,6 +35,10 @@ static const char *TAG = "serial_server";
 
 static TaskHandle_t rx_task_handle = NULL;
 static volatile bool rx_task_running = false;
+
+/* Async ESP_LOG redirect queue (see serial_log_vprintf). */
+#define SERIAL_LOG_QUEUE_LEN 8
+static QueueHandle_t log_queue = NULL;
 
 /* -----------------------------------------------------------------------
  * UART TX
@@ -124,24 +130,44 @@ static void send_pong(void)
  * ESP_LOG Redirection
  * ----------------------------------------------------------------------- */
 
+/*
+ * Async ESP_LOG redirect (audit R6). Log lines are formatted here and queued,
+ * then sent by the RX task (serial_log_drain). This keeps esp_log_vprintf free
+ * of UART I/O, so logs from the audio/BLE tasks can never interleave with a
+ * bulk config stream or stall the caller; overflowing lines are dropped.
+ */
 static int serial_log_vprintf(const char *fmt, va_list args)
 {
-    static bool in_log = false;
-    if (in_log) return vprintf(fmt, args);
-    in_log = true;
+    if (log_queue == NULL) {
+        return vprintf(fmt, args);
+    }
 
     char buf[SERIAL_MAX_PAYLOAD_SIZE - 1];
     int len = vsnprintf(buf, sizeof(buf), fmt, args);
-    if (len <= 0) { in_log = false; return len; }
+    if (len <= 0) return len;
     if (len >= (int)sizeof(buf)) len = (int)sizeof(buf) - 1;
 
-    uint8_t payload[SERIAL_MAX_PAYLOAD_SIZE];
-    payload[0] = SERIAL_MSG_LOG;
-    memcpy(&payload[1], buf, len);
-    serial_send_frame(payload, (uint8_t)(1 + len));
+    char *item = malloc((size_t)len + 2);  /* [msg_type, text..., '\0'] */
+    if (item == NULL) return len;
 
-    in_log = false;
+    item[0] = SERIAL_MSG_LOG;
+    memcpy(&item[1], buf, (size_t)len);
+    item[len + 1] = '\0';
+
+    if (xQueueSend(log_queue, &item, 0) != pdTRUE) {
+        free(item);  /* queue full: drop the log line */
+    }
     return len;
+}
+
+static void serial_log_drain(void)
+{
+    char *item;
+    while (xQueueReceive(log_queue, &item, 0) == pdTRUE) {
+        uint8_t payload_len = (uint8_t)(strlen(item + 1) + 1);
+        serial_send_frame((const uint8_t *)item, payload_len);
+        free(item);
+    }
 }
 
 /* -----------------------------------------------------------------------
@@ -230,6 +256,7 @@ static void serial_rx_task(void *pvParameters)
 
     while (rx_task_running) {
         msg_handler_flush_telemetry();
+        serial_log_drain();
 
         /* Batch reads: frames are at most 256 bytes, so pull whatever is
          * buffered in one uart_read_bytes() call and feed the byte state
@@ -276,6 +303,11 @@ esp_err_t serial_server_init(void)
     err = uart_driver_install(SERIAL_UART_NUM, SERIAL_RX_BUF_SIZE,
                               SERIAL_TX_BUF_SIZE, 0, NULL, 0);
     if (err != ESP_OK) return err;
+
+    log_queue = xQueueCreate(SERIAL_LOG_QUEUE_LEN, sizeof(char *));
+    if (log_queue == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
 
     msg_handler_init(&serial_transport);
 

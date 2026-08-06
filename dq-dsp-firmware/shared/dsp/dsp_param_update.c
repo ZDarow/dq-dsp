@@ -527,7 +527,9 @@ void dsp_param_commit(void)
     pending_update = false;
 
     /* Commit happens on every param change (including slider drags), so keep
-     * per-commit diagnostics out of the hot path: LOGV only. */
+     * per-commit diagnostics out of the hot path: compiled out entirely at
+     * log levels below VERBOSE (audit R6). */
+#if (CONFIG_LOG_MAXIMUM_LEVEL >= ESP_LOG_VERBOSE)
     const dsp_config_t *act = (const dsp_config_t *)atomic_load(&active_ptr);
     int active_count = 0;
     for (int i = 0; i < DSP_NUM_INPUTS; i++) {
@@ -536,6 +538,7 @@ void dsp_param_commit(void)
         }
     }
     ESP_LOGV(TAG, "Commit: active RoomEQ bands enabled = %d", active_count);
+#endif
 }
 
 void dsp_param_notify_update(void)

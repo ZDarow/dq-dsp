@@ -36,7 +36,7 @@ esp_err_t i2s_audio_init_dual_output(uint32_t sample_rate)
     i2s_chan_config_t chan0_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     chan0_cfg.dma_desc_num = 12;
     chan0_cfg.dma_frame_num = 240;
-    chan0_cfg.auto_clear = true;
+    chan0_cfg.auto_clear = false;
 
     err = i2s_new_channel(&chan0_cfg, &i2s_tx_chan0, NULL);
     if (err != ESP_OK) {
@@ -63,7 +63,7 @@ esp_err_t i2s_audio_init_dual_output(uint32_t sample_rate)
     i2s_chan_config_t chan1_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_1, I2S_ROLE_MASTER);
     chan1_cfg.dma_desc_num = 12;
     chan1_cfg.dma_frame_num = 240;
-    chan1_cfg.auto_clear = true;
+    chan1_cfg.auto_clear = false;
 
     err = i2s_new_channel(&chan1_cfg, &i2s_tx_chan1, NULL);
     if (err != ESP_OK) {
