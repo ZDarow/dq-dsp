@@ -1,1 +1,2 @@
-dependencies: {}
+dependencies:
+  espressif/esp-dsp: '^1.8.2'

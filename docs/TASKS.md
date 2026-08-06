@@ -9,9 +9,9 @@
 | # | Задача | Локация |
 |---|---|---|
 | R1 | Устранить гонку staging-буфера — seqlock/атомарная копия в `dsp_param_commit` | `dq-dsp-firmware/shared/dsp/dsp_param_update.c:522` |
-| R2 | Bulk gate — единая очередь для `sendBulkConfig`, без interleave с live-параметрами | `dq-dsp-ui/src/hooks/useWebSerial.ts:549-592`, `dq-dsp-ui/src/serial/serial-middleware.ts:213-252` |
-| H4 | Retry-машина — единый таймер с декрементом попыток, ретрай на ошибку `write` | `dq-dsp-ui/src/hooks/useWebSerial.ts:114-135` |
-| H3 | Bulk-континуация — при активном `bulkRxBufferRef` не разбирать сигнатуры ACK/ERROR/BULK | `dq-dsp-ui/src/hooks/useWebSerial.ts:163-295` |
+| R2 | Bulk gate — единая очередь для `sendBulkConfig`, без interleave с live-параметрами | ✅ `dq-dsp-ui/src/hooks/useWebSerial.ts:549-592`, `dq-dsp-ui/src/serial/serial-middleware.ts:213-252` |
+| H4 | Retry-машина — единый таймер с декрементом попыток, ретрай на ошибку `write` | ✅ `dq-dsp-ui/src/hooks/useWebSerial.ts:114-135` |
+| H3 | Bulk-континуация — при активном `bulkRxBufferRef` не разбирать сигнатуры ACK/ERROR/BULK | ✅ `dq-dsp-ui/src/hooks/useWebSerial.ts:163-295` |
 
 ## Medium
 
@@ -24,7 +24,8 @@
 | R6 | Асинхронный редирект `ESP_LOG`; убрать `ESP_LOGV` из hot-path | `dq-dsp-firmware/main/serial_server.c:127-145`, `dq-dsp-firmware/shared/dsp/dsp_param_update.c:538` |
 | R7 | Полный `resetAll()` — сброс `roomEqBands`, `inputsLinked`, `outputLinkGroups` | `dq-dsp-ui/src/store/slices/preset-slice.ts:139-151` |
 | M6 | OOB-проверки `bChannelNumber`/`alt` в vendored UAC | `dq-dsp-firmware/components/usb_device_uac/usb_device_uac.c:210,246,255,345,359` |
-| G1 | Golden-тесты C↔TS: биквады, кросоверы, checksum-векторы | `dq-dsp-ui/src/dsp/`, `dq-dsp-ui/src/export/` |
+| G1 | Golden-тесты C↔TS: биквады, кросоверы, checksum-векторы | ✅ `dq-dsp-firmware/tests/` (biquad 10/10, crc 6/6, crossover 36/36) + `dq-dsp-ui/tests/export/checksum.test.ts` |
+| G2 | Интеграция `esp-dsp` (блочные биквады/FFT) в FW-конвейер | `dq-dsp-firmware` — `esp-dsp` подключён как managed component (^1.8.2), ждёт перехода на блочную обработку |
 
 ## Low
 
@@ -41,7 +42,7 @@
 ## Порядок работ
 
 1. **High** — все четыре (serial-стек UI + FW), начинать с R2 → H3 → H4 → R1.
-2. **Medium** — R5/R6/R7 (FW-стабильность), затем R3/R4/M4, M6, G1.
+2. **Medium** — R5/R6/R7 (FW-стабильность), затем R3/R4/M4, M6, G2 (G1 — завершён).
 3. **Low** — R8–R10, затем тесты T4 и рефакторинг T1–T3.
 
 После каждого блока — сборка (`idf.py build`), линт и тесты

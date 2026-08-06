@@ -4,6 +4,20 @@
 Формат коэффициентов — **negated-a конвенция**: `a1`/`a2` в `biquad_coeffs_t`
 уже отрицательные, поэтому внутренний цикл биквада — только сложения.
 
+> **Golden-тесты C↔TS** (`dq-dsp-firmware/tests/`, запуск `make -C tests test-host`):
+> 1. `golden_biquad.c` — наша DF-IIT-реализация против эталонного
+>    `dsps_biquad_f32_ansi` из `espressif/esp-dsp` на всех типах фильтров
+>    Cookbook. 10/10 совпадений в пределах float32-шума (~1e-5..1e-4).
+> 2. `golden_crc.c` — битовый CRC-32/IEEE прошивки против табличного из
+>    `checksum.ts`, включая канонический вектор `0xCBF43926`. 6/6.
+> 3. `golden_crossover.c` — каскады кросоверов C против TS
+>    (`crossover.ts`): BW/LR × 12/24/48 dB/oct × HP/LP. 36/36.
+>
+> TS-сторона закреплена теми же векторами в
+> `dq-dsp-ui/tests/export/checksum.test.ts` (и существующими
+> `tests/dsp/biquad.test.ts`). Это гарантирует, что переход на блочные
+> биквады `esp-dsp` (задача G2) не изменит передаточную функцию.
+
 ## 1. Биквад — Direct Form II Transposed
 
 Разностное уравнение (порядок применения на каждый сэмпл):
