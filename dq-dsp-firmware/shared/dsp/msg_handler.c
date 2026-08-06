@@ -13,6 +13,7 @@
 
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
 #include <string.h>
 
 /* NVS save function from main.c */
@@ -42,6 +43,11 @@ static int64_t bulk_last_frame_time = 0;
 static volatile bool s_telemetry_pending = false;
 static dsp_telemetry_t s_telemetry_snapshot;
 
+/** Guards the snapshot memcpy: the audio task and the transport (serial/BLE)
+ *  task may run on different cores, and dsp_telemetry_t is larger than a
+ *  native word, so an unlocked copy can tear (audit R4/M7). */
+static portMUX_TYPE s_telemetry_lock = portMUX_INITIALIZER_UNLOCKED;
+
 /* -----------------------------------------------------------------------
  * Init
  * ----------------------------------------------------------------------- */
@@ -60,17 +66,31 @@ void msg_handler_init(const msg_transport_t *transport)
 
 void msg_handler_post_telemetry(const dsp_telemetry_t *stats)
 {
+    portENTER_CRITICAL(&s_telemetry_lock);
     memcpy(&s_telemetry_snapshot, stats, sizeof(dsp_telemetry_t));
     s_telemetry_pending = true;
+    portEXIT_CRITICAL(&s_telemetry_lock);
 }
 
 bool msg_handler_flush_telemetry(void)
 {
-    if (!s_telemetry_pending || !s_transport || !s_transport->send_telemetry) {
+    if (!s_transport || !s_transport->send_telemetry) {
+        return false;
+    }
+
+    dsp_telemetry_t snapshot;
+    portENTER_CRITICAL(&s_telemetry_lock);
+    if (!s_telemetry_pending) {
+        portEXIT_CRITICAL(&s_telemetry_lock);
         return false;
     }
     s_telemetry_pending = false;
-    s_transport->send_telemetry(&s_telemetry_snapshot);
+    memcpy(&snapshot, &s_telemetry_snapshot, sizeof(dsp_telemetry_t));
+    portEXIT_CRITICAL(&s_telemetry_lock);
+
+    /* Send outside the critical section: UART/BLE I/O must not run under a
+     * spinlock, and the transport may itself call into the log system. */
+    s_transport->send_telemetry(&snapshot);
     return true;
 }
 

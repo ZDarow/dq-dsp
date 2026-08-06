@@ -205,6 +205,13 @@ static bool tud_audio_feature_unit_get_request(uint8_t rhport, audio_control_req
 {
     TU_ASSERT(request->bEntityID == UAC2_ENTITY_SPK_FEATURE_UNIT);
 
+    /* Host-controlled channel index: reject OOB instead of reading past the
+     * mute[]/volume[] arrays (audit M6). 0 is the master channel. */
+    if (request->bChannelNumber > CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX) {
+        TU_LOG1("Get request for out-of-range channel %u\r\n", request->bChannelNumber);
+        return false;
+    }
+
     if (request->bControlSelector == AUDIO_FU_CTRL_MUTE && request->bRequest == AUDIO_CS_REQ_CUR) {
         audio_control_cur_1_t mute1 = {
             .bCur = s_uac_device->mute[request->bChannelNumber]
@@ -240,6 +247,13 @@ static bool tud_audio_feature_unit_set_request(uint8_t rhport, audio_control_req
 
     TU_ASSERT(request->bEntityID == UAC2_ENTITY_SPK_FEATURE_UNIT);
     TU_VERIFY(request->bRequest == AUDIO_CS_REQ_CUR);
+
+    /* Host-controlled channel index: reject OOB before the mute[]/volume[]
+     * writes (audit M6). 0 is the master channel. */
+    if (request->bChannelNumber > CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX) {
+        TU_LOG1("Set request for out-of-range channel %u\r\n", request->bChannelNumber);
+        return false;
+    }
 
     if (request->bControlSelector == AUDIO_FU_CTRL_MUTE) {
         TU_VERIFY(request->wLength == sizeof(audio_control_cur_1_t));
@@ -341,6 +355,12 @@ bool tud_audio_set_itf_cb(uint8_t rhport, tusb_control_request_t const *p_reques
 
 #if CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_TX
     if (s_uac_device->spk_itf_num == itf && alt != 0) {
+        /* Host-controlled alt setting: reject OOB before indexing the
+         * per-format resolution table (audit M6). */
+        if (alt > CFG_TUD_AUDIO_FUNC_1_N_FORMATS) {
+            TU_LOG1("Reject speaker alt %u: only %u formats\r\n", alt, CFG_TUD_AUDIO_FUNC_1_N_FORMATS);
+            return false;
+        }
         s_uac_device->spk_data_size = 0;
         s_uac_device->spk_resolution = spk_resolutions_per_format[alt - 1];
         s_uac_device->spk_active = true;
@@ -355,6 +375,12 @@ bool tud_audio_set_itf_cb(uint8_t rhport, tusb_control_request_t const *p_reques
 
 #if CFG_TUD_AUDIO_FUNC_1_N_CHANNELS_RX
     if (s_uac_device->mic_itf_num == itf && alt != 0) {
+        /* Host-controlled alt setting: reject OOB before indexing the
+         * per-format resolution table (audit M6). */
+        if (alt > CFG_TUD_AUDIO_FUNC_1_N_FORMATS) {
+            TU_LOG1("Reject mic alt %u: only %u formats\r\n", alt, CFG_TUD_AUDIO_FUNC_1_N_FORMATS);
+            return false;
+        }
         s_uac_device->mic_data_size = 0;
         s_uac_device->mic_resolution = mic_resolutions_per_format[alt - 1];
         s_uac_device->mic_active = true;
