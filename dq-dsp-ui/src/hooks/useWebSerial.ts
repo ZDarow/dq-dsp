@@ -18,6 +18,7 @@ import type { BLEAckMsg, BLEErrorMsg, BLEStatusCode } from '../types/ble-protoco
 import type { DSPConfig } from '../types/dsp';
 import { encodeDSPConfig } from '../export/binary-encoder';
 import { decodeDSPConfig } from '../export/binary-decoder';
+import { reassignMsgId } from '../ble/param-encoder';
 import { useDSPStore } from '../store/dsp-store';
 
 export interface WebSerialState {
@@ -109,7 +110,17 @@ export function useWebSerial() {
       // msg_id is the first byte of the payload inside the serial frame
       // The frame is: [0xAA, 0x55, len, ...payload, crc]
       // payload[0] = msg_id
-      const msgId = data[3]; // skip header(2) + length(1)
+      let msgId = data[3]; // skip header(2) + length(1)
+
+      // The 8-bit msg_id counter wraps after 256 sends. If the ID is still
+      // awaiting its ACK (or was reused by an older queued message), reassign
+      // it to a free ID and fix the frame CRC so ACK matching stays correct
+      // (audit R3).
+      if (inFlightRef.current.has(msgId)) {
+        const newId = reassignMsgId(data, (id) => inFlightRef.current.has(id));
+        if (newId !== -1) msgId = newId;
+      }
+
       const pending: PendingMessage = {
         msgId,
         data,

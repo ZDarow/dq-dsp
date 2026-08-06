@@ -17,7 +17,7 @@
 
 | # | Задача | Локация |
 |---|---|---|
-| R3 | `msg_id` — пропуск занятых id при переполнении 8 бит + пересчёт CRC | `dq-dsp-ui/src/hooks/useWebSerial.ts:110-138` |
+| R3 | `msg_id` — пропуск занятых id при переполнении 8 бит + пересчёт CRC | ✅ `dq-dsp-ui/src/ble/param-encoder.ts:72-91` (`reassignMsgId`), `dq-dsp-ui/src/hooks/useWebSerial.ts:108-121`; тесты `dq-dsp-ui/tests/ble/param-encoder.test.ts` |
 | R4/M7 | Torn-read снапшота телеметрии — атомарное/защищённое копирование | `dq-dsp-firmware/shared/dsp/msg_handler.c:52-66` |
 | M4 | Таймаут незавершённого bulk-приёма в FW | ✅ `dq-dsp-firmware/shared/dsp/msg_handler.c:34-39,128-168,251` — стоп-таймаут 1 с, сброс `bulk_offset` |
 | R5 | `auto_clear = false` согласно комментарию (провалы звука тишиной) | ✅ `dq-dsp-firmware/main/i2s_audio.c:39,66` |

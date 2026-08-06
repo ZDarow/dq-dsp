@@ -44,6 +44,7 @@ import {
 import type { FilterType, CrossoverFilterType, CrossoverSlope } from '../types/filter';
 import { dbToLinear } from '../dsp/utils';
 import { SERIAL_MSG_PING, SERIAL_MSG_SYNC_CONFIG, SERIAL_MSG_SAVE_CONFIG } from '../types/serial-protocol';
+import { crc8 } from '../types/serial-protocol';
 
 /** Rolling message ID counter (0..255) */
 let nextMsgId = 0;
@@ -72,6 +73,30 @@ export function getNextMsgId(): number {
 /** Reset the message ID counter (useful for testing) */
 export function resetMsgId(): void {
   nextMsgId = 0;
+}
+
+/**
+ * Reassign the msg_id of an already-encoded serial frame when the 8-bit
+ * counter wrapped and the original ID is still awaiting its ACK (audit R3).
+ * Scans forward for the first free ID, rewrites the payload's msg_id byte,
+ * and recomputes the trailing CRC-8 over [length, ...payload].
+ *
+ * @param frame  Complete serial frame (0xAA 0x55 len payload... crc).
+ * @param isBusy Predicate returning true for IDs currently in flight.
+ * @returns      The new msg_id, or -1 if every ID is busy/reserved.
+ */
+export function reassignMsgId(frame: Uint8Array, isBusy: (id: number) => boolean): number {
+  const payloadLen = frame[2];
+  const old = frame[3];
+  for (let i = 1; i < BLE_MSG_ID_MAX; i++) {
+    const id = (old + i) % BLE_MSG_ID_MAX;
+    if (RESERVED_MSG_IDS.has(id)) continue;
+    if (isBusy(id)) continue;
+    frame[3] = id;
+    frame[3 + payloadLen] = crc8(frame, 2, 1 + payloadLen);
+    return id;
+  }
+  return -1;
 }
 
 /**
