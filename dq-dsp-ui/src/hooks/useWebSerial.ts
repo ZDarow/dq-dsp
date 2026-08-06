@@ -267,8 +267,10 @@ export function useWebSerial() {
     }
 
     // Handle ACK / ERROR (BLE-format status messages inside serial frame).
-    // Checked FIRST so ACKs/errors interleaved with bulk continuation frames
-    // are never swallowed as raw config bytes.
+    // Note: bulk continuation frames are consumed FIRST (above), so while a
+    // bulk receive is active a genuine ACK/ERROR would be swallowed as raw
+    // config bytes. Live sends are gated during bulk TX (R2) and PINGs are
+    // skipped during bulk transfers, so this window is effectively closed.
     // Wire format: [msg_id, msg_type, status_code, ...optional detail]
     if (payload.length >= 3 && (payload[1] === BLE_MSG_ACK || payload[1] === BLE_MSG_ERROR)) {
       const msgId = payload[0];
@@ -475,6 +477,13 @@ export function useWebSerial() {
 
     pingIntervalRef.current = setInterval(() => {
       if (!writerRef.current) return;
+
+      // Skip the PING cycle while a bulk transfer is in flight in either
+      // direction: the FW treats every frame arriving mid-bulk as continuation
+      // bytes, and the UI consumes every incoming frame as continuation while
+      // a bulk receive is active (H3). A PING/PONG interleaved with bulk
+      // frames would corrupt the transfer, so we simply defer it.
+      if (bulkTxActiveRef.current || bulkRxBufferRef.current) return;
 
       const pingFrame = encodeSerialFrame(new Uint8Array([SERIAL_MSG_PING]));
       pingSentAtRef.current = performance.now();
