@@ -32,7 +32,7 @@
 | # | Задача | Локация |
 |---|---|---|
 | R8 | Единый PING-обработчик (дубли) | `dq-dsp-firmware/main/serial_server.c:213`, `dq-dsp-firmware/shared/dsp/msg_handler.c:155-160` |
-| R9 | Синхронизировать дефолты PI-дрейфа UI (0.5/200 ppm) с FW | `dq-dsp-ui/src/store/slices/drift-slice.ts:16-21`, `dq-dsp-firmware/main/main.c:152-155` |
+| R9 | Синхронизировать дефолты PI-дрейфа UI (0.5/200 ppm) с FW | ✅ `dq-dsp-ui/src/store/slices/drift-slice.ts:13-24` — эталон FW (`dq-dsp-firmware/main/main.c:152-155`), по решению пользователя |
 | R10 | DIP — инъекция `save_config_to_nvs` в `msg_transport_t` вместо `extern` | `dq-dsp-firmware/shared/dsp/msg_handler.c:18` |
 | T1 | Декомпозиция god-modules: `dsp_param_update.c`, `useWebSerial.ts`, `usb_audio.c` | — |
 | T2 | Кодоген `types/esp32.ts` из `dsp_config.h` (единый source of truth layout) | `dq-dsp-ui/src/types/esp32.ts` |

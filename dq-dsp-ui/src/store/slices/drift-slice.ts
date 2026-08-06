@@ -10,14 +10,15 @@ export interface DriftSlice {
   setDriftMaxPpm: (maxPpm: number) => void;
 }
 
-// Defaults tuned in-field on the prototype hardware — gentle Kp/Ki with a
-// generous ±1400 PPM headroom and a low 20% target fill. Adjust live via
-// the System panel; "Reset to defaults" snaps back to these values.
+// Defaults mirrored from the firmware's initial config
+// (dq-dsp-firmware/main/main.c — drift_kp/ki/target_fill/max_ppm). The UI and
+// the device must reset to the same behaviour, so this file stays in sync
+// with main.c; tune live via the System panel, then update BOTH sides.
 export const DEFAULT_DRIFT: DriftConfig = {
-  kp: 0.10,
-  ki: 0.020,
-  targetFill: 0.20,
-  maxPpm: 1400,
+  kp: 0.30,
+  ki: 0.05,
+  targetFill: 0.50,
+  maxPpm: 200,
 };
 
 export const createDriftSlice: StateCreator<DSPStore, [], [], DriftSlice> = (set) => ({
