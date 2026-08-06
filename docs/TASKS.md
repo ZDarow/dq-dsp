@@ -19,7 +19,7 @@
 |---|---|---|
 | R3 | `msg_id` — пропуск занятых id при переполнении 8 бит + пересчёт CRC | `dq-dsp-ui/src/hooks/useWebSerial.ts:110-138` |
 | R4/M7 | Torn-read снапшота телеметрии — атомарное/защищённое копирование | `dq-dsp-firmware/shared/dsp/msg_handler.c:52-66` |
-| M4 | Таймаут незавершённого bulk-приёма в FW | `dq-dsp-firmware/shared/dsp/msg_handler.c:150-178` |
+| M4 | Таймаут незавершённого bulk-приёма в FW | ✅ `dq-dsp-firmware/shared/dsp/msg_handler.c:34-39,128-168,251` — стоп-таймаут 1 с, сброс `bulk_offset` |
 | R5 | `auto_clear = false` согласно комментарию (провалы звука тишиной) | `dq-dsp-firmware/main/i2s_audio.c:39,66` |
 | R6 | Асинхронный редирект `ESP_LOG`; убрать `ESP_LOGV` из hot-path | `dq-dsp-firmware/main/serial_server.c:127-145`, `dq-dsp-firmware/shared/dsp/dsp_param_update.c:538` |
 | R7 | Полный `resetAll()` — сброс `roomEqBands`, `inputsLinked`, `outputLinkGroups` | `dq-dsp-ui/src/store/slices/preset-slice.ts:139-151` |

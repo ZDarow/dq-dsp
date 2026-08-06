@@ -12,6 +12,7 @@
 #include "dsp_param_update.h"
 
 #include "esp_log.h"
+#include "esp_timer.h"
 #include <string.h>
 
 /* NVS save function from main.c */
@@ -30,6 +31,13 @@ static uint8_t bulk_buffer[sizeof(dsp_config_t)];
 static size_t  bulk_offset = 0;
 static size_t  bulk_expected = sizeof(dsp_config_t);
 
+/** Stall timeout for a partially received bulk config (µs): if no
+ *  continuation frame arrives within this window the transfer is aborted so
+ *  a host that stops mid-transfer cannot wedge the device in bulk mode
+ *  forever (audit M4). Monotonic via esp_timer. */
+#define BULK_RX_STALL_TIMEOUT_US (1000000LL)  /* 1 s */
+static int64_t bulk_last_frame_time = 0;
+
 /** Telemetry shared state (written by audio task, read by transport task). */
 static volatile bool s_telemetry_pending = false;
 static dsp_telemetry_t s_telemetry_snapshot;
@@ -42,6 +50,7 @@ void msg_handler_init(const msg_transport_t *transport)
 {
     s_transport = transport;
     bulk_offset = 0;
+    bulk_last_frame_time = 0;
     s_telemetry_pending = false;
 }
 
@@ -117,33 +126,45 @@ void msg_handler_process(const uint8_t *payload, uint8_t payload_len)
      * device into permanent bulk mode.
      */
     if (bulk_offset > 0) {
-        if (bulk_offset + payload_len > sizeof(bulk_buffer)) {
-            ESP_LOGE(TAG, "Bulk buffer overflow (offset=%d, chunk=%d)",
-                     (int)bulk_offset, payload_len);
+        int64_t now = esp_timer_get_time();
+
+        /* Abort a stalled transfer: bulk mode must not be permanent. */
+        if ((now - bulk_last_frame_time) > BULK_RX_STALL_TIMEOUT_US) {
+            ESP_LOGW(TAG, "Bulk config stalled, aborting (offset=%d/%d)",
+                     (int)bulk_offset, (int)bulk_expected);
             bulk_offset = 0;
-            if (s_transport->send_error) {
-                s_transport->send_error(0, BLE_STATUS_OUT_OF_RANGE, 0);
+            bulk_last_frame_time = 0;
+            /* Fall through: treat this payload as a fresh message. */
+        } else {
+            bulk_last_frame_time = now;
+            if (bulk_offset + payload_len > sizeof(bulk_buffer)) {
+                ESP_LOGE(TAG, "Bulk buffer overflow (offset=%d, chunk=%d)",
+                         (int)bulk_offset, payload_len);
+                bulk_offset = 0;
+                if (s_transport->send_error) {
+                    s_transport->send_error(0, BLE_STATUS_OUT_OF_RANGE, 0);
+                }
+                return;
+            }
+            memcpy(bulk_buffer + bulk_offset, payload, payload_len);
+            bulk_offset += payload_len;
+
+            if (bulk_offset >= bulk_expected) {
+                uint8_t status = dsp_param_apply_bulk(bulk_buffer, bulk_expected);
+                bulk_offset = 0;
+                if (status == BLE_STATUS_OK) {
+                    if (s_transport->send_ack) {
+                        s_transport->send_ack(0, BLE_STATUS_OK);
+                    }
+                    ESP_LOGI(TAG, "Bulk config applied successfully");
+                } else {
+                    if (s_transport->send_error) {
+                        s_transport->send_error(0, status, 0);
+                    }
+                }
             }
             return;
         }
-        memcpy(bulk_buffer + bulk_offset, payload, payload_len);
-        bulk_offset += payload_len;
-
-        if (bulk_offset >= bulk_expected) {
-            uint8_t status = dsp_param_apply_bulk(bulk_buffer, bulk_expected);
-            bulk_offset = 0;
-            if (status == BLE_STATUS_OK) {
-                if (s_transport->send_ack) {
-                    s_transport->send_ack(0, BLE_STATUS_OK);
-                }
-                ESP_LOGI(TAG, "Bulk config applied successfully");
-            } else {
-                if (s_transport->send_error) {
-                    s_transport->send_error(0, status, 0);
-                }
-            }
-        }
-        return;
     }
 
     uint8_t first_byte = payload[0];
@@ -227,6 +248,7 @@ void msg_handler_process(const uint8_t *payload, uint8_t payload_len)
 
         bulk_offset = 0;
         bulk_expected = advertised;
+        bulk_last_frame_time = esp_timer_get_time();
 
         if (payload_len > 4) {
             size_t chunk = payload_len - 4;
