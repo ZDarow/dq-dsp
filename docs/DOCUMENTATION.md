@@ -54,7 +54,12 @@
   - [6.2 Подключение и звук](#62-подключение-и-звук)
   - [6.3 Веб-интерфейс](#63-веб-интерфейс)
   - [6.4 FAQ](#64-faq)
-- [7. Ссылки](#7-ссылки)
+- [7. Тестирование](#7-тестирование)
+  - [7.1 Обзор стратегии](#71-обзор-стратегии)
+  - [7.2 Golden-тесты прошивки (C, host)](#72-golden-тесты-прошивки-c-host)
+  - [7.3 Unit-тесты веб-панели (vitest)](#73-unit-тесты-веб-панели-vitest)
+  - [7.4 esp-dsp и план G2](#74-esp-dsp-и-план-g2)
+- [8. Ссылки](#8-ссылки)
 
 ---
 
@@ -80,7 +85,9 @@
 | Управление | Live-параметры по serial (diff-движок), bulk-загрузка полного конфига (3772 Б, CRC-32), телеметрия, логи |
 | Пресеты | Сохранение в localStorage, экспорт/импорт JSON, сохранение конфига на устройство (NVS) |
 | Room EQ | Импорт измерения REW (`.txt`/`.csv`), сглаживание, целевые кривые (flat/harman/tilt) |
-| ASRC | Асинхронная передискретизация с PI-компенсацией дрейфа USB↔I2S (±ppm) |
+| ASRC | Асинхронная передискретизация с PI-компенсацией дрейфа USB↔I2S (±200 ppm) |
+| esp-dsp | Подключён как managed component (`espressif/esp-dsp ^1.8.2`); план G2 — блочные биквады |
+| Тесты | Golden-тесты C↔TS: 52 случая (biquad 10, CRC 6, crossover 36); vitest 23/23 |
 
 ### 1.2 Аппаратная и программная платформа
 
@@ -111,6 +118,12 @@ dq-dsp/
 │   │   ├── serial_protocol.h   # фрейминг + CRC-8 + control-сообщения
 │   │   └── ble_protocol.h      # wire-формат BLE-совместимых сообщений
 │   ├── components/usb_device_uac/  # vendored компонент UAC (espressif)
+│   ├── tests/                  # host golden-тесты (gcc, без ESP-IDF)
+│   │   ├── golden_biquad.c     # 10 случаев: биквады (Audio EQ Cookbook)
+│   │   ├── golden_crc.c        # 6 случаев: CRC-32 IEEE
+│   │   ├── golden_crossover.c  # 36 случаев: BW/LR 12/24/48 дБ/окт
+│   │   └── Makefile            # make test-host / test-host-clean
+│   ├── main/idf_component.yml  # esp-dsp ^1.8.2 (managed)
 │   ├── sdkconfig.defaults      # CONFIG_UAC_SAMPLE_RATE=48000 и др.
 │   └── main/Kconfig.projbuild  # GPIO I2S0/I2S1 (menuconfig)
 ├── dq-dsp-ui/                  # React SPA
@@ -372,11 +385,12 @@ AA 55 | length (≤252) | payload | CRC-8 (poly 0x07, init 0)
 
 | Компонент | Требование |
 |---|---|
-| ESP-IDF | 6.0.2, target `esp32s3` (в этом окружении — `C:\Users\Mi\Arduino\esp-idf-git\esp-idf`) |
+| ESP-IDF | 6.0.2, target `esp32s3` (Linux — `~/.espressif/tools/activate_idf_v6.0.2.sh`; Windows — Espressif-IDE) |
 | Python | 3.14 (в venv IDF) |
 | Node.js | 22+ |
 | npm | в паре с Node |
 | Браузер | Chrome/Edge (Web Serial API; работает на `localhost`/HTTPS) |
+| gcc | для host golden-тестов прошивки (`make -C tests test-host`) |
 
 ### 3.2 Прошивка: установка ESP-IDF
 
@@ -389,14 +403,15 @@ AA 55 | length (≤252) | payload | CRC-8 (poly 0x07, init 0)
 
 ### 3.3 Прошивка: сборка, прошивка, мониторинг
 
-**Windows (PowerShell):**
+**Linux (данная машина, ESP-IDF 6.0.2):**
 
-```powershell
-# 1. Экспорт окружения
-& "C:\Users\Mi\Arduino\esp-idf-git\esp-idf\export.ps1" | Out-Null
+```bash
+# 1. Экспорт окружения ESP-IDF
+export IDF_TOOLS_PATH=/home/mi/.espressif/tools
+source ~/.espressif/tools/activate_idf_v6.0.2.sh
 
 # 2. Сборка (из корня проекта прошивки)
-cd C:\Users\Mi\dq-dsp\dq-dsp-firmware
+cd /home/mi/DQ-DSP/dq-dsp-firmware
 idf.py build
 ```
 
@@ -407,26 +422,26 @@ idf.py build
   замечания парсера Kconfig IDF 6;
 - `bootloader 36% free`, `app ... 93% free`.
 
-**Поиск COM-порта:**
+**Поиск COM-порта (Linux):**
 
-```powershell
-[System.IO.Ports.SerialPort]::GetPortNames()
+```bash
+ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null
 ```
 
-**Прошивка** (устройство — обычно `COM10`):
+**Прошивка:**
 
-```powershell
-idf.py -p COM10 flash
+```bash
+idf.py -p /dev/ttyUSB0 flash
 ```
 
 или вручную через esptool:
 
-```powershell
-python -m esptool --chip esp32s3 -b 460800 --before default-reset --after hard-reset `
-  write-flash --flash-mode dio --flash-size 16MB --flash-freq 80m `
-  0x0 build\bootloader\bootloader.bin `
-  0x8000 build\partition_table\partition-table.bin `
-  0x10000 build\esp32s3_audio_dsp.bin
+```bash
+python -m esptool --chip esp32s3 -b 460800 --before default-reset --after hard-reset \
+  write-flash --flash-mode dio --flash-size 16MB --flash-freq 80m \
+  0x0 build/bootloader/bootloader.bin \
+  0x8000 build/partition_table/partition-table.bin \
+  0x10000 build/esp32s3_audio_dsp.bin
 ```
 
 Признак успеха: `Hash of data verified.` для каждого образа и
@@ -435,12 +450,12 @@ python -m esptool --chip esp32s3 -b 460800 --before default-reset --after hard-r
 
 **Мониторинг логов:**
 
-```powershell
-idf.py -p COM10 monitor
+```bash
+idf.py -p /dev/ttyUSB0 monitor
 ```
 
-**Linux/macOS:** используйте `idf.sh` в корне прошивки (обновите пути под своё
-окружение):
+**macOS/Windows:** на других машинах используйте `idf.sh` в корне прошивки
+(обновите пути под своё окружение) или штатный `export.ps1`:
 
 ```bash
 ./idf.sh build
@@ -464,8 +479,15 @@ Dev-сервер: `http://localhost:5173` (если занято — Vite выб
 ```powershell
 npm run build        # tsc -b && vite build → dist/
 npx eslint .         # линт (цель — 0 предупреждений)
-npx vitest run       # unit-тесты (17/17)
+npx vitest run       # unit-тесты (23/23)
 npm audit            # уязвимости (0)
+```
+
+Golden-тесты прошивки (host, без ESP-IDF, нужен только gcc):
+
+```bash
+cd dq-dsp-firmware/tests
+make test-host        # golden_biquad 10/10, golden_crc 6/6, golden_crossover 36/36
 ```
 
 Артефакт: `dist/` (~492 кБ JS / 147 кБ gzip) — статический SPA, можно
@@ -978,7 +1000,84 @@ reuse msg_id (R3), гонка телеметрии (R4).
 
 ---
 
-## 7. Ссылки
+## 7. Тестирование
+
+### 7.1 Обзор стратегии
+
+Тестирование двухуровневое: **golden-тесты прошивки** (чистый C, собирается
+обычным `gcc` без ESP-IDF) и **unit-тесты веб-панели** (vitest). Идея — зафиксировать
+бинарный контракт между C и TypeScript: одни и те же канонические векторы (частоты,
+коэффициенты, CRC) проверяются на обеих сторонах, поэтому будущие оптимизации
+(например, блочные биквады esp-dsp) не могут молча разойтись с поведением UI.
+
+```mermaid
+flowchart LR
+    subgraph C["C (dq-dsp-firmware)"]
+        G1["golden_biquad.c (10)"]
+        G2["golden_crc.c (6)"]
+        G3["golden_crossover.c (36)"]
+    end
+    subgraph TS["TypeScript (dq-dsp-ui)"]
+        T1["checksum.test.ts (6)\nvitest"]
+        T2["остальные unit-тесты\n(17)"]
+    end
+    CANON["Канонические векторы\n(частоты, типы, CRC-32 IEEE)"]
+    CANON --> G1 & G2 & G3
+    CANON --> T1
+```
+
+Запуск всех проверок:
+
+```bash
+# Golden-тесты прошивки (host, gcc)
+make -C dq-dsp-firmware/tests test-host
+
+# UI: линт + unit-тесты + сборка
+cd dq-dsp-ui
+npx eslint .
+npx vitest run
+npm run build
+```
+
+### 7.2 Golden-тесты прошивки (C, host)
+
+Расположение: `dq-dsp-firmware/tests/`. Собираются обычным `gcc` (без ESP-IDF),
+выход — в `/tmp/dq-dsp-host-tests/`. Специфично: `Makefile` компилирует каждый
+`.c` и запускает; ожидание — «ALL PASSED (N/N cases)».
+
+| Файл | Случаев | Что проверяет |
+|---|---|---|
+| `golden_biquad.c` | 10 | Коэффициенты биквадов по Audio EQ Cookbook (peaking/LP/HP/shelf, negated-a конвенция) — сверка с TS `calculateBiquadCoefficients` |
+| `golden_crc.c` | 6 | CRC-32 IEEE 802.3 (полином `0xEDB88320`, побитовый) — сверка с TS `checksum.ts` `crc32()` |
+| `golden_crossover.c` | 36 | Декомпозиция кросоверов HP/LP: Butterworth и Linkwitz-Riley × 12/24/48 дБ/окт × 3 частоты — сверка с TS `calculateCrossoverStages` |
+
+Ключевое требование: при изменении DSP-формул (например, в рамках G2) golden-векторы
+обязаны остаться зелёными — это гарантирует, что прошивка и панель считают
+идентично.
+
+### 7.3 Unit-тесты веб-панели (vitest)
+
+Расположение: `dq-dsp-ui/tests/`. Итого **23/23** в 3 файлах. Ядро — `checksum.test.ts`
+(6 векторов, общих с `golden_crc.c`): проверяет, что CRC-32 UI совпадает с
+эталонными байтами, которыми пользуется прошивка при валидации bulk-конфига.
+
+Прочие тесты покрывают encoder/decoder бинарного формата `dsp_config_t`,
+проверку границ и defensive-декодирование (магия, версия, CRC, NaN).
+
+### 7.4 esp-dsp и план G2
+
+- **esp-dsp подключён** как managed component: `main/idf_component.yml`
+  (`espressif/esp-dsp: '^1.8.2'`), версия зафиксирована в `dependencies.lock` (1.8.2).
+- Текущий конвейер — **посимвольный**: `dsp_pipeline_process()` вызывает
+  DF-II Transposed биквад на каждом семпле (`usb_audio.c`), что в hot-path
+  не векторизуется.
+- **G2 (открытая задача)**: переход на блочные вызовы `dsps_biquad_f32_ae32`
+  (векторизация esp-dsp) при сохранении golden-поведения — именно для этого
+  были созданы golden-тесты (раздел 7.2). Статус задач — в `docs/TASKS.md`.
+
+---
+
+## 8. Ссылки
 
 | Документ | Назначение |
 |---|---|
@@ -991,3 +1090,4 @@ reuse msg_id (R3), гонка телеметрии (R4).
 | [`api-reference.md`](api-reference.md) | Справочник публичных API (FW и UI) |
 | [`build-and-flash.md`](build-and-flash.md) | Сборка, прошивка, проверки, версионирование |
 | [`audit-2026-08.md`](audit-2026-08.md) | Полный отчёт аудита: уязвимости R1–R10, план рефакторинга |
+| [`TASKS.md`](TASKS.md) | Статус задач (G1 ✅, G2 открыта) |
