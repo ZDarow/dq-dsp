@@ -26,6 +26,9 @@
 
 static const char *TAG = "serial_server";
 
+/* NVS persistence hook provided by main.c; wired in via msg_transport_t (R10). */
+extern void save_config_to_nvs_immediate(void);
+
 #define SERIAL_UART_NUM       UART_NUM_0
 #define SERIAL_RX_BUF_SIZE    256
 #define SERIAL_TX_BUF_SIZE    0
@@ -51,6 +54,12 @@ static void serial_send_frame(const uint8_t *payload, uint8_t payload_len)
     if (frame_len == 0) return;
     uart_write_bytes(SERIAL_UART_NUM, frame, frame_len);
 }
+
+/* -----------------------------------------------------------------------
+ * PONG
+ * ----------------------------------------------------------------------- */
+
+static void send_pong(void);
 
 /* -----------------------------------------------------------------------
  * msg_transport_t callbacks
@@ -109,11 +118,18 @@ static void serial_transport_send_telemetry(const dsp_telemetry_t *stats)
     serial_send_frame(payload, sizeof(payload));
 }
 
+static void serial_transport_save_config(void)
+{
+    save_config_to_nvs_immediate();
+}
+
 static const msg_transport_t serial_transport = {
     .send_ack       = serial_transport_send_ack,
     .send_error     = serial_transport_send_error,
     .send_config    = serial_transport_send_config,
     .send_telemetry = serial_transport_send_telemetry,
+    .send_pong      = send_pong,
+    .save_config    = serial_transport_save_config,
 };
 
 /* -----------------------------------------------------------------------
@@ -235,12 +251,9 @@ static void rx_process_byte(rx_ctx_t *ctx, uint8_t byte)
         uint8_t actual_crc = serial_crc8(&ctx->frame_buf[2], 1 + ctx->payload_len);
 
         if (actual_crc == expected_crc) {
-            uint8_t first_byte = ctx->frame_buf[3];
-            if (first_byte == SERIAL_MSG_PING && ctx->payload_len == 1) {
-                send_pong();
-            } else {
-                msg_handler_process(&ctx->frame_buf[3], ctx->payload_len);
-            }
+            /* All control messages, including PING, go through the shared
+             * msg_handler router (audit R8). */
+            msg_handler_process(&ctx->frame_buf[3], ctx->payload_len);
         }
         ctx->state = RX_STATE_SYNC0;
         break;

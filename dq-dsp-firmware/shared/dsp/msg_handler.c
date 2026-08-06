@@ -16,9 +16,6 @@
 #include "freertos/FreeRTOS.h"
 #include <string.h>
 
-/* NVS save function from main.c */
-extern void save_config_to_nvs_immediate(void);
-
 static const char *TAG = "msg_handler";
 
 /* -----------------------------------------------------------------------
@@ -194,8 +191,10 @@ void msg_handler_process(const uint8_t *payload, uint8_t payload_len)
      * 0xA0/0xA2/0xA5 (host msg_ids cycle 0..255) always carries a msg_type
      * byte, so it can never be mistaken for one of these. */
     if (first_byte == SERIAL_MSG_PING && payload_len == 1) {
-        /* Transport handles PONG response directly if needed */
-        if (s_transport->send_ack) {
+        /* Single PING handler (audit R8): the transport replies via send_pong. */
+        if (s_transport->send_pong) {
+            s_transport->send_pong();
+        } else if (s_transport->send_ack) {
             s_transport->send_ack(0, BLE_STATUS_OK);
         }
         return;
@@ -207,7 +206,9 @@ void msg_handler_process(const uint8_t *payload, uint8_t payload_len)
     }
 
     if (first_byte == SERIAL_MSG_SAVE_CONFIG && payload_len == 1) {
-        save_config_to_nvs_immediate();
+        if (s_transport->save_config) {
+            s_transport->save_config();
+        }
         if (s_transport->send_ack) {
             s_transport->send_ack(0, BLE_STATUS_OK);
         }

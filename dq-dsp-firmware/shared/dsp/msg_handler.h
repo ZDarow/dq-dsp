@@ -27,6 +27,8 @@ typedef struct {
     void (*send_error)(uint8_t msg_id, uint8_t status, uint8_t detail);
     void (*send_config)(const uint8_t *data, size_t len);
     void (*send_telemetry)(const dsp_telemetry_t *stats);
+    void (*send_pong)(void);
+    void (*save_config)(void);
 } msg_transport_t;
 
 /**
