@@ -20,9 +20,9 @@
 | R3 | `msg_id` — пропуск занятых id при переполнении 8 бит + пересчёт CRC | `dq-dsp-ui/src/hooks/useWebSerial.ts:110-138` |
 | R4/M7 | Torn-read снапшота телеметрии — атомарное/защищённое копирование | `dq-dsp-firmware/shared/dsp/msg_handler.c:52-66` |
 | M4 | Таймаут незавершённого bulk-приёма в FW | ✅ `dq-dsp-firmware/shared/dsp/msg_handler.c:34-39,128-168,251` — стоп-таймаут 1 с, сброс `bulk_offset` |
-| R5 | `auto_clear = false` согласно комментарию (провалы звука тишиной) | `dq-dsp-firmware/main/i2s_audio.c:39,66` |
-| R6 | Асинхронный редирект `ESP_LOG`; убрать `ESP_LOGV` из hot-path | `dq-dsp-firmware/main/serial_server.c:127-145`, `dq-dsp-firmware/shared/dsp/dsp_param_update.c:538` |
-| R7 | Полный `resetAll()` — сброс `roomEqBands`, `inputsLinked`, `outputLinkGroups` | `dq-dsp-ui/src/store/slices/preset-slice.ts:139-151` |
+| R5 | `auto_clear = false` согласно комментарию (провалы звука тишиной) | ✅ `dq-dsp-firmware/main/i2s_audio.c:39,66` |
+| R6 | Асинхронный редирект `ESP_LOG`; убрать `ESP_LOGV` из hot-path | ✅ `dq-dsp-firmware/main/serial_server.c:133-171` (очередь + дренаж в RX-задаче), `dq-dsp-firmware/shared/dsp/dsp_param_update.c:529-543` (compile-time guard) |
+| R7 | Полный `resetAll()` — сброс `roomEqBands`, `inputsLinked`, `outputLinkGroups` | ✅ `dq-dsp-ui/src/store/slices/preset-slice.ts:139-160` |
 | M6 | OOB-проверки `bChannelNumber`/`alt` в vendored UAC | `dq-dsp-firmware/components/usb_device_uac/usb_device_uac.c:210,246,255,345,359` |
 | G1 | Golden-тесты C↔TS: биквады, кросоверы, checksum-векторы | ✅ `dq-dsp-firmware/tests/` (biquad 10/10, crc 6/6, crossover 36/36) + `dq-dsp-ui/tests/export/checksum.test.ts` |
 | G2 | Интеграция `esp-dsp` (блочные биквады/FFT) в FW-конвейер | `dq-dsp-firmware` — `esp-dsp` подключён как managed component (^1.8.2), ждёт перехода на блочную обработку |

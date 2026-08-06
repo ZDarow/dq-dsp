@@ -147,6 +147,14 @@ export const createPresetSlice: StateCreator<DSPStore, [], [], PresetSlice> = (s
       presetIndex: defaults.presetIndex,
       presetName: defaults.presetName,
       customSums: defaults.customSums ?? createDefaultCustomSums(),
+      // Mirror the same top-level mirrors as importConfig, otherwise the
+      // RoomEQ panel and link metadata keep stale state after a reset (R7).
+      roomEqBands: [
+        defaults.inputs[0]?.roomEqBands?.map((b) => ({ ...b })) ?? createDefaultEQBands(),
+        defaults.inputs[1]?.roomEqBands?.map((b) => ({ ...b })) ?? createDefaultEQBands(),
+      ],
+      inputsLinked: false,
+      outputLinkGroups: [],
     });
   },
 });
