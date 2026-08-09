@@ -101,32 +101,7 @@ void i2s_audio_write_dual(const uint8_t *buf_i2s0, const uint8_t *buf_i2s1, size
     i2s_channel_write(i2s_tx_chan1, buf_i2s1, size, &written1, portMAX_DELAY);
 }
 
-void i2s_audio_reconfig_sample_rate(int sample_rate)
-{
-    /* Disable → reconfig → enable. This causes a brief gap (~1ms).
-     * Called by drift PI controller only when correction changes by ≥5 ppm,
-     * which should be infrequent (every few seconds at most). */
-    i2s_channel_disable(i2s_tx_chan0);
-    i2s_channel_disable(i2s_tx_chan1);
-
-    i2s_std_clk_config_t clk = I2S_STD_CLK_DEFAULT_CONFIG(sample_rate);
-    i2s_channel_reconfig_std_clock(i2s_tx_chan0, &clk);
-    i2s_channel_reconfig_std_clock(i2s_tx_chan1, &clk);
-
-    i2s_channel_enable(i2s_tx_chan0);
-    i2s_channel_enable(i2s_tx_chan1);
-}
-
-void i2s_audio_deinit(void)
-{
-    if (i2s_tx_chan0) {
-        i2s_channel_disable(i2s_tx_chan0);
-        i2s_del_channel(i2s_tx_chan0);
-        i2s_tx_chan0 = NULL;
-    }
-    if (i2s_tx_chan1) {
-        i2s_channel_disable(i2s_tx_chan1);
-        i2s_del_channel(i2s_tx_chan1);
-        i2s_tx_chan1 = NULL;
-    }
-}
+/* NOTE: no deinit/reconfig API is exposed. The drift PI controller performs
+ * clock-drift compensation in software via the ASRC resampler in usb_audio.c
+ * (s_resample_ratio), not by reconfiguring the I2S clocks — a reconfig would
+ * disable both channels and cause an audible gap on every correction. */

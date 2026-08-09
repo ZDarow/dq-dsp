@@ -448,27 +448,3 @@ void usb_audio_start(void)
 
     ESP_LOGI(TAG, "USB audio streaming started");
 }
-
-void usb_audio_stop(void)
-{
-    if (s_audio_task_handle) {
-        vTaskDelete(s_audio_task_handle);
-        s_audio_task_handle = NULL;
-    }
-
-    if (s_ringbuf) {
-        vRingbufferDelete(s_ringbuf);
-        s_ringbuf = NULL;
-    }
-
-    if (s_buf_i2s0) {
-        heap_caps_free(s_buf_i2s0);
-        s_buf_i2s0 = NULL;
-    }
-    if (s_buf_i2s1) {
-        heap_caps_free(s_buf_i2s1);
-        s_buf_i2s1 = NULL;
-    }
-
-    ESP_LOGI(TAG, "USB audio stopped");
-}

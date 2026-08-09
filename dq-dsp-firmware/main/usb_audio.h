@@ -32,9 +32,4 @@ esp_err_t usb_audio_init(uint32_t sample_rate);
  */
 void usb_audio_start(void);
 
-/**
- * Stop USB audio streaming and release resources.
- */
-void usb_audio_stop(void);
-
 #endif /* USB_AUDIO_H */

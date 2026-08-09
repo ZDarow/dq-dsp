@@ -141,9 +141,34 @@ export function useWebSerial() {
     const msgId = msg.msgId;
 
     const drop = () => {
+      const timer = ackTimeoutsRef.current.get(msgId);
+      if (timer) {
+        clearTimeout(timer);
+        ackTimeoutsRef.current.delete(msgId);
+      }
       inFlightRef.current.delete(msgId);
-      ackTimeoutsRef.current.delete(msgId);
       processQueue();
+    };
+
+    // Single ACK timer per message: every real write attempt (initial or
+    // retry) restarts it, so a slow write never races a stale timer from a
+    // previous attempt, and the budget is shared between write failures and
+    // ACK timeouts (audit H4).
+    const scheduleAckTimeout = () => {
+      const prev = ackTimeoutsRef.current.get(msgId);
+      if (prev) clearTimeout(prev);
+      const timeout = setTimeout(() => {
+        ackTimeoutsRef.current.delete(msgId);
+        const live = inFlightRef.current.get(msgId);
+        if (!live) return;
+        if (live.retries < MAX_RETRIES) {
+          live.retries++;
+          sendPendingRef.current(live);
+        } else {
+          drop();
+        }
+      }, ACK_TIMEOUT_MS);
+      ackTimeoutsRef.current.set(msgId, timeout);
     };
 
     const attemptWrite = () => {
@@ -152,6 +177,8 @@ export function useWebSerial() {
         return;
       }
       msg.sentAt = performance.now();
+      // Restart the ACK clock on every write attempt.
+      scheduleAckTimeout();
       writerRef.current.write(msg.data).catch((err: unknown) => {
         console.error('[Serial] Write failed:', err);
         // A failed write is a retryable failure too — reuse the same budget.
@@ -165,19 +192,6 @@ export function useWebSerial() {
     };
 
     attemptWrite();
-
-    // ACK timeout: retry until the budget is exhausted, then drop.
-    const timeout = setTimeout(() => {
-      const live = inFlightRef.current.get(msgId);
-      if (!live) return;
-      if (live.retries < MAX_RETRIES) {
-        live.retries++;
-        sendPendingRef.current(live);
-      } else {
-        drop();
-      }
-    }, ACK_TIMEOUT_MS);
-    ackTimeoutsRef.current.set(msgId, timeout);
   }, [processQueue]);
 
   sendPendingRef.current = sendPending;
@@ -211,7 +225,9 @@ export function useWebSerial() {
     // bytes can collide with the ACK/ERROR/BULK-START signatures below. While a
     // bulk receive is active we must consume every frame as continuation data
     // FIRST, otherwise ~30% of SYNC_CONFIG blobs get corrupted (audit H3).
-    if (bulkRxBufferRef.current && bulkRxOffsetRef.current < bulkRxExpectedSizeRef.current) {
+    // This includes frames that look like a fresh BULK-START: a nested bulk
+    // header mid-transfer is raw config bytes, not a new transfer.
+    if (bulkRxBufferRef.current) {
       // Abandon a stalled bulk transfer (e.g. version-skewed host never
       // finishes) so the read loop stays healthy.
       if (performance.now() - bulkRxStartedAtRef.current > BULK_RX_TIMEOUT_MS) {
@@ -288,17 +304,21 @@ export function useWebSerial() {
       const ackMsgType = payload[1];
       const statusCode = payload[2] as BLEStatusCode;
 
-      // Track latency from ACK round-trip
+      // Accept ACK/ERROR only for a message we actually have in flight. Raw
+      // bulk continuation bytes (or stale/duplicate status frames) can carry
+      // the ACK/ERROR signature by coincidence; acting on them would clear an
+      // unrelated pending message or fire spurious callbacks (audit H3).
       const pending = inFlightRef.current.get(msgId);
-      if (pending) {
-        const latency = performance.now() - pending.sentAt;
-        latencySamplesRef.current.push(latency);
-        if (latencySamplesRef.current.length > 20) {
-          latencySamplesRef.current.shift();
-        }
-        const avgLatency = latencySamplesRef.current.reduce((a, b) => a + b, 0) / latencySamplesRef.current.length;
-        setState((s) => ({ ...s, latency: Math.round(avgLatency) }));
+      if (!pending) return;
+
+      // Track latency from ACK round-trip
+      const latency = performance.now() - pending.sentAt;
+      latencySamplesRef.current.push(latency);
+      if (latencySamplesRef.current.length > 20) {
+        latencySamplesRef.current.shift();
       }
+      const avgLatency = latencySamplesRef.current.reduce((a, b) => a + b, 0) / latencySamplesRef.current.length;
+      setState((s) => ({ ...s, latency: Math.round(avgLatency) }));
 
       // Clear pending ACK
       inFlightRef.current.delete(msgId);
