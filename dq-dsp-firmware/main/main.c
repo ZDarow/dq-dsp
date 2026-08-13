@@ -16,13 +16,12 @@
 
 #include "dsp_config.h"
 #include "dsp_param_update.h"
+#include "dsp_pipeline.h"
 #include "i2s_audio.h"
 #include "usb_audio.h"
 #include "serial_server.h"
 
 static const char *TAG = "dsp_main";
-
-extern void dsp_pipeline_init(void);
 
 /* -----------------------------------------------------------------------
  * Initial configuration (loaded from flash or defaults)

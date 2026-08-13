@@ -18,6 +18,7 @@
 #include "dsp_param_update.h"
 #include "msg_handler.h"
 #include "i2s_audio.h"
+#include "dsp_pipeline.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -30,7 +31,7 @@
 #include "usb_device_uac.h"
 #include "sdkconfig.h"
 
-extern void dsp_pipeline_process(const dsp_config_t *cfg, float in_l, float in_r, float out[4]);
+
 
 /* -----------------------------------------------------------------------
  * Sample format helpers — gated on CONFIG_UAC_BIT_DEPTH (Kconfig).
@@ -251,6 +252,10 @@ static void usb_audio_task(void *arg)
         size_t num_pairs = item_size / UAC_BYTES_PER_PAIR;
         size_t in_idx = 0;
         size_t out_bytes = 0;
+        int block_count = 0;
+        float block_l[DSP_PIPELINE_BLOCK_SIZE];
+        float block_r[DSP_PIPELINE_BLOCK_SIZE];
+        float block_out[DSP_PIPELINE_BLOCK_SIZE][4];
 
         while (out_bytes + 8 <= USB_AUDIO_DMA_BUF_SIZE) {
             while (s_asrc_phase >= 1.0f) {
@@ -263,6 +268,22 @@ static void usb_audio_task(void *arg)
                     s_asrc_cur_r = decode_in(p + UAC_BYTES_PER_SAMPLE);
                     in_idx++;
                 } else {
+                    if (block_count > 0 && out_bytes + block_count * 8 <= USB_AUDIO_DMA_BUF_SIZE) {
+                        dsp_pipeline_process_block(cfg, block_l, block_r, block_out, block_count);
+                        for (int s = 0; s < block_count; s++) {
+                            int32_t s24[4];
+                            for (int ch = 0; ch < 4; ch++) {
+                                float val = soft_clip(block_out[s][ch]) * uv;
+                                s24[ch] = (int32_t)(val * 8388607.0f);
+                            }
+                            *out0++ = s24[0] << 8;
+                            *out0++ = s24[1] << 8;
+                            *out1++ = s24[2] << 8;
+                            *out1++ = s24[3] << 8;
+                            out_bytes += 8;
+                        }
+                        block_count = 0;
+                    }
                     goto asrc_done;
                 }
             }
@@ -271,20 +292,26 @@ static void usb_audio_task(void *arg)
             float interp_l = s_asrc_prev_l + frac * (s_asrc_cur_l - s_asrc_prev_l);
             float interp_r = s_asrc_prev_r + frac * (s_asrc_cur_r - s_asrc_prev_r);
 
-            float dsp_out[4];
-            dsp_pipeline_process(cfg, interp_l, interp_r, dsp_out);
+            block_l[block_count] = interp_l;
+            block_r[block_count] = interp_r;
+            block_count++;
 
-            int32_t s24[4];
-            for (int ch = 0; ch < 4; ch++) {
-                float s = soft_clip(dsp_out[ch]) * uv;
-                s24[ch] = (int32_t)(s * 8388607.0f);
+            if (block_count >= DSP_PIPELINE_BLOCK_SIZE) {
+                dsp_pipeline_process_block(cfg, block_l, block_r, block_out, DSP_PIPELINE_BLOCK_SIZE);
+                for (int s = 0; s < DSP_PIPELINE_BLOCK_SIZE; s++) {
+                    int32_t s24[4];
+                    for (int ch = 0; ch < 4; ch++) {
+                            float val = soft_clip(block_out[s][ch]) * uv;
+                        s24[ch] = (int32_t)(val * 8388607.0f);
+                    }
+                    *out0++ = s24[0] << 8;
+                    *out0++ = s24[1] << 8;
+                    *out1++ = s24[2] << 8;
+                    *out1++ = s24[3] << 8;
+                    out_bytes += 8;
+                }
+                block_count = 0;
             }
-
-            *out0++ = s24[0] << 8;
-            *out0++ = s24[1] << 8;
-            *out1++ = s24[2] << 8;
-            *out1++ = s24[3] << 8;
-            out_bytes += 8;
 
             s_asrc_phase += ratio;
         }

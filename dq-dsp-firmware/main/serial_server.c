@@ -35,13 +35,36 @@ extern void save_config_to_nvs_immediate(void);
 #define SERIAL_RX_TASK_STACK  4096
 #define SERIAL_RX_TASK_PRIO   3
 #define SERIAL_RX_TASK_CORE   0
+#define SERIAL_TX_QUEUE_LEN   16
+#define SERIAL_TX_TASK_STACK  2048
+#define SERIAL_TX_TASK_PRIO   2
+#define SERIAL_TX_TASK_CORE   0
 
 static TaskHandle_t rx_task_handle = NULL;
+static TaskHandle_t tx_task_handle = NULL;
 static volatile bool rx_task_running = false;
 
 /* Async ESP_LOG redirect queue (see serial_log_vprintf). */
 #define SERIAL_LOG_QUEUE_LEN 8
 static QueueHandle_t log_queue = NULL;
+
+/* Async TX queue: frames are queued here and sent by the TX task,
+ * so the RX task never blocks on UART I/O (fixes blocking config dump). */
+typedef struct {
+    uint8_t data[SERIAL_MAX_FRAME_SIZE];
+    size_t len;
+} tx_frame_t;
+static QueueHandle_t tx_queue = NULL;
+
+static void serial_tx_task(void *pvParameters)
+{
+    tx_frame_t frame;
+    while (1) {
+        if (xQueueReceive(tx_queue, &frame, portMAX_DELAY) == pdTRUE) {
+            uart_write_bytes(SERIAL_UART_NUM, frame.data, frame.len);
+        }
+    }
+}
 
 /* -----------------------------------------------------------------------
  * UART TX
@@ -52,7 +75,14 @@ static void serial_send_frame(const uint8_t *payload, uint8_t payload_len)
     uint8_t frame[SERIAL_MAX_FRAME_SIZE];
     size_t frame_len = serial_frame_encode(payload, payload_len, frame);
     if (frame_len == 0) return;
-    uart_write_bytes(SERIAL_UART_NUM, frame, frame_len);
+
+    tx_frame_t tx_frame;
+    if (frame_len > sizeof(tx_frame.data)) frame_len = sizeof(tx_frame.data);
+    memcpy(tx_frame.data, frame, frame_len);
+    tx_frame.len = frame_len;
+
+    /* Drop frame if queue full — better than blocking the RX task. */
+    xQueueSend(tx_queue, &tx_frame, 0);
 }
 
 /* -----------------------------------------------------------------------
@@ -322,6 +352,19 @@ esp_err_t serial_server_init(void)
         return ESP_ERR_NO_MEM;
     }
 
+    tx_queue = xQueueCreate(SERIAL_TX_QUEUE_LEN, sizeof(tx_frame_t));
+    if (tx_queue == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    if (xTaskCreatePinnedToCore(serial_tx_task, "serial_tx",
+                                SERIAL_TX_TASK_STACK, NULL,
+                                SERIAL_TX_TASK_PRIO, &tx_task_handle,
+                                SERIAL_TX_TASK_CORE) != pdTRUE) {
+        tx_queue = NULL;
+        return ESP_ERR_NO_MEM;
+    }
+
     msg_handler_init(&serial_transport);
 
     ESP_LOGI(TAG, "Serial server initialized (UART%d, %d baud)", SERIAL_UART_NUM, SERIAL_BAUD_RATE);
@@ -354,4 +397,13 @@ void serial_server_stop(void)
     rx_task_running = false;
     vTaskDelay(pdMS_TO_TICKS(100));
     rx_task_handle = NULL;
+
+    if (tx_task_handle != NULL) {
+        vTaskDelete(tx_task_handle);
+        tx_task_handle = NULL;
+    }
+    if (tx_queue != NULL) {
+        vQueueDelete(tx_queue);
+        tx_queue = NULL;
+    }
 }
