@@ -13,7 +13,7 @@ import {
   decodeTelemetry,
 } from '../types/serial-protocol';
 import type { DSPTelemetry } from '../types/serial-protocol';
-import { BLE_MSG_ACK, BLE_MSG_ERROR, BLE_MSG_BULK_CONFIG } from '../types/ble-protocol';
+import { BLE_MSG_ACK, BLE_MSG_ERROR, BLE_MSG_BULK_CONFIG, BLE_ACK_TIMEOUT_MS } from '../types/ble-protocol';
 import type { BLEAckMsg, BLEErrorMsg, BLEStatusCode } from '../types/ble-protocol';
 import type { DSPConfig } from '../types/dsp';
 import { encodeDSPConfig } from '../export/binary-encoder';
@@ -38,7 +38,6 @@ interface PendingMessage {
 
 type StatusCallback = (msg: BLEAckMsg | BLEErrorMsg) => void;
 
-const ACK_TIMEOUT_MS = 300;
 const MAX_IN_FLIGHT = 4;
 const MAX_RETRIES = 3;
 const AUTO_RECONNECT_DELAY_MS = 2000;
@@ -167,7 +166,7 @@ export function useWebSerial() {
         } else {
           drop();
         }
-      }, ACK_TIMEOUT_MS);
+      }, BLE_ACK_TIMEOUT_MS);
       ackTimeoutsRef.current.set(msgId, timeout);
     };
 

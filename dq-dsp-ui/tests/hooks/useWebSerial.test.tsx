@@ -18,7 +18,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useWebSerial } from '../../src/hooks/useWebSerial';
 import { encodeSerialFrame } from '../../src/types/serial-protocol';
-import { BLE_MSG_ACK, BLE_MSG_BULK_CONFIG } from '../../src/types/ble-protocol';
+import { BLE_MSG_ACK, BLE_MSG_BULK_CONFIG, BLE_ACK_TIMEOUT_MS } from '../../src/types/ble-protocol';
 
 // ---------------------------------------------------------------------------
 // Mock Web Serial
@@ -164,10 +164,10 @@ describe('useWebSerial retry budget (H4)', () => {
     });
     expect(mockWriter.write).toHaveBeenCalledTimes(1);
 
-    // Each ACK timeout (300 ms) triggers a retry; 3 retries = 4 attempts.
+    // Each ACK timeout (BLE_ACK_TIMEOUT_MS) triggers a retry; 3 retries = 4 attempts.
     for (let i = 0; i < 3; i++) {
       await act(async () => {
-        vi.advanceTimersByTime(300);
+        vi.advanceTimersByTime(BLE_ACK_TIMEOUT_MS);
         await Promise.resolve();
       });
     }
