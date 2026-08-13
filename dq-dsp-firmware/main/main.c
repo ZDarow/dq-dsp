@@ -64,8 +64,8 @@ static bool load_config_from_nvs(dsp_config_t *config)
 static void nvs_save_timer_cb(void *arg)
 {
     (void)arg;
-    const dsp_config_t *cfg = dsp_param_get_active();
-    if (!cfg) return;
+    dsp_config_t snapshot;
+    if (!dsp_param_snapshot(&snapshot)) return;
 
     nvs_handle_t handle;
     esp_err_t err = nvs_open("dsp", NVS_READWRITE, &handle);
@@ -74,7 +74,7 @@ static void nvs_save_timer_cb(void *arg)
         return;
     }
 
-    err = nvs_set_blob(handle, "config", cfg, sizeof(dsp_config_t));
+    err = nvs_set_blob(handle, "config", &snapshot, sizeof(snapshot));
     if (err == ESP_OK) {
         err = nvs_commit(handle);
     }

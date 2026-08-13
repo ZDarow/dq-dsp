@@ -97,19 +97,17 @@ bool msg_handler_flush_telemetry(void)
 
 static void send_current_config(void)
 {
-    const dsp_config_t *cfg = dsp_param_get_active();
-    if (!cfg) {
+    dsp_config_t snapshot;
+    if (!dsp_param_snapshot(&snapshot)) {
         if (s_transport->send_error) {
             s_transport->send_error(0, BLE_STATUS_BUSY, 0);
         }
         return;
     }
 
-    /* Snapshot into a local buffer and refresh the CRC there: the bytes that
-     * go out must always match their checksum, and the active config buffer
-     * (read lock-free by the audio task) is never written from here. */
-    static dsp_config_t snapshot;
-    memcpy(&snapshot, cfg, sizeof(snapshot));
+    /* Refresh the CRC in the snapshot so the bytes that go out always match
+     * their checksum. The active config buffer (read lock-free by the audio
+     * task) is never written from here. */
     dsp_param_refresh_crc_in_place(&snapshot);
 
     if (s_transport->send_config) {

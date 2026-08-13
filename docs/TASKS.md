@@ -8,7 +8,7 @@
 
 | # | Задача | Локация |
 |---|---|---|
-| R1 | Устранить гонку staging-буфера — seqlock/атомарная копия в `dsp_param_commit` | `dq-dsp-firmware/shared/dsp/dsp_param_update.c:522` |
+| R1 | Устранить гонку staging-буфера — seqlock/атомарная копия в `dsp_param_commit` | ✅ `dq-dsp-firmware/shared/dsp/dsp_param_update.c:41-45,532-548` (`portMUX_TYPE` + `dsp_param_snapshot()`), `msg_handler.c:98-115`, `main.c:64-83` |
 | R2 | Bulk gate — единая очередь для `sendBulkConfig`, без interleave с live-параметрами | ✅ `dq-dsp-ui/src/hooks/useWebSerial.ts:549-592`, `dq-dsp-ui/src/serial/serial-middleware.ts:213-252` |
 | H4 | Retry-машина — единый таймер с декрементом попыток, ретрай на ошибку `write` | ✅ `dq-dsp-ui/src/hooks/useWebSerial.ts:114-135` |
 | H3 | Bulk-континуация — при активном `bulkRxBufferRef` не разбирать сигнатуры ACK/ERROR/BULK | ✅ `dq-dsp-ui/src/hooks/useWebSerial.ts:163-295` |

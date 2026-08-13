@@ -41,6 +41,15 @@ esp_err_t dsp_param_init(const dsp_config_t *initial);
 const dsp_config_t *dsp_param_get_active(void);
 
 /**
+ * Snapshot the active config under the commit lock. Use this from tasks
+ * other than the audio task when you need a consistent copy (e.g. the
+ * serial RX task or timer callbacks). The caller provides the output buffer.
+ *
+ * @return true if a config was available and copied.
+ */
+bool dsp_param_snapshot(dsp_config_t *out);
+
+/**
  * Parse a BLE parameter update message and apply it to the staging config.
  * Recalculates biquad coefficients if EQ/crossover parameters change.
  * Called from BLE task context.

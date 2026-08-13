@@ -38,6 +38,12 @@ static QueueHandle_t update_queue = NULL;
 /* Flag: staging has uncommitted changes. */
 static volatile bool pending_update = false;
 
+/** Guards the commit memcpy and snapshot copies (audit R1). The audio task
+ *  is the sole writer; readers in other tasks/timers must not observe a
+ *  torn dsp_config_t while the staging buffer is being copied into the
+ *  previous active buffer. */
+static portMUX_TYPE s_config_lock = portMUX_INITIALIZER_UNLOCKED;
+
 /* Shadow EQ/XO params are now stored directly in dsp_config_t
  * (eq_band_params_t and xo_params_t in dsp_config.h).
  * No separate static arrays needed. */
@@ -492,6 +498,18 @@ const dsp_config_t *dsp_param_get_active(void)
     return atomic_load(&active_ptr);
 }
 
+bool dsp_param_snapshot(dsp_config_t *out)
+{
+    if (!out) return false;
+    portENTER_CRITICAL(&s_config_lock);
+    const dsp_config_t *cfg = atomic_load(&active_ptr);
+    if (cfg) {
+        memcpy(out, cfg, sizeof(dsp_config_t));
+    }
+    portEXIT_CRITICAL(&s_config_lock);
+    return cfg != NULL;
+}
+
 void dsp_param_refresh_crc_in_place(dsp_config_t *cfg)
 {
     if (!cfg) return;
@@ -516,10 +534,11 @@ void dsp_param_commit(void)
     /* Swap pointers: staging becomes active, old active becomes staging. */
     dsp_config_t *old_active = (dsp_config_t *)atomic_load(&active_ptr);
 
-    /* Copy staging to old_active so both buffers are in sync after swap.
-     * This ensures the new staging buffer (old active) has the latest data
-     * for subsequent incremental updates. */
+    /* Copy staging to old_active under the config lock so readers on other
+     * cores cannot observe a torn dsp_config_t (audit R1). */
+    portENTER_CRITICAL(&s_config_lock);
     memcpy(old_active, staging_ptr, sizeof(dsp_config_t));
+    portEXIT_CRITICAL(&s_config_lock);
 
     /* Atomic pointer swap with memory barrier */
     atomic_store(&active_ptr, staging_ptr);
