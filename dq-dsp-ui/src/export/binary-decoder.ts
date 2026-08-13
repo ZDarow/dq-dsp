@@ -4,6 +4,7 @@ import { ESP32_MAGIC, ESP32_CONFIG_VERSION, MAX_PEQ_BANDS, MAX_CROSSOVER_STAGES 
 import { BLE_TO_FILTER_TYPE, BLE_TO_CROSSOVER_TYPE, BLE_TO_CROSSOVER_SLOPE } from '../types/ble-protocol';
 import { linearToDb } from '../dsp/utils';
 import { crc32 } from './checksum';
+import { readEQBandParams } from './eq-band-params-io';
 
 class BinaryReader {
   private view: DataView;
@@ -179,20 +180,7 @@ function readInputChannel(reader: BinaryReader): InputChannel {
   // Read shadow EQ band params (16 bytes each)
   const eqBands: EQBand[] = [];
   for (let b = 0; b < MAX_PEQ_BANDS; b++) {
-    const frequency = reader.readFloat32();
-    const gainDb = reader.readFloat32();
-    const q = reader.readFloat32();
-    const filterTypeBle = reader.readUint8();
-    const enabled = reader.readUint8() !== 0;
-    reader.skip(2); // pad
-
-    eqBands.push({
-      enabled,
-      filterType: BLE_TO_FILTER_TYPE[filterTypeBle] ?? 'peaking',
-      frequency,
-      gain: gainDb,
-      q,
-    });
+    eqBands.push(readEQBandParams(reader));
   }
 
   // Skip Room EQ biquad coefficients (5 floats * 10 bands = 200 bytes)
@@ -201,20 +189,7 @@ function readInputChannel(reader: BinaryReader): InputChannel {
   // Read shadow Room EQ band params (16 bytes each)
   const roomEqBands: EQBand[] = [];
   for (let b = 0; b < MAX_PEQ_BANDS; b++) {
-    const frequency = reader.readFloat32();
-    const gainDb = reader.readFloat32();
-    const q = reader.readFloat32();
-    const filterTypeBle = reader.readUint8();
-    const enabled = reader.readUint8() !== 0;
-    reader.skip(2); // pad
-
-    roomEqBands.push({
-      enabled,
-      filterType: BLE_TO_FILTER_TYPE[filterTypeBle] ?? 'peaking',
-      frequency,
-      gain: gainDb,
-      q,
-    });
+    roomEqBands.push(readEQBandParams(reader));
   }
 
   const gain = linearToDb(gainLinear);
@@ -246,20 +221,7 @@ function readOutputChannel(reader: BinaryReader, sampleRate: number): OutputChan
   // Read shadow EQ band params (16 bytes each)
   const eqBands: EQBand[] = [];
   for (let b = 0; b < MAX_PEQ_BANDS; b++) {
-    const frequency = reader.readFloat32();
-    const gainDb = reader.readFloat32();
-    const q = reader.readFloat32();
-    const filterTypeBle = reader.readUint8();
-    const enabled = reader.readUint8() !== 0;
-    reader.skip(2); // pad
-
-    eqBands.push({
-      enabled,
-      filterType: BLE_TO_FILTER_TYPE[filterTypeBle] ?? 'peaking',
-      frequency,
-      gain: gainDb,
-      q,
-    });
+    eqBands.push(readEQBandParams(reader));
   }
 
   // Read shadow HP crossover params (8 bytes)

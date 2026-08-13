@@ -7,6 +7,7 @@ import { dbToLinear } from '../dsp/utils';
 import { FILTER_TYPE_TO_BLE, CROSSOVER_TYPE_TO_BLE, CROSSOVER_SLOPE_TO_BLE } from '../types/ble-protocol';
 import { crc32 } from './checksum';
 import { DEFAULT_DRIFT } from '../store/slices/drift-slice';
+import { writeEQBandParams, writeDefaultEQBandParams } from './eq-band-params-io';
 
 export class BinaryWriter {
   private buffer: ArrayBuffer;
@@ -146,21 +147,9 @@ export function encodeDSPConfig(config: DSPConfig, drift?: DriftConfig): ArrayBu
     for (let b = 0; b < MAX_PEQ_BANDS; b++) {
       const band = input.eqBands[b];
       if (band) {
-        writer.writeFloat32(band.frequency);
-        writer.writeFloat32(band.gain);
-        writer.writeFloat32(band.q);
-        writer.writeUint8(FILTER_TYPE_TO_BLE[band.filterType] ?? 0);
-        writer.writeUint8(band.enabled ? 1 : 0);
-        writer.writeUint8(0); // pad
-        writer.writeUint8(0); // pad
+        writeEQBandParams(writer, band);
       } else {
-        writer.writeFloat32(1000);
-        writer.writeFloat32(0);
-        writer.writeFloat32(0.707);
-        writer.writeUint8(0);
-        writer.writeUint8(0);
-        writer.writeUint8(0);
-        writer.writeUint8(0);
+        writeDefaultEQBandParams(writer);
       }
     }
 
@@ -185,21 +174,9 @@ export function encodeDSPConfig(config: DSPConfig, drift?: DriftConfig): ArrayBu
     for (let b = 0; b < MAX_PEQ_BANDS; b++) {
       const band = input.roomEqBands[b];
       if (band) {
-        writer.writeFloat32(band.frequency);
-        writer.writeFloat32(band.gain);
-        writer.writeFloat32(band.q);
-        writer.writeUint8(FILTER_TYPE_TO_BLE[band.filterType] ?? 0);
-        writer.writeUint8(band.enabled ? 1 : 0);
-        writer.writeUint8(0); // pad
-        writer.writeUint8(0); // pad
+        writeEQBandParams(writer, band);
       } else {
-        writer.writeFloat32(1000);
-        writer.writeFloat32(0);
-        writer.writeFloat32(0.707);
-        writer.writeUint8(0);
-        writer.writeUint8(0);
-        writer.writeUint8(0);
-        writer.writeUint8(0);
+        writeDefaultEQBandParams(writer);
       }
     }
   }
@@ -285,21 +262,9 @@ export function encodeDSPConfig(config: DSPConfig, drift?: DriftConfig): ArrayBu
     for (let b = 0; b < MAX_PEQ_BANDS; b++) {
       const band = output.eqBands[b];
       if (band) {
-        writer.writeFloat32(band.frequency);
-        writer.writeFloat32(band.gain);
-        writer.writeFloat32(band.q);
-        writer.writeUint8(FILTER_TYPE_TO_BLE[band.filterType] ?? 0);
-        writer.writeUint8(band.enabled ? 1 : 0);
-        writer.writeUint8(0); // pad
-        writer.writeUint8(0); // pad
+        writeEQBandParams(writer, band);
       } else {
-        writer.writeFloat32(1000);
-        writer.writeFloat32(0);
-        writer.writeFloat32(0.707);
-        writer.writeUint8(0);
-        writer.writeUint8(0);
-        writer.writeUint8(0);
-        writer.writeUint8(0);
+        writeDefaultEQBandParams(writer);
       }
     }
 
