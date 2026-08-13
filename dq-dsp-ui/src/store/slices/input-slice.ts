@@ -3,6 +3,7 @@ import type { InputChannel } from '../../types/dsp';
 import type { EQBand, FilterType } from '../../types/filter';
 import type { DSPStore } from '../dsp-store';
 import { createDefaultInputChannel } from '../../constants/defaults';
+import { getLinkPartners } from '../slices/link-slice';
 
 export interface InputSlice {
   inputs: [InputChannel, InputChannel];
@@ -17,11 +18,6 @@ export interface InputSlice {
   resetInput: (index: number) => void;
 }
 
-/** Get the partner input index (0↔1) */
-function partner(index: number): number {
-  return index ^ 1;
-}
-
 export const createInputSlice: StateCreator<DSPStore, [], [], InputSlice> = (set) => ({
   inputs: [createDefaultInputChannel(), createDefaultInputChannel()],
 
@@ -29,8 +25,8 @@ export const createInputSlice: StateCreator<DSPStore, [], [], InputSlice> = (set
     set((state) => {
       const inputs = [...state.inputs] as [InputChannel, InputChannel];
       inputs[index] = { ...inputs[index], gain };
-      if (state.inputsLinked) {
-        inputs[partner(index)] = { ...inputs[partner(index)], gain };
+      for (const p of getLinkPartners(state.inputLinkGroups, index)) {
+        inputs[p] = { ...inputs[p], gain };
       }
       return { inputs };
     }),
@@ -39,8 +35,8 @@ export const createInputSlice: StateCreator<DSPStore, [], [], InputSlice> = (set
     set((state) => {
       const inputs = [...state.inputs] as [InputChannel, InputChannel];
       inputs[index] = { ...inputs[index], mute };
-      if (state.inputsLinked) {
-        inputs[partner(index)] = { ...inputs[partner(index)], mute };
+      for (const p of getLinkPartners(state.inputLinkGroups, index)) {
+        inputs[p] = { ...inputs[p], mute };
       }
       return { inputs };
     }),
@@ -49,8 +45,8 @@ export const createInputSlice: StateCreator<DSPStore, [], [], InputSlice> = (set
     set((state) => {
       const inputs = [...state.inputs] as [InputChannel, InputChannel];
       inputs[index] = { ...inputs[index], phaseInvert: invert };
-      if (state.inputsLinked) {
-        inputs[partner(index)] = { ...inputs[partner(index)], phaseInvert: invert };
+      for (const p of getLinkPartners(state.inputLinkGroups, index)) {
+        inputs[p] = { ...inputs[p], phaseInvert: invert };
       }
       return { inputs };
     }),
@@ -60,8 +56,8 @@ export const createInputSlice: StateCreator<DSPStore, [], [], InputSlice> = (set
       const inputs = [...state.inputs] as [InputChannel, InputChannel];
       const newMute = !inputs[index].mute;
       inputs[index] = { ...inputs[index], mute: newMute };
-      if (state.inputsLinked) {
-        inputs[partner(index)] = { ...inputs[partner(index)], mute: newMute };
+      for (const p of getLinkPartners(state.inputLinkGroups, index)) {
+        inputs[p] = { ...inputs[p], mute: newMute };
       }
       return { inputs };
     }),
@@ -71,8 +67,8 @@ export const createInputSlice: StateCreator<DSPStore, [], [], InputSlice> = (set
       const inputs = [...state.inputs] as [InputChannel, InputChannel];
       const newPhase = !inputs[index].phaseInvert;
       inputs[index] = { ...inputs[index], phaseInvert: newPhase };
-      if (state.inputsLinked) {
-        inputs[partner(index)] = { ...inputs[partner(index)], phaseInvert: newPhase };
+      for (const p of getLinkPartners(state.inputLinkGroups, index)) {
+        inputs[p] = { ...inputs[p], phaseInvert: newPhase };
       }
       return { inputs };
     }),
@@ -83,8 +79,7 @@ export const createInputSlice: StateCreator<DSPStore, [], [], InputSlice> = (set
       const eqBands = [...inputs[inputIndex].eqBands];
       eqBands[bandIndex] = { ...eqBands[bandIndex], ...updates };
       inputs[inputIndex] = { ...inputs[inputIndex], eqBands };
-      if (state.inputsLinked) {
-        const p = partner(inputIndex);
+      for (const p of getLinkPartners(state.inputLinkGroups, inputIndex)) {
         const pBands = [...inputs[p].eqBands];
         pBands[bandIndex] = { ...pBands[bandIndex], ...updates };
         inputs[p] = { ...inputs[p], eqBands: pBands };
@@ -98,8 +93,7 @@ export const createInputSlice: StateCreator<DSPStore, [], [], InputSlice> = (set
       const eqBands = [...inputs[inputIndex].eqBands];
       eqBands[bandIndex] = { ...eqBands[bandIndex], filterType };
       inputs[inputIndex] = { ...inputs[inputIndex], eqBands };
-      if (state.inputsLinked) {
-        const p = partner(inputIndex);
+      for (const p of getLinkPartners(state.inputLinkGroups, inputIndex)) {
         const pBands = [...inputs[p].eqBands];
         pBands[bandIndex] = { ...pBands[bandIndex], filterType };
         inputs[p] = { ...inputs[p], eqBands: pBands };
@@ -114,8 +108,7 @@ export const createInputSlice: StateCreator<DSPStore, [], [], InputSlice> = (set
       const newEnabled = !eqBands[bandIndex].enabled;
       eqBands[bandIndex] = { ...eqBands[bandIndex], enabled: newEnabled };
       inputs[inputIndex] = { ...inputs[inputIndex], eqBands };
-      if (state.inputsLinked) {
-        const p = partner(inputIndex);
+      for (const p of getLinkPartners(state.inputLinkGroups, inputIndex)) {
         const pBands = [...inputs[p].eqBands];
         pBands[bandIndex] = { ...pBands[bandIndex], enabled: newEnabled };
         inputs[p] = { ...inputs[p], eqBands: pBands };
@@ -127,8 +120,8 @@ export const createInputSlice: StateCreator<DSPStore, [], [], InputSlice> = (set
     set((state) => {
       const inputs = [...state.inputs] as [InputChannel, InputChannel];
       inputs[index] = createDefaultInputChannel();
-      if (state.inputsLinked) {
-        inputs[partner(index)] = createDefaultInputChannel();
+      for (const p of getLinkPartners(state.inputLinkGroups, index)) {
+        inputs[p] = createDefaultInputChannel();
       }
       return { inputs };
     }),

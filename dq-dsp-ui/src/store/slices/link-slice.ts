@@ -3,8 +3,15 @@ import type { DSPStore } from '../dsp-store';
 import type { InputChannel, OutputChannel } from '../../types/dsp';
 
 export interface LinkSlice {
-  /** Stereo link for the 2 inputs — only one possible pair so it stays a bool. */
-  inputsLinked: boolean;
+  /**
+   * Flexible input link groups. Each subarray is a set of input indices
+   * whose parameter changes mirror each other. Inputs not present in any
+   * group are independent. Examples:
+   *   []          — no links
+   *   [[0,1]]     — In1+2 linked (classic stereo)
+   */
+  inputLinkGroups: number[][];
+
   /**
    * Flexible output link groups. Each subarray is a set of output indices
    * whose parameter changes mirror each other. Outputs not present in any
@@ -16,8 +23,15 @@ export interface LinkSlice {
    */
   outputLinkGroups: number[][];
 
-  setInputsLinked: (linked: boolean) => void;
-  toggleInputsLinked: () => void;
+  /** Add a link between two inputs. Merges existing groups if needed. */
+  linkInputs: (a: number, b: number) => void;
+  /** Remove an input from its group (group is dropped if it becomes a singleton). */
+  unlinkInput: (index: number) => void;
+  /**
+   * Convenience for the picker UI: if `current` and `other` already share
+   * a group, unlink `other`; otherwise link them.
+   */
+  toggleInputLinkMember: (current: number, other: number) => void;
 
   /** Add a link between two outputs. Merges existing groups if needed. */
   linkOutputs: (a: number, b: number) => void;
@@ -36,22 +50,22 @@ export interface LinkSlice {
 }
 
 // ---------------------------------------------------------------------------
-// Group helpers (pure, exported for use by output-slice and UI components)
+// Group helpers (pure, exported for use by input-slice, output-slice, and UI)
 // ---------------------------------------------------------------------------
 
 /** Find the group containing `index`, or null if not linked. */
-export function getOutputLinkGroup(groups: number[][], index: number): number[] | null {
+export function getLinkGroup(groups: number[][], index: number): number[] | null {
   return groups.find((g) => g.includes(index)) ?? null;
 }
 
 /** True if `index` is part of any link group. */
-export function isOutputLinked(groups: number[][], index: number): boolean {
+export function isLinked(groups: number[][], index: number): boolean {
   return groups.some((g) => g.includes(index));
 }
 
 /** Return all OTHER members of the group containing `index` (empty array if not linked). */
-export function getOutputLinkPartners(groups: number[][], index: number): number[] {
-  const g = getOutputLinkGroup(groups, index);
+export function getLinkPartners(groups: number[][], index: number): number[] {
+  const g = getLinkGroup(groups, index);
   return g ? g.filter((i) => i !== index) : [];
 }
 
@@ -96,11 +110,27 @@ function cloneOutput(ch: OutputChannel): OutputChannel {
 // ---------------------------------------------------------------------------
 
 export const createLinkSlice: StateCreator<DSPStore, [], [], LinkSlice> = (set) => ({
-  inputsLinked: false,
+  inputLinkGroups: [],
   outputLinkGroups: [],
 
-  setInputsLinked: (linked) => set({ inputsLinked: linked }),
-  toggleInputsLinked: () => set((state) => ({ inputsLinked: !state.inputsLinked })),
+  linkInputs: (a, b) =>
+    set((state) => {
+      if (a === b) return {};
+      return { inputLinkGroups: withMerged(state.inputLinkGroups, a, b) };
+    }),
+
+  unlinkInput: (index) =>
+    set((state) => ({ inputLinkGroups: withRemoved(state.inputLinkGroups, index) })),
+
+  toggleInputLinkMember: (current, other) =>
+    set((state) => {
+      if (current === other) return {};
+      const group = getLinkGroup(state.inputLinkGroups, current);
+      if (group?.includes(other)) {
+        return { inputLinkGroups: withRemoved(state.inputLinkGroups, other) };
+      }
+      return { inputLinkGroups: withMerged(state.inputLinkGroups, current, other) };
+    }),
 
   linkOutputs: (a, b) =>
     set((state) => {
@@ -114,9 +144,8 @@ export const createLinkSlice: StateCreator<DSPStore, [], [], LinkSlice> = (set) 
   toggleOutputLinkMember: (current, other) =>
     set((state) => {
       if (current === other) return {};
-      const group = getOutputLinkGroup(state.outputLinkGroups, current);
+      const group = getLinkGroup(state.outputLinkGroups, current);
       if (group?.includes(other)) {
-        // Already linked — remove `other` from the group.
         return { outputLinkGroups: withRemoved(state.outputLinkGroups, other) };
       }
       return { outputLinkGroups: withMerged(state.outputLinkGroups, current, other) };

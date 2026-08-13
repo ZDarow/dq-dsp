@@ -29,10 +29,10 @@ function createTestStore<T extends Record<string, any>>(
 }
 
 describe('input-slice', () => {
-  it('mirrors gain when inputsLinked', () => {
+  it('mirrors gain when linked via inputLinkGroups', () => {
     const store = createTestStore(createInputSlice, {
       inputs: [createDefaultInputChannel(), createDefaultInputChannel()],
-      inputsLinked: true,
+      inputLinkGroups: [[0, 1]],
     } as any);
 
     store.getState().setInputGain(0, 6);
@@ -42,10 +42,10 @@ describe('input-slice', () => {
     expect(s.inputs[1].gain).toBe(6);
   });
 
-  it('does not mirror when inputsLinked is false', () => {
+  it('does not mirror when not linked', () => {
     const store = createTestStore(createInputSlice, {
       inputs: [createDefaultInputChannel(), createDefaultInputChannel()],
-      inputsLinked: false,
+      inputLinkGroups: [],
     } as any);
 
     store.getState().setInputGain(0, 6);
@@ -58,7 +58,7 @@ describe('input-slice', () => {
   it('toggles mute on partner when linked', () => {
     const store = createTestStore(createInputSlice, {
       inputs: [createDefaultInputChannel(), createDefaultInputChannel()],
-      inputsLinked: true,
+      inputLinkGroups: [[0, 1]],
     } as any);
 
     store.getState().toggleInputMute(0);
@@ -71,7 +71,7 @@ describe('input-slice', () => {
   it('resets both inputs when linked', () => {
     const store = createTestStore(createInputSlice, {
       inputs: [createDefaultInputChannel(), createDefaultInputChannel()],
-      inputsLinked: true,
+      inputLinkGroups: [[0, 1]],
     } as any);
 
     store.getState().setInputGain(0, 12);

@@ -38,7 +38,7 @@ export interface DSPConfig {
   /** Optional in older presets — falls back to defaults on import. */
   customSums?: CustomSum[];
   /** UI-only mirroring metadata for round-tripping through JSON exports. */
-  inputsLinked?: boolean;
+  inputLinkGroups?: number[][];
   outputLinkGroups?: number[][];
 }
 

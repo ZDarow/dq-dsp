@@ -106,14 +106,12 @@ export const createPresetSlice: StateCreator<DSPStore, [], [], PresetSlice> = (s
       presetIndex: state.presetIndex,
       presetName: state.presetName,
       customSums: state.customSums,
-      inputsLinked: state.inputsLinked,
+      inputLinkGroups: state.inputLinkGroups,
       outputLinkGroups: state.outputLinkGroups,
     };
   },
 
   importConfig: (config) => {
-    // Pull room EQ out of inputs[i].roomEqBands and mirror to top-level
-    // state.roomEqBands so the UI panel and live BLE/Serial diff see it.
     const roomEqBands: [EQBand[], EQBand[]] = [
       config.inputs[0]?.roomEqBands?.map((b) => ({ ...b })) ?? createDefaultEQBands(),
       config.inputs[1]?.roomEqBands?.map((b) => ({ ...b })) ?? createDefaultEQBands(),
@@ -127,11 +125,8 @@ export const createPresetSlice: StateCreator<DSPStore, [], [], PresetSlice> = (s
       presetIndex: config.presetIndex,
       presetName: config.presetName,
       roomEqBands,
-      // Older presets may not have customSums; fall back to defaults so
-      // the chart always has something sensible to draw.
       customSums: config.customSums ?? createDefaultCustomSums(),
-      // Older presets won't have link metadata — fall back to "no links".
-      inputsLinked: config.inputsLinked ?? false,
+      inputLinkGroups: config.inputLinkGroups ?? (config.inputsLinked ? [[0, 1]] : []),
       outputLinkGroups: config.outputLinkGroups ?? [],
     });
   },
@@ -147,13 +142,11 @@ export const createPresetSlice: StateCreator<DSPStore, [], [], PresetSlice> = (s
       presetIndex: defaults.presetIndex,
       presetName: defaults.presetName,
       customSums: defaults.customSums ?? createDefaultCustomSums(),
-      // Mirror the same top-level mirrors as importConfig, otherwise the
-      // RoomEQ panel and link metadata keep stale state after a reset (R7).
       roomEqBands: [
         defaults.inputs[0]?.roomEqBands?.map((b) => ({ ...b })) ?? createDefaultEQBands(),
         defaults.inputs[1]?.roomEqBands?.map((b) => ({ ...b })) ?? createDefaultEQBands(),
       ],
-      inputsLinked: false,
+      inputLinkGroups: [],
       outputLinkGroups: [],
     });
   },

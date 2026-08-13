@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useDSPStore } from '../../store/dsp-store';
+import { getLinkPartners } from '../../store/slices/link-slice';
 import { getInputColor } from '../../utils/colors';
 import { GainSlider } from '../controls/GainSlider';
 import { MuteButton } from '../controls/MuteButton';
@@ -21,15 +22,15 @@ export function InputChannelStrip({ index }: InputChannelStripProps) {
   const toggleInputMute = useDSPStore((s) => s.toggleInputMute);
   const toggleInputPhase = useDSPStore((s) => s.toggleInputPhase);
   const setInputEQBand = useDSPStore((s) => s.setInputEQBand);
-  const inputsLinked = useDSPStore((s) => s.inputsLinked);
-  const toggleInputsLinked = useDSPStore((s) => s.toggleInputsLinked);
+  const inputLinkGroups = useDSPStore((s) => s.inputLinkGroups);
+  const toggleInputLinkMember = useDSPStore((s) => s.toggleInputLinkMember);
   const copyInput = useDSPStore((s) => s.copyInput);
   const color = getInputColor(index);
 
-  // Only 2 inputs — link target is fixed to the other one. Copy uses the
-  // same picker UX as outputs for consistency, even though there's only
-  // one possible target.
-  const others = [index === 0 ? 1 : 0];
+  const partners = getLinkPartners(inputLinkGroups, index);
+  const isLinked = partners.length > 0;
+  const other = index === 0 ? 1 : 0;
+  const isOtherLinked = inputLinkGroups.some((g) => g.includes(other));
 
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -42,21 +43,21 @@ export function InputChannelStrip({ index }: InputChannelStripProps) {
         <PhaseButton inverted={input.phaseInvert} onClick={() => toggleInputPhase(index)} />
         <div className="w-px h-4 bg-surface-bg" />
         <LinkButton
-          linked={inputsLinked}
-          onClick={toggleInputsLinked}
-          label={inputsLinked ? t('input.linkOn') : t('input.link')}
+          linked={isLinked}
+          onClick={() => toggleInputLinkMember(index, other)}
+          label={isLinked ? t('input.linkOn') : t('input.link')}
           title={t('input.linkTitle')}
         />
         <CopyPicker
           currentIndex={index}
-          others={others}
+          others={[other]}
           onCopy={(target) => copyInput(index, target)}
           channelLabel={t('input.channelIn')}
         />
       </div>
 
       {/* Linked indicator with hint */}
-      {inputsLinked && (
+      {isLinked && (
         <div className="text-xs text-accent/80 bg-accent/5 px-2 py-1 rounded border border-accent/15">
           {t('input.linkActive')}
         </div>

@@ -4,7 +4,7 @@ import type { EQBand, FilterType, CrossoverFilterType, CrossoverSlope } from '..
 import type { DSPStore } from '../dsp-store';
 import { createDefaultOutputChannel } from '../../constants/defaults';
 import { msToSamples } from '../../dsp/utils';
-import { getOutputLinkPartners } from './link-slice';
+import { getLinkPartners } from '../slices/link-slice';
 
 export interface OutputSlice {
   outputs: [OutputChannel, OutputChannel, OutputChannel, OutputChannel];
@@ -26,7 +26,7 @@ type Outputs = [OutputChannel, OutputChannel, OutputChannel, OutputChannel];
 
 /** All output indices that should mirror changes from `index`. */
 function partnersOf(state: { outputLinkGroups: number[][] }, index: number): number[] {
-  return getOutputLinkPartners(state.outputLinkGroups, index);
+  return getLinkPartners(state.outputLinkGroups, index);
 }
 
 export const createOutputSlice: StateCreator<DSPStore, [], [], OutputSlice> = (set, get) => ({

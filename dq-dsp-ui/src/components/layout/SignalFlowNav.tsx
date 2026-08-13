@@ -41,14 +41,17 @@ export function SignalFlowNav() {
   const { t } = useTranslation();
   const selectedBlock = useDSPStore((s) => s.selectedBlock);
   const setSelectedBlock = useDSPStore((s) => s.setSelectedBlock);
-  const inputsLinked = useDSPStore((s) => s.inputsLinked);
+  const inputLinkGroups = useDSPStore((s) => s.inputLinkGroups);
   const outputLinkGroups = useDSPStore((s) => s.outputLinkGroups);
   const roomEqEnabled = useDSPStore((s) => s.roomEqEnabled);
   const setRoomEqEnabled = useDSPStore((s) => s.setRoomEqEnabled);
 
   /** Check if a nav item is part of a linked group */
   function isItemLinked(item: (typeof NAV_ITEMS)[number]): boolean {
-    if (item.block?.type === 'input') return inputsLinked;
+    if (item.block?.type === 'input') {
+      const idx = item.block.index;
+      return inputLinkGroups.some((g) => g.includes(idx));
+    }
     if (item.block?.type === 'output') {
       const idx = item.block.index;
       return outputLinkGroups.some((g) => g.includes(idx));

@@ -128,7 +128,7 @@ export function SerialStatusBar() {
       sampleRate: state.sampleRate,
       presetIndex: state.presetIndex,
       presetName: state.presetName,
-      inputsLinked: state.inputsLinked,
+      inputLinkGroups: state.inputLinkGroups,
       outputLinkGroups: state.outputLinkGroups,
     };
     setUploading(true);

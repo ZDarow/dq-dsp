@@ -83,7 +83,7 @@ export const useDSPStore = create<DSPStore>()(
         presetIndex: state.presetIndex,
         presetName: state.presetName,
         presets: state.presets,
-        inputsLinked: state.inputsLinked,
+        inputLinkGroups: state.inputLinkGroups,
         outputLinkGroups: state.outputLinkGroups,
         roomEqBands: state.roomEqBands,
         roomMeasurement: state.roomMeasurement,
@@ -127,6 +127,15 @@ export const useDSPStore = create<DSPStore>()(
             }
             return s;
           });
+        }
+        // Migration: old `inputsLinked: boolean` → new `inputLinkGroups: number[][]`.
+        const legacyInputsLinked = (persisted as unknown as { inputsLinked?: boolean })?.inputsLinked;
+        if (!merged.inputLinkGroups) {
+          if (legacyInputsLinked) {
+            merged.inputLinkGroups = [[0, 1]];
+          } else {
+            merged.inputLinkGroups = [];
+          }
         }
         // Migration: old `outputLinks: [bool, bool]` (Out1↔2, Out3↔4 fixed
         // pairs) → new flexible `outputLinkGroups: number[][]`.
