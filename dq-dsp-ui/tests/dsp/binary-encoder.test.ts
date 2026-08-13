@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { encodeDSPConfig } from '../../src/export/binary-encoder';
+import { encodeDSPConfig, BinaryWriter } from '../../src/export/binary-encoder';
 import { createDefaultDSPConfig } from '../../src/constants/defaults';
 import { ESP32_MAGIC, ESP32_CONFIG_VERSION } from '../../src/types/esp32';
 import { crc32 } from '../../src/export/checksum';
@@ -121,5 +121,53 @@ describe('binary encoder', () => {
     expect(view.getUint8(routingStart)).toBe(1);
     // In1->Out2 should be disabled (0)
     expect(view.getUint8(routingStart + 8)).toBe(0);
+  });
+});
+
+describe('BinaryWriter validation', () => {
+  it('rejects NaN float32', () => {
+    const writer = new BinaryWriter(64);
+    expect(() => writer.writeFloat32(NaN)).toThrow('NaN/Infinity');
+  });
+
+  it('rejects Infinity float32', () => {
+    const writer = new BinaryWriter(64);
+    expect(() => writer.writeFloat32(Infinity)).toThrow('NaN/Infinity');
+    expect(() => writer.writeFloat32(-Infinity)).toThrow('NaN/Infinity');
+  });
+
+  it('rejects out-of-range uint8', () => {
+    const writer = new BinaryWriter(64);
+    expect(() => writer.writeUint8(-1)).toThrow('uint8 out of range');
+    expect(() => writer.writeUint8(256)).toThrow('uint8 out of range');
+    expect(() => writer.writeUint8(1.5)).toThrow('uint8 out of range');
+  });
+
+  it('rejects out-of-range uint16', () => {
+    const writer = new BinaryWriter(64);
+    expect(() => writer.writeUint16(-1)).toThrow('uint16 out of range');
+    expect(() => writer.writeUint16(65536)).toThrow('uint16 out of range');
+  });
+
+  it('rejects out-of-range uint32', () => {
+    const writer = new BinaryWriter(64);
+    expect(() => writer.writeUint32(-1)).toThrow('uint32 out of range');
+    expect(() => writer.writeUint32(4294967296)).toThrow('uint32 out of range');
+  });
+
+  it('rejects buffer overflow', () => {
+    const writer = new BinaryWriter(4);
+    writer.writeUint32(0);
+    expect(() => writer.writeUint8(0)).toThrow('out of bounds');
+  });
+
+  it('accepts valid finite floats', () => {
+    const writer = new BinaryWriter(64);
+    expect(() => {
+      writer.writeFloat32(0);
+      writer.writeFloat32(-0);
+      writer.writeFloat32(1.5);
+      writer.writeFloat32(-3.14e10);
+    }).not.toThrow();
   });
 });

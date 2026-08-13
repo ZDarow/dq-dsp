@@ -8,7 +8,7 @@ import { FILTER_TYPE_TO_BLE, CROSSOVER_TYPE_TO_BLE, CROSSOVER_SLOPE_TO_BLE } fro
 import { crc32 } from './checksum';
 import { DEFAULT_DRIFT } from '../store/slices/drift-slice';
 
-class BinaryWriter {
+export class BinaryWriter {
   private buffer: ArrayBuffer;
   private view: DataView;
   private offset: number;
@@ -19,22 +19,51 @@ class BinaryWriter {
     this.offset = 0;
   }
 
+  private ensureBounds(bytes: number): void {
+    if (this.offset + bytes > this.buffer.byteLength) {
+      throw new RangeError(
+        `BinaryWriter: out of bounds at offset ${this.offset}, ` +
+        `need ${bytes}, size ${this.buffer.byteLength}`
+      );
+    }
+  }
+
+  private validateFloat(value: number): void {
+    if (!Number.isFinite(value)) {
+      throw new RangeError(`BinaryWriter: NaN/Infinity at offset ${this.offset}`);
+    }
+  }
+
   writeUint8(value: number) {
+    if (value < 0 || value > 255 || !Number.isInteger(value)) {
+      throw new RangeError(`BinaryWriter: uint8 out of range at offset ${this.offset}: ${value}`);
+    }
+    this.ensureBounds(1);
     this.view.setUint8(this.offset, value);
     this.offset += 1;
   }
 
   writeUint16(value: number) {
-    this.view.setUint16(this.offset, value, true); // little-endian
+    if (value < 0 || value > 65535 || !Number.isInteger(value)) {
+      throw new RangeError(`BinaryWriter: uint16 out of range at offset ${this.offset}: ${value}`);
+    }
+    this.ensureBounds(2);
+    this.view.setUint16(this.offset, value, true);
     this.offset += 2;
   }
 
   writeUint32(value: number) {
+    if (value < 0 || value > 4294967295 || !Number.isInteger(value)) {
+      throw new RangeError(`BinaryWriter: uint32 out of range at offset ${this.offset}: ${value}`);
+    }
+    this.ensureBounds(4);
     this.view.setUint32(this.offset, value, true);
     this.offset += 4;
   }
 
   writeFloat32(value: number) {
+    this.validateFloat(value);
+    this.ensureBounds(4);
     this.view.setFloat32(this.offset, value, true);
     this.offset += 4;
   }
@@ -47,7 +76,6 @@ class BinaryWriter {
     this.writeFloat32(coeffs.a2);
   }
 
-  // Pad to 4-byte alignment
   align4() {
     while (this.offset % 4 !== 0) {
       this.writeUint8(0);
@@ -66,8 +94,10 @@ class BinaryWriter {
     return new Uint8Array(this.buffer, 0, this.offset);
   }
 
-  // Write at specific offset without moving cursor
   writeUint32At(offset: number, value: number) {
+    if (offset < 0 || offset + 4 > this.buffer.byteLength) {
+      throw new RangeError(`BinaryWriter: writeUint32At out of bounds: offset ${offset}`);
+    }
     this.view.setUint32(offset, value, true);
   }
 }
