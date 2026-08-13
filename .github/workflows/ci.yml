@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ui-tests:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: dq-dsp-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run build
+      - run: npm run lint
+      - run: npm run test
+
+  firmware-host-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dq-dsp-firmware/tests
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential
+      - run: gcc -O2 -o golden_biquad golden_biquad.c -lm && ./golden_biquad
