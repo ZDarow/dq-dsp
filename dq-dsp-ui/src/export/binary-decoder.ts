@@ -1,12 +1,12 @@
 import type { DSPConfig, DriftConfig, InputChannel, OutputChannel, CrosspointGain } from '../types/dsp';
 import type { EQBand, CrossoverFilter, CrossoverConfig } from '../types/filter';
 import { ESP32_MAGIC, ESP32_CONFIG_VERSION, MAX_PEQ_BANDS, MAX_CROSSOVER_STAGES } from '../types/esp32';
-import { BLE_TO_FILTER_TYPE, BLE_TO_CROSSOVER_TYPE, BLE_TO_CROSSOVER_SLOPE } from '../types/ble-protocol';
+import { BLE_TO_CROSSOVER_TYPE, BLE_TO_CROSSOVER_SLOPE } from '../types/ble-protocol';
 import { linearToDb } from '../dsp/utils';
 import { crc32 } from './checksum';
 import { readEQBandParams } from './eq-band-params-io';
 
-class BinaryReader {
+export class BinaryReader {
   private view: DataView;
   private offset: number;
 

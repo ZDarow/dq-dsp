@@ -30,7 +30,6 @@ export function InputChannelStrip({ index }: InputChannelStripProps) {
   const partners = getLinkPartners(inputLinkGroups, index);
   const isLinked = partners.length > 0;
   const other = index === 0 ? 1 : 0;
-  const isOtherLinked = inputLinkGroups.some((g) => g.includes(other));
 
   return (
     <div className="flex flex-col gap-3 p-4">

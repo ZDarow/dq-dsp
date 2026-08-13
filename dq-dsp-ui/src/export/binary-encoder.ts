@@ -4,7 +4,7 @@ import { ESP32_MAGIC, ESP32_CONFIG_VERSION, MAX_PEQ_BANDS, MAX_CROSSOVER_STAGES 
 import { calculateBiquadCoefficients, identityBiquad } from '../dsp/biquad';
 import { calculateCrossoverStages } from '../dsp/crossover';
 import { dbToLinear } from '../dsp/utils';
-import { FILTER_TYPE_TO_BLE, CROSSOVER_TYPE_TO_BLE, CROSSOVER_SLOPE_TO_BLE } from '../types/ble-protocol';
+import { CROSSOVER_TYPE_TO_BLE, CROSSOVER_SLOPE_TO_BLE } from '../types/ble-protocol';
 import { crc32 } from './checksum';
 import { DEFAULT_DRIFT } from '../store/slices/drift-slice';
 import { writeEQBandParams, writeDefaultEQBandParams } from './eq-band-params-io';

@@ -7,11 +7,13 @@
  * Run with: npx vitest run tests/store/slices.test.ts
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { describe, it, expect } from 'vitest';
-import { createInputSlice, type InputSlice } from '../../src/store/slices/input-slice';
-import { createOutputSlice, type OutputSlice } from '../../src/store/slices/output-slice';
-import { createRoomEQSlice, type RoomEQSlice } from '../../src/store/slices/room-eq-slice';
-import { createLinkSlice, type LinkSlice } from '../../src/store/slices/link-slice';
+import { createInputSlice } from '../../src/store/slices/input-slice';
+import { createOutputSlice } from '../../src/store/slices/output-slice';
+import { createRoomEQSlice } from '../../src/store/slices/room-eq-slice';
+import { createLinkSlice } from '../../src/store/slices/link-slice';
 import { createDefaultInputChannel } from '../../src/constants/defaults';
 import { createDefaultOutputChannel } from '../../src/constants/defaults';
 import { createDefaultEQBands } from '../../src/constants/defaults';
@@ -33,7 +35,7 @@ describe('input-slice', () => {
     const store = createTestStore(createInputSlice, {
       inputs: [createDefaultInputChannel(), createDefaultInputChannel()],
       inputLinkGroups: [[0, 1]],
-    } as any);
+    });
 
     store.getState().setInputGain(0, 6);
     const s = store.getState();
@@ -59,7 +61,7 @@ describe('input-slice', () => {
     const store = createTestStore(createInputSlice, {
       inputs: [createDefaultInputChannel(), createDefaultInputChannel()],
       inputLinkGroups: [[0, 1]],
-    } as any);
+    });
 
     store.getState().toggleInputMute(0);
     const s = store.getState();
@@ -72,7 +74,7 @@ describe('input-slice', () => {
     const store = createTestStore(createInputSlice, {
       inputs: [createDefaultInputChannel(), createDefaultInputChannel()],
       inputLinkGroups: [[0, 1]],
-    } as any);
+    });
 
     store.getState().setInputGain(0, 12);
     store.getState().resetInput(0);

@@ -12,8 +12,8 @@ import { encodeDSPConfig } from '../../src/export/binary-encoder';
 import { decodeDSPConfig } from '../../src/export/binary-decoder';
 import { createDefaultDSPConfig } from '../../src/constants/defaults';
 
-function roundTrip(config: any) {
-  const buffer = encodeDSPConfig(config);
+function roundTrip(config: unknown) {
+  const buffer = encodeDSPConfig(config as Parameters<typeof encodeDSPConfig>[0]);
   const decoded = decodeDSPConfig(buffer);
   expect(decoded).not.toBeNull();
   return decoded;

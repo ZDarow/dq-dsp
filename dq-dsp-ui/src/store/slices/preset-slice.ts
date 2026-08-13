@@ -126,7 +126,7 @@ export const createPresetSlice: StateCreator<DSPStore, [], [], PresetSlice> = (s
       presetName: config.presetName,
       roomEqBands,
       customSums: config.customSums ?? createDefaultCustomSums(),
-      inputLinkGroups: config.inputLinkGroups ?? (config.inputsLinked ? [[0, 1]] : []),
+      inputLinkGroups: config.inputLinkGroups ?? ((config as unknown as { inputsLinked?: boolean }).inputsLinked ? [[0, 1]] : []),
       outputLinkGroups: config.outputLinkGroups ?? [],
     });
   },

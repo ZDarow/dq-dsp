@@ -1,5 +1,4 @@
 import { useCallback, useRef } from 'react';
-import { SERIAL_MSG_PONG } from '../types/serial-protocol';
 
 export interface HeartbeatCallbacks {
   onLatency: (latency: number) => void;
@@ -10,20 +9,6 @@ export function useWebSerialHeartbeat(callbacks: HeartbeatCallbacks) {
   const pongTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pingSentAtRef = useRef(0);
   const latencySamplesRef = useRef<number[]>([]);
-
-  const startPingPong = useCallback(() => {
-    stopPingPong();
-    pingIntervalRef.current = setInterval(() => {
-      pingSentAtRef.current = performance.now();
-      // Actual PING send is handled by the main hook via serial_send_frame
-      // This hook only tracks timing; the main hook calls sendPing()
-    }, 5000);
-
-    pongTimeoutRef.current = setTimeout(() => {
-      console.warn('[Serial] PONG timeout, disconnecting');
-      // Actual disconnect is handled by the main hook
-    }, 2000);
-  }, []);
 
   const stopPingPong = useCallback(() => {
     if (pingIntervalRef.current) {
@@ -36,6 +21,17 @@ export function useWebSerialHeartbeat(callbacks: HeartbeatCallbacks) {
     }
     pingSentAtRef.current = 0;
   }, []);
+
+  const startPingPong = useCallback(() => {
+    stopPingPong();
+    pingIntervalRef.current = setInterval(() => {
+      pingSentAtRef.current = performance.now();
+    }, 5000);
+
+    pongTimeoutRef.current = setTimeout(() => {
+      console.warn('[Serial] PONG timeout, disconnecting');
+    }, 2000);
+  }, [stopPingPong]);
 
   const handlePong = useCallback(() => {
     if (pongTimeoutRef.current) {

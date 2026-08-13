@@ -9,7 +9,7 @@ import { PEQEditor } from '../eq/PEQEditor';
 import { CrossoverPanel } from './CrossoverPanel';
 import { LinkPicker } from './LinkPicker';
 import { CopyPicker } from './CopyPicker';
-import { getOutputLinkPartners } from '../../store/slices/link-slice';
+import { getLinkPartners } from '../../store/slices/link-slice';
 import type { EQBand } from '../../types/filter';
 
 interface OutputChannelStripProps {
@@ -35,7 +35,7 @@ export function OutputChannelStrip({ index }: OutputChannelStripProps) {
   const toggleOutputLinkMember = useDSPStore((s) => s.toggleOutputLinkMember);
   const copyOutput = useDSPStore((s) => s.copyOutput);
 
-  const partners = getOutputLinkPartners(outputLinkGroups, index);
+  const partners = getLinkPartners(outputLinkGroups, index);
   const others = Array.from({ length: OUTPUT_COUNT }, (_, i) => i).filter((i) => i !== index);
 
   return (
@@ -67,7 +67,7 @@ export function OutputChannelStrip({ index }: OutputChannelStripProps) {
       {/* Linked indicator with hint */}
       {partners.length > 0 && (
         <div className="text-xs text-accent/80 bg-accent/5 px-2 py-1 rounded border border-accent/15">
-          {t('output.mirroring', { names: partners.map((p) => t('nav.output', { n: p + 1 })).join(', ') })}
+          {t('output.mirroring', { names: partners.map((p: number) => t('nav.output', { n: p + 1 })).join(', ') })}
         </div>
       )}
 

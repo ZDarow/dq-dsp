@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import { BLE_MSG_ACK, BLE_MSG_ERROR, BLE_ACK_TIMEOUT_MS, BLE_MAX_IN_FLIGHT } from '../types/ble-protocol';
 import type { BLEAckMsg, BLEErrorMsg, BLEStatusCode } from '../types/ble-protocol';
 
@@ -11,7 +11,7 @@ export interface PendingMessage {
 
 export interface SendCallbacks {
   onStatus: (msg: BLEAckMsg | BLEErrorMsg) => void;
-  onWrite: (data: Uint8Array) => void;
+  onWrite: (data: Uint8Array) => Promise<void>;
 }
 
 export function useWebSerialSend(callbacks: SendCallbacks) {
@@ -89,7 +89,9 @@ export function useWebSerialSend(callbacks: SendCallbacks) {
     attemptWrite();
   }, [callbacks, processQueue]);
 
-  sendPendingRef.current = sendPending;
+  useLayoutEffect(() => {
+    sendPendingRef.current = sendPending;
+  });
 
   const sendParam = useCallback((frame: Uint8Array) => {
     sendQueueRef.current.push(frame);
@@ -104,7 +106,6 @@ export function useWebSerialSend(callbacks: SendCallbacks) {
     const pending = inFlightRef.current.get(msgId);
     if (!pending) return;
 
-    const latency = performance.now() - pending.sentAt;
     const timeout = ackTimeoutsRef.current.get(msgId);
     if (timeout) {
       clearTimeout(timeout);
@@ -122,7 +123,7 @@ export function useWebSerialSend(callbacks: SendCallbacks) {
   }, [callbacks, processQueue]);
 
   const dropAll = useCallback(() => {
-    for (const [id, timer] of ackTimeoutsRef.current) {
+    for (const [_id, timer] of ackTimeoutsRef.current) {
       clearTimeout(timer);
     }
     ackTimeoutsRef.current.clear();

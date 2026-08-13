@@ -3,7 +3,6 @@ import {
   SERIAL_BAUD_RATE,
   SERIAL_FRAME_HEADER,
   SERIAL_MAX_PAYLOAD_SIZE,
-  SERIAL_MSG_PING,
   SERIAL_MSG_PONG,
   SERIAL_MSG_SYNC_CONFIG,
   SERIAL_MSG_LOG,
@@ -14,7 +13,7 @@ import {
 } from '../types/serial-protocol';
 import type { DSPTelemetry } from '../types/serial-protocol';
 import { BLE_MSG_ACK, BLE_MSG_ERROR, BLE_MSG_BULK_CONFIG } from '../types/ble-protocol';
-import type { BLEAckMsg, BLEErrorMsg, BLEStatusCode } from '../types/ble-protocol';
+import type { BLEAckMsg, BLEErrorMsg } from '../types/ble-protocol';
 import type { DSPConfig } from '../types/dsp';
 import { encodeDSPConfig } from '../export/binary-encoder';
 import { useDSPStore } from '../store/dsp-store';
@@ -31,9 +30,6 @@ export interface WebSerialState {
 }
 
 type StatusCallback = (msg: BLEAckMsg | BLEErrorMsg) => void;
-
-const AUTO_RECONNECT_DELAY_MS = 2000;
-const BULK_RX_TIMEOUT_MS = 5000;
 
 export function useWebSerial() {
   const [state, setState] = useState<WebSerialState>({
@@ -206,43 +202,6 @@ export function useWebSerial() {
     configRequestedRef.current = false;
   }, []);
 
-  // Handle unexpected disconnection with auto-reconnect
-  const handleDisconnection = useCallback(async () => {
-    readLoopActiveRef.current = false;
-    setState((s) => ({ ...s, connected: false }));
-    cleanupConnection();
-
-    if (!disconnectIntentionalRef.current && portRef.current) {
-      reconnectTimeoutRef.current = setTimeout(async () => {
-        reconnectTimeoutRef.current = null;
-        try {
-          setState((s) => ({ ...s, connecting: true, error: null }));
-
-          const port = portRef.current;
-          await port.open({ baudRate: SERIAL_BAUD_RATE });
-
-          writerRef.current = port.writable?.getWriter() ?? null;
-          readerRef.current = port.readable?.getReader() ?? null;
-
-          setState((s) => ({ ...s, connected: true, connecting: false }));
-          startReadLoop();
-          heartbeatRef.current.startPingPong();
-        } catch {
-          setState((s) => ({
-            ...s,
-            connecting: false,
-            error: 'Auto-reconnect failed',
-          }));
-        }
-      }, AUTO_RECONNECT_DELAY_MS);
-    }
-  }, [cleanupConnection, startReadLoop]);
-
-  // Start ping/pong health monitoring
-  const startPingPong = useCallback(() => {
-    heartbeatRef.current.startPingPong();
-  }, []);
-
   const connect = useCallback(async () => {
     if (!('serial' in navigator)) {
       setState((s) => ({ ...s, error: 'Web Serial API not supported in this browser' }));
@@ -276,7 +235,7 @@ export function useWebSerial() {
       });
 
       startReadLoop();
-      startPingPong();
+      heartbeatRef.current.startPingPong();
     } catch (err) {
       setState((s) => ({
         ...s,
@@ -284,7 +243,7 @@ export function useWebSerial() {
         error: err instanceof Error ? err.message : 'Connection failed',
       }));
     }
-  }, [startReadLoop, startPingPong]);
+  }, [startReadLoop, heartbeat]);
 
   const disconnect = useCallback(async () => {
     disconnectIntentionalRef.current = true;
