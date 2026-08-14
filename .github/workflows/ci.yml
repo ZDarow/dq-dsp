@@ -30,4 +30,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install -y build-essential
-      - run: gcc -O2 -o golden_biquad golden_biquad.c -lm && ./golden_biquad
+      - run: make test-host
+
+  firmware-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dq-dsp-firmware
+    steps:
+      - uses: actions/checkout@v4
+      - uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp-idf-version: v6.0.2
+          target: esp32s3
+      - run: idf.py build

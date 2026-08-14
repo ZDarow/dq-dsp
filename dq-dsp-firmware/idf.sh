@@ -2,33 +2,46 @@
 # Source ESP-IDF environment and run idf.py commands.
 # Usage:
 #   ./idf.sh build
-#   ./idf.sh flash -p /dev/cu.usbserial-0001
-#   ./idf.sh flash monitor -p /dev/cu.usbserial-0001
+#   ./idf.sh flash -p /dev/ttyACM0
+#   ./idf.sh flash monitor -p /dev/ttyACM0
 #   ./idf.sh menuconfig
 #   ./idf.sh            (opens a shell with IDF in PATH)
 
-export IDF_PATH=/Users/duongtam/Workspace/audio/ESP32_Bluetooth_DSP_Speaker/esp-idf
-export ESP_ROM_ELF_DIR=/Users/duongtam/.espressif/tools/esp-rom-elfs/20230320/
-export IDF_PYTHON_ENV_PATH=/Users/duongtam/.espressif/python_env/idf5.2_py3.14_env
+set -euo pipefail
 
-# Add toolchain and IDF tools to PATH
-export PATH="/Users/duongtam/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin:$IDF_PYTHON_ENV_PATH/bin:$IDF_PATH/tools:$PATH"
+# Allow overriding IDF path; otherwise fall back to common locations.
+if [ -n "${IDF_PATH:-}" ]; then
+  :
+elif [ -d "$HOME/esp/esp-idf" ]; then
+  export IDF_PATH="$HOME/esp/esp-idf"
+elif [ -d "$HOME/.espressif/esp-idf" ]; then
+  export IDF_PATH="$HOME/.espressif/esp-idf"
+fi
 
-# Add any other espressif tool dirs
-for d in /Users/duongtam/.espressif/tools/*/; do
-    for sd in "$d"*/*/bin; do
-        [ -d "$sd" ] && export PATH="$sd:$PATH"
-    done
-done
+if [ -z "${IDF_PATH:-}" ]; then
+  echo "ERROR: IDF_PATH is not set and ESP-IDF was not found under \$HOME/esp/esp-idf or \$HOME/.espressif/esp-idf" >&2
+  echo "Set IDF_PATH or install ESP-IDF first." >&2
+  exit 1
+fi
+
+# Prefer the new IDF tools activation script when available.
+if [ -f "$HOME/.espressif/tools/activate_idf_v6.0.2.sh" ]; then
+  . "$HOME/.espressif/tools/activate_idf_v6.0.2.sh"
+elif [ -f "$IDF_PATH/export.sh" ]; then
+  . "$IDF_PATH/export.sh"
+else
+  echo "ERROR: ESP-IDF export script not found in $IDF_PATH" >&2
+  exit 1
+fi
 
 cd "$(dirname "$0")"
 
 if [ $# -eq 0 ]; then
-    echo "ESP-IDF environment ready. idf.py is available."
-    echo "  idf.py build"
-    echo "  idf.py flash -p /dev/cu.usbserial-XXXX"
-    echo "  idf.py flash monitor -p /dev/cu.usbserial-XXXX"
-    exec $SHELL
+  echo "ESP-IDF environment ready. idf.py is available."
+  echo "  idf.py build"
+  echo "  idf.py flash -p /dev/ttyACM0"
+  echo "  idf.py flash monitor -p /dev/ttyACM0"
+  exec $SHELL
 else
-    idf.py "$@"
+  idf.py "$@"
 fi
