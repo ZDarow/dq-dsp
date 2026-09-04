@@ -1,0 +1,148 @@
+﻿{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "firmware: build",
+      "type": "shell",
+      "command": "idfx build",
+      "options": {
+        "cwd": "${workspaceFolder}/dq-dsp-firmware"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "firmware: flash (COM14)",
+      "type": "shell",
+      "command": "idfx -p COM14 flash",
+      "options": {
+        "cwd": "${workspaceFolder}/dq-dsp-firmware"
+      },
+      "dependsOrder": "sequence",
+      "dependsOn": ["firmware: build"],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "firmware: monitor (COM14)",
+      "type": "shell",
+      "command": "idfx -p COM14 monitor",
+      "options": {
+        "cwd": "${workspaceFolder}/dq-dsp-firmware"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "group": {
+          "kind": "shared",
+          "id": "monitor-panel"
+        }
+      },
+      "problems": false
+    },
+    {
+      "label": "ui: dev",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/dq-dsp-ui"
+      },
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new",
+        "group": {
+          "kind": "shared",
+          "id": "ui-dev"
+        }
+      },
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "VITE.*ready.*in",
+          "endsPattern": "Local:.*http://localhost:5173"
+        }
+      }
+    },
+    {
+      "label": "ui: build",
+      "type": "shell",
+      "command": "npm run build",
+      "options": {
+        "cwd": "${workspaceFolder}/dq-dsp-ui"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": [
+        "$tsc"
+      ]
+    },
+    {
+      "label": "ui: test",
+      "type": "shell",
+      "command": "npm run test",
+      "options": {
+        "cwd": "${workspaceFolder}/dq-dsp-ui"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": [
+        "$vitest"
+      ]
+    },
+    {
+      "label": "firmware: test-host",
+      "type": "shell",
+      "command": "make test-host",
+      "options": {
+        "cwd": "${workspaceFolder}/dq-dsp-firmware/tests"
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    }
+  ]
+}

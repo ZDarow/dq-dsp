@@ -4,8 +4,24 @@
 # OS
 .DS_Store
 
-# Редакторы
+# ESP-IDF
+build/
+**/build/
+*.bin
+sdkconfig
+sdkconfig.defaults
+managed_components/
+.espressif/
+
+# Node
+node_modules/
+
+# Debug / artifacts
+*.log
+Screenshot_*.png
+web-ui-*.png
+*.local
 .vscode/*
 !.vscode/extensions.json
-.idea
-*.swp
+!.vscode/tasks.json
+!.vscode/settings.json
