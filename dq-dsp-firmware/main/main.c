@@ -175,10 +175,7 @@ void app_main(void)
         return;
     }
 
-    /* 4. Initialize DSP pipeline state */
-    dsp_pipeline_init();
-
-    /* 5. Initialize serial server (UART transport for web UI) */
+    /* 4. Initialize serial server (UART transport for web UI) */
     err = serial_server_init();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Serial server init failed: %s", esp_err_to_name(err));

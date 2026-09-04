@@ -14,7 +14,6 @@ extern "C" {
 #define DSP_PIPELINE_BLOCK_SIZE 32
 
 void dsp_pipeline_init(void);
-void dsp_pipeline_process(const dsp_config_t* cfg, float in_l, float in_r, float out[4]);
 void dsp_pipeline_process_block(const dsp_config_t* cfg, const float in_l[], const float in_r[], float out[][4], int len);
 
 #ifdef __cplusplus

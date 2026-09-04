@@ -25,7 +25,7 @@
 | R7 | Полный `resetAll()` — сброс `roomEqBands`, `inputsLinked`, `outputLinkGroups` | ✅ `dq-dsp-ui/src/store/slices/preset-slice.ts:139-160` |
 | M6 | OOB-проверки `bChannelNumber`/`alt` в vendored UAC | ✅ `dq-dsp-firmware/components/usb_device_uac/usb_device_uac.c:214-222,256-264,365-373,390-398` |
 | G1 | Golden-тесты C↔TS: биквады, кросоверы, checksum-векторы | ✅ `dq-dsp-firmware/tests/` (biquad 10/10, crc 6/6, crossover 36/36) + `dq-dsp-ui/tests/export/checksum.test.ts` |
-| G2 | Интеграция `esp-dsp` (блочные биквады/FFT) в FW-конвейер | `dq-dsp-firmware` — `esp-dsp` подключён как managed component (^1.8.2), ждёт перехода на блочную обработку |
+| G2 | Интеграция `esp-dsp` (блочные биквады/FFT) в FW-конвейер | ✅ `dq-dsp-firmware` — `esp-dsp` подключён как managed component (`^1.8.2`), `dsp_pipeline_process_block` использует `dsps_biquad_f32_ae32` для PEQ/HP/LP, вызывается из `usb_audio.c`; per-sample `dsp_pipeline_process()` удалён, `dsp_pipeline_init()` удалён (состояния zero-init), задержка встроена инлайном |
 
 ## Low
 

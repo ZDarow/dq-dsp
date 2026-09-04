@@ -36,7 +36,7 @@ dependencies:
   idf:
     source:
       type: idf
-    version: 6.0.2
+    version: 5.5.5
 direct_dependencies:
 - espressif/cmake_utilities
 - espressif/esp-dsp
@@ -44,4 +44,4 @@ direct_dependencies:
 - idf
 manifest_hash: c8269203d634c56b0653862480f9da852ddf4160560d5ae2a8a4c56b66b52f1f
 target: esp32s3
-version: 3.0.0
+version: 2.0.0
