@@ -13,7 +13,7 @@
 | [`dsp-algorithms.md`](dsp-algorithms.md) | Математика DSP: биквад DF-IIT, Audio EQ Cookbook, кроссоверы Butterworth/Linkwitz-Riley, ASRC, PI-компенсатор, soft-clip, диапазоны валидации. |
 | [`api-reference.md`](api-reference.md) | API-справочник: публичные функции FW и UI с сигнатурами и константами. |
 | [`ui-architecture.md`](ui-architecture.md) | Архитектура веб-UI: слои, Zustand-стор и слайсы, serial-middleware, useWebSerial, экспорт/импорт конфига, пресеты + диаграммы retry/RX/reconnect. |
-| [`build-and-flash.md`](build-and-flash.md) | Сборка, прошивка и проверки (ESP-IDF 6.0.2 / Vite): команды, окружение, порядок верификации. |
+| [`build-and-flash.md`](build-and-flash.md) | Сборка, прошивка и проверки (ESP-IDF 5.5.5 / Vite): команды, окружение, порядок верификации. |
 | [`audit-2026-08.md`](audit-2026-08.md) | Результаты комплексного аудита (2026-08): найденные проблемы, применённые фиксы, оставшиеся рекомендации. |
 | [`TASKS.md`](TASKS.md) | План устранения проблем и текущие статусы задач. |
 
@@ -21,7 +21,7 @@
 
 ```
 dq-dsp/
-├── dq-dsp-firmware/            # ESP-IDF 6.0.2, target esp32s3
+├── dq-dsp-firmware/            # ESP-IDF 5.5.5, target esp32s3
 │   ├── main/                   # app_main, USB Audio, I2S, serial-сервер
 │   ├── shared/dsp/             # Чистый C: конфиг, конвейер, engine параметров, router
 │   ├── components/usb_device_uac/  # vendored TinyUSB UAC-компонент

@@ -93,11 +93,11 @@
 
 | Компонент | Версия / значение |
 |---|---|
-| MCU | ESP32-S3 (N16R8: dual-core Xtensa LX7 @ 240 МГц, 16 МБ flash, 8 МБ PSRAM) |
+| MCU | ESP32-S3 (N8R2: dual-core Xtensa LX7 @ 240 МГц, 8 МБ flash, без PSRAM) |
 | Вход | USB Audio Class 1.0, `CONFIG_UAC_SAMPLE_RATE = 48000` |
 | Выход | I2S0 (GPIO 4/5/6) → левый ЦАП; I2S1 (GPIO 16/17/18) → правый ЦАП |
 | ЦАП | 2 × PCM5102A (24 бит, Philips, 32-битные слоты) |
-| ESP-IDF | 6.0.2, target `esp32s3` |
+| ESP-IDF | 5.5.5, target `esp32s3` |
 | UI | Node 22+, React 19, TypeScript 5.9, Vite 7, Zustand 5, Tailwind 4 |
 
 ### 1.3 Структура репозитория
@@ -385,7 +385,7 @@ AA 55 | length (≤252) | payload | CRC-8 (poly 0x07, init 0)
 
 | Компонент | Требование |
 |---|---|
-| ESP-IDF | 6.0.2, target `esp32s3` (Linux — `~/.espressif/tools/activate_idf_v6.0.2.sh`; Windows — Espressif-IDE) |
+| ESP-IDF | 5.5.5, target `esp32s3` (Linux — `~/.espressif/tools/activate_idf_v5.5.5.sh`; Windows — `C:\Users\Mi\esp-idf-v5.5.5\export.ps1`) |
 | Python | 3.14 (в venv IDF) |
 | Node.js | 22+ |
 | npm | в паре с Node |
@@ -394,21 +394,21 @@ AA 55 | length (≤252) | payload | CRC-8 (poly 0x07, init 0)
 
 ### 3.2 Прошивка: установка ESP-IDF
 
-1. Установить **ESP-IDF 6.0.2** по официальному гайду:
-   <https://docs.espressif.com/projects/esp-idf/en/v6.0.2/esp32s3/get-started/>
-   (Windows — Espressif-IDE или ручная установка + `install.ps1`).
+1. Установить **ESP-IDF 5.5.5** по официальному гайду:
+   <https://docs.espressif.com/projects/esp-idf/en/v5.5.5/esp32s3/get-started/>
+   (Windows — Espressif-IDE или ручная установка + `export.ps1`).
 2. Убедиться, что `idf.py` доступен после экспорта окружения.
 
-> Примечание: репозиторий рассчитан на ESP-IDF 6; сборка на 5.x может не пройти.
+> Примечание: репозиторий протестирован с ESP-IDF 5.5.5; сборка на 6.x может не пройти.
 
 ### 3.3 Прошивка: сборка, прошивка, мониторинг
 
-**Linux (данная машина, ESP-IDF 6.0.2):**
+**Linux (данная машина, ESP-IDF 5.5.5):**
 
 ```bash
 # 1. Экспорт окружения ESP-IDF
 export IDF_TOOLS_PATH=/home/mi/.espressif/tools
-source ~/.espressif/tools/activate_idf_v6.0.2.sh
+source ~/.espressif/tools/activate_idf_v5.5.5.sh
 
 # 2. Сборка (из корня проекта прошивки)
 cd /home/mi/DQ-DSP/dq-dsp-firmware
@@ -438,7 +438,7 @@ idf.py -p /dev/ttyUSB0 flash
 
 ```bash
 python -m esptool --chip esp32s3 -b 460800 --before default-reset --after hard-reset \
-  write-flash --flash-mode dio --flash-size 16MB --flash-freq 80m \
+  write-flash --flash-mode dio --flash-size 8MB --flash-freq 40m \
   0x0 build/bootloader/bootloader.bin \
   0x8000 build/partition_table/partition-table.bin \
   0x10000 build/esp32s3_audio_dsp.bin

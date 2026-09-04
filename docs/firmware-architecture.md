@@ -1,7 +1,7 @@
 # Архитектура прошивки (ESP32-S3)
 
-Модули: `dq-dsp-firmware/main/` и `dq-dsp-firmware/shared/dsp/`. Сборка: ESP-IDF 6.0.2,
-target `esp32s3`, чип ESP32-S3 N16R8 (dual-core Xtensa LX7 @ 240 МГц, 16 МБ flash, 8 МБ PSRAM).
+Модули: `dq-dsp-firmware/main/` и `dq-dsp-firmware/shared/dsp/`. Сборка: ESP-IDF 5.5.5,
+target `esp32s3`, чип ESP32-S3 N8R2 (dual-core Xtensa LX7 @ 240 МГц, 8 МБ flash, без PSRAM).
 
 ## 1. Потоки и ядра
 

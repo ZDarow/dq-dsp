@@ -4,7 +4,7 @@
 
 | Компонент | Версия/требование |
 |---|---|
-| ESP-IDF | **6.0.2** (установлен в `C:\Users\Mi\Arduino\esp-idf-git\esp-idf`), target `esp32s3` |
+| ESP-IDF | **5.5.5** (установлен в `C:\Users\Mi\esp-idf-v5.5.5`), target `esp32s3` |
 | Python | 3.14 (в виртуальном окружении IDF) |
 | Node | см. `dq-dsp-ui/package.json` (`engines`) |
 | npm | в паре с Node |
@@ -14,14 +14,14 @@
 ### Экспорт окружения ESP-IDF
 
 ```powershell
-& "C:\Users\Mi\Arduino\esp-idf-git\esp-idf\export.ps1" | Out-Null
+& "C:\Users\Mi\esp-idf-v5.5.5\export.ps1" | Out-Null
 ```
 
 ### Сборка
 
 ```powershell
 cd C:\Users\Mi\dq-dsp\dq-dsp-firmware
-& "C:\Users\Mi\Arduino\esp-idf-git\esp-idf\export.ps1" | Out-Null
+& "C:\Users\Mi\esp-idf-v5.5.5\export.ps1" | Out-Null
 idf.py build
 ```
 
@@ -29,7 +29,7 @@ idf.py build
 - `CMake Warning ... component_validation.cmake:98` — tinyusb использует include
   freertos без явной REQUIRES-зависимости (внутренняя нота IDF/компонента);
 - `NOTE: ... BT_NIMBLE_MESH_PROVISIONER / FATFS_*: 'default 0' is not a valid bool`
-  — безвредные замечания Kconfig-парсера IDF 6;
+  — безвредные замечания Kconfig-парсера IDF 5.5;
 - `bootloader 36% free`, `app ... 93% free` — занятость разделов.
 
 ### Поиск COM-порта
@@ -38,20 +38,20 @@ idf.py build
 [System.IO.Ports.SerialPort]::GetPortNames()
 ```
 
-Устройство — `COM10` (пример из последней прошивки). Если портов нет —
-проверить, что плата подключена USB-кабелем с данными.
+Устройство — `COM14` (CH343 USB-Serial-JTAG, основной порт). Если портов нет —
+проверить, что плата подключена USB-кабелем с данными и драйвер CH343 установлен.
 
 ### Прошивка
 
 ```powershell
-idf.py -p COM10 flash
+idf.py -p COM14 flash
 ```
 
 или полная команда esptool:
 
 ```powershell
 python -m esptool --chip esp32s3 -b 460800 --before default-reset --after hard-reset `
-  write-flash --flash-mode dio --flash-size 16MB --flash-freq 80m `
+  write-flash --flash-mode dio --flash-size 8MB --flash-freq 40m `
   0x0 build\bootloader\bootloader.bin `
   0x8000 build\partition_table\partition-table.bin `
   0x10000 build\esp32s3_audio_dsp.bin
@@ -63,7 +63,7 @@ python -m esptool --chip esp32s3 -b 460800 --before default-reset --after hard-r
 ### Мониторинг логов
 
 ```powershell
-idf.py -p COM10 monitor
+idf.py -p COM14 monitor
 ```
 
 ## 3. UI (Vite + React)
