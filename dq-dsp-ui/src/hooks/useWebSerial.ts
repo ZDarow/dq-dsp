@@ -115,12 +115,14 @@ export function useWebSerial() {
       const frameBytes = new Uint8Array(buf.splice(0, frameSize));
       const result = decodeSerialFrame(frameBytes);
       if (result.valid) {
-        handleRxPayload(result.payload);
+        handleRxPayloadRef.current(result.payload);
       }
     }
   }, []);
 
-  const handleRxPayload = useCallback((payload: Uint8Array) => {
+  // Handle incoming payload via a ref to avoid re-creating feedRxBytes
+  const handleRxPayloadRef = useRef<(payload: Uint8Array) => void>(() => {});
+  handleRxPayloadRef.current = (payload: Uint8Array) => {
     if (payload.length === 0) return;
 
     if (bulkRef.current.isBulkActive()) {
@@ -162,7 +164,7 @@ export function useWebSerial() {
       bulkRef.current.handleBulkStart(payload);
       return;
     }
-  }, []);
+  };
 
   // Read loop for incoming serial data
   const startReadLoop = useCallback(async () => {
@@ -243,7 +245,7 @@ export function useWebSerial() {
         error: err instanceof Error ? err.message : 'Connection failed',
       }));
     }
-  }, [startReadLoop, heartbeat]);
+  }, [startReadLoop]);
 
   const disconnect = useCallback(async () => {
     disconnectIntentionalRef.current = true;

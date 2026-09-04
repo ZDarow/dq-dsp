@@ -105,11 +105,11 @@ ports of the dev-board:
 
 | | |
 |---|---|
-| MCU | ESP32-S3 N16R8 — Xtensa LX7 dual core @ 240 MHz |
-| Flash | 16 MB QSPI |
-| PSRAM | 8 MB Octal |
+| MCU | ESP32-S3 N8R2 — Xtensa LX7 dual core @ 240 MHz |
+| Flash | 8 MB QSPI |
+| PSRAM | Отсутствует (N8R2 без PSRAM) |
 | USB | 2 × USB-C: USB-Serial-JTAG (UART0) + native USB-OTG |
-| ESP-IDF | v5.2 |
+| ESP-IDF | v5.5.5 |
 
 ### Control link
 
@@ -184,7 +184,7 @@ breadboarded DSP are in the [blog post](https://tamduongs.com/blog/dq-dsp).
 | 5 | 3.5 mm audio cable / pigtail | 2 | One per DAC, into your amp or powered speakers. |
 
 Total parts cost: roughly **US $15–20** at the time of writing. ESP-IDF
-v5.2 toolchain is the only software dependency.
+v5.5.5 toolchain is the only software dependency.
 
 ## Wiring
 

@@ -25,8 +25,8 @@ if [ -z "${IDF_PATH:-}" ]; then
 fi
 
 # Prefer the new IDF tools activation script when available.
-if [ -f "$HOME/.espressif/tools/activate_idf_v6.0.2.sh" ]; then
-  . "$HOME/.espressif/tools/activate_idf_v6.0.2.sh"
+if [ -f "$HOME/.espressif/tools/activate_idf_v5.5.5.sh" ]; then
+  . "$HOME/.espressif/tools/activate_idf_v5.5.5.sh"
 elif [ -f "$IDF_PATH/export.sh" ]; then
   . "$IDF_PATH/export.sh"
 else

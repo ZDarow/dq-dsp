@@ -7,14 +7,14 @@
 | Каталог | Назначение |
 |---------|------------|
 | [`dq-dsp-ui/`](dq-dsp-ui) | Веб-интерфейс (Vite + React + TypeScript). Стримит правки параметров (усиление, ЭК, кроссовер, маршрутизация) на устройство в реальном времени; bulk-применение пресетов и сохранение в NVS. |
-| [`dq-dsp-firmware/`](dq-dsp-firmware) | Прошивка ESP32-S3 (ESP-IDF 6.0.2): USB UAC-класс, ASRC-компенсация дрейфа, DSP-конвейер, dual I2S → 2× PCM5102A, serial-сервер. |
+| [`dq-dsp-firmware/`](dq-dsp-firmware) | Прошивка ESP32-S3 (ESP-IDF 5.5.5): USB UAC-класс, ASRC-компенсация дрейфа, DSP-конвейер, dual I2S → 2× PCM5102A, serial-сервер. |
 | [`docs/`](docs) | Техническая документация: архитектура, wire-протокол, алгоритмы DSP, сборка и прошивка, аудит. |
 | [`scripts/`](scripts) | Вспомогательные скрипты (генерация типов, кодогенерация). |
 
 ## Быстрый старт
 
 - **UI:** `cd dq-dsp-ui && npm install && npm run dev`
-- **Прошивка:** см. `dq-dsp-firmware/README.md` и `docs/build-and-flash.md` (требуется ESP-IDF 6.0.2)
+- **Прошивка:** см. `dq-dsp-firmware/README.md` и `docs/build-and-flash.md` (требуется ESP-IDF 5.5.5)
 
 ## Техническая документация
 
@@ -33,7 +33,7 @@
 
 ## Ключевые особенности
 
-- **Аппаратная платформа:** ESP32-S3 DevKitC-1 N8R2 (8 MB flash, 2 MB embedded PSRAM, dual-core Xtensa LX7 @ 240 MHz)
+- **Аппаратная платформа:** ESP32-S3 DevKitC-1 N8R2 (8 MB flash, без PSRAM, dual-core Xtensa LX7 @ 240 MHz)
 - **Аудио вход:** USB Audio Class 1.0, 24-bit / 48 kHz stereo
 - **Аудио выход:** 4 канала (2× стерео) через 2× PCM5102A на I2S0/I2S1
 - **Управление:** Web Serial (Chrome/Edge/ Brave/Opera desktop), 115200 8N1, live-параметры + bulk-конфиг
