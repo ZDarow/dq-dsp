@@ -3,6 +3,7 @@
 
 # OS
 .DS_Store
+Thumbs.db
 
 # IDE-специфичные кеши
 .kilo/
@@ -28,11 +29,31 @@ dependencies.lock
 # Node
 node_modules/
 
+# Тестовое покрытие
+.coverage
+coverage/
+htmlcov/
+*.lcov
+
+# Архивы
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tgz
+
 # Debug / artifacts
 *.log
+*.tmp
 Screenshot_*.png
 web-ui-*.png
 *.local
+
+# Окружение
+.env
+.env.local
+*.env.*
+
+# IDE
 .vscode/*
 !.vscode/extensions.json
 !.vscode/tasks.json
