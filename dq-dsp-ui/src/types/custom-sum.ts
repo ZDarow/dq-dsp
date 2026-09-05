@@ -8,15 +8,15 @@
  */
 export interface CustomSum {
   /** Stable unique id (uuid-like; generated on creation). */
-  id: string;
+  id: string
   /** User-editable label shown on the toggle pill and legend. */
-  name: string;
+  name: string
   /** Stroke color for the curve and pill accent (hex). */
-  color: string;
+  color: string
   /** Indices into outputs[] to sum (e.g. [0, 1] for Out 1 + Out 2). */
-  outputIndices: number[];
+  outputIndices: number[]
   /** Visibility toggle, mirrors the pill state. */
-  enabled: boolean;
+  enabled: boolean
 }
 
 /**
@@ -33,4 +33,4 @@ export const CUSTOM_SUM_COLORS = [
   '#26a69a', // teal-green
   '#ef6c00', // burnt orange
   '#455a64', // blue-grey
-] as const;
+] as const

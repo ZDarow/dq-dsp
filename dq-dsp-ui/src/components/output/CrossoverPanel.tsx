@@ -1,13 +1,23 @@
-import { useTranslation } from 'react-i18next';
-import type { CrossoverConfig, CrossoverFilterType, CrossoverSlope } from '../../types/filter';
-import { CROSSOVER_TYPES, CROSSOVER_SLOPES } from '../../constants/filter-options';
-import { Tooltip } from '../ui/Tooltip';
+import { useTranslation } from 'react-i18next'
+import type { CrossoverConfig, CrossoverFilterType, CrossoverSlope } from '../../types/filter'
+import { CROSSOVER_TYPES, CROSSOVER_SLOPES } from '../../constants/filter-options'
+import { Tooltip } from '../ui/Tooltip'
 
 interface CrossoverPanelProps {
-  crossover: CrossoverConfig;
-  onHPChange: (updates: { enabled?: boolean; filterType?: CrossoverFilterType; slope?: CrossoverSlope; frequency?: number }) => void;
-  onLPChange: (updates: { enabled?: boolean; filterType?: CrossoverFilterType; slope?: CrossoverSlope; frequency?: number }) => void;
-  color: string;
+  crossover: CrossoverConfig
+  onHPChange: (updates: {
+    enabled?: boolean
+    filterType?: CrossoverFilterType
+    slope?: CrossoverSlope
+    frequency?: number
+  }) => void
+  onLPChange: (updates: {
+    enabled?: boolean
+    filterType?: CrossoverFilterType
+    slope?: CrossoverSlope
+    frequency?: number
+  }) => void
+  color: string
 }
 
 function FilterSection({
@@ -18,14 +28,14 @@ function FilterSection({
   longName,
   description,
 }: {
-  label: string;
-  filter: CrossoverConfig['highPass'];
-  onChange: (updates: Record<string, unknown>) => void;
-  color: string;
-  longName: string;
-  description: string;
+  label: string
+  filter: CrossoverConfig['highPass']
+  onChange: (updates: Record<string, unknown>) => void
+  color: string
+  longName: string
+  description: string
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   return (
     <Tooltip content={description} wrapperClassName="block">
       <div className="flex items-center gap-2 p-2 rounded bg-panel-bg">
@@ -36,7 +46,10 @@ function FilterSection({
           style={{ accentColor: color }}
           aria-label={t('crossover.enable', { name: longName })}
         />
-        <span className="text-xs font-bold w-6" style={{ color: filter.enabled ? color : '#55556a' }}>
+        <span
+          className="text-xs font-bold w-6"
+          style={{ color: filter.enabled ? color : '#55556a' }}
+        >
           {label}
         </span>
 
@@ -47,7 +60,9 @@ function FilterSection({
           className="bg-control-bg text-text-primary text-xs px-1.5 py-0.5 rounded border border-surface-bg focus:border-accent focus:outline-none disabled:opacity-40"
         >
           {CROSSOVER_TYPES.map((opt) => (
-            <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
+            <option key={opt.value} value={opt.value}>
+              {t(opt.labelKey)}
+            </option>
           ))}
         </select>
 
@@ -58,7 +73,9 @@ function FilterSection({
           className="bg-control-bg text-text-primary text-xs px-1.5 py-0.5 rounded border border-surface-bg focus:border-accent focus:outline-none disabled:opacity-40"
         >
           {CROSSOVER_SLOPES.map((s) => (
-            <option key={s.value} value={s.value}>{s.label}</option>
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
           ))}
         </select>
 
@@ -74,11 +91,11 @@ function FilterSection({
         <span className="text-text-dimmed text-xs">Hz</span>
       </div>
     </Tooltip>
-  );
+  )
 }
 
 export function CrossoverPanel({ crossover, onHPChange, onLPChange, color }: CrossoverPanelProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col gap-1">
       <Tooltip content={t('crossover.titleTooltip')}>
@@ -101,5 +118,5 @@ export function CrossoverPanel({ crossover, onHPChange, onLPChange, color }: Cro
         description={t('crossover.lpDesc')}
       />
     </div>
-  );
+  )
 }

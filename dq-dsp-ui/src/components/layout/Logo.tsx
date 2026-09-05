@@ -89,10 +89,13 @@ export function Logo() {
         >
           DQ-DSP
         </span>
-        <span className="section-label" style={{ fontSize: '0.7rem', letterSpacing: '0.22em', marginTop: '4px' }}>
+        <span
+          className="section-label"
+          style={{ fontSize: '0.7rem', letterSpacing: '0.22em', marginTop: '4px' }}
+        >
           2 in · 4 out
         </span>
       </div>
     </div>
-  );
+  )
 }

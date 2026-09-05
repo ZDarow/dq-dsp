@@ -1,4 +1,9 @@
-import type { BLEParamUpdateMsg, BLEParamValue, BLEBlockType, BLEParamType } from '../types/ble-protocol';
+import type {
+  BLEParamUpdateMsg,
+  BLEParamValue,
+  BLEBlockType,
+  BLEParamType,
+} from '../types/ble-protocol'
 import {
   BLE_MSG_PARAM_UPDATE,
   BLE_BLOCK_INPUT,
@@ -40,14 +45,18 @@ import {
   FILTER_TYPE_TO_BLE,
   CROSSOVER_TYPE_TO_BLE,
   CROSSOVER_SLOPE_TO_BLE,
-} from '../types/ble-protocol';
-import type { FilterType, CrossoverFilterType, CrossoverSlope } from '../types/filter';
-import { dbToLinear } from '../dsp/utils';
-import { SERIAL_MSG_PING, SERIAL_MSG_SYNC_CONFIG, SERIAL_MSG_SAVE_CONFIG } from '../types/serial-protocol';
-import { crc8 } from '../types/serial-protocol';
+} from '../types/ble-protocol'
+import type { FilterType, CrossoverFilterType, CrossoverSlope } from '../types/filter'
+import { dbToLinear } from '../dsp/utils'
+import {
+  SERIAL_MSG_PING,
+  SERIAL_MSG_SYNC_CONFIG,
+  SERIAL_MSG_SAVE_CONFIG,
+} from '../types/serial-protocol'
+import { crc8 } from '../types/serial-protocol'
 
 /** Rolling message ID counter (0..255) */
-let nextMsgId = 0;
+let nextMsgId = 0
 
 /**
  * Serial message IDs that share the first payload byte with a param update's
@@ -59,20 +68,20 @@ const RESERVED_MSG_IDS = new Set<number>([
   SERIAL_MSG_PING,
   SERIAL_MSG_SYNC_CONFIG,
   SERIAL_MSG_SAVE_CONFIG,
-]);
+])
 
 /** Get next message ID and advance the counter */
 export function getNextMsgId(): number {
-  const id = nextMsgId;
+  const id = nextMsgId
   do {
-    nextMsgId = (nextMsgId + 1) % BLE_MSG_ID_MAX;
-  } while (RESERVED_MSG_IDS.has(nextMsgId));
-  return id;
+    nextMsgId = (nextMsgId + 1) % BLE_MSG_ID_MAX
+  } while (RESERVED_MSG_IDS.has(nextMsgId))
+  return id
 }
 
 /** Reset the message ID counter (useful for testing) */
 export function resetMsgId(): void {
-  nextMsgId = 0;
+  nextMsgId = 0
 }
 
 /**
@@ -86,17 +95,17 @@ export function resetMsgId(): void {
  * @returns      The new msg_id, or -1 if every ID is busy/reserved.
  */
 export function reassignMsgId(frame: Uint8Array, isBusy: (id: number) => boolean): number {
-  const payloadLen = frame[2];
-  const old = frame[3];
+  const payloadLen = frame[2]
+  const old = frame[3]
   for (let i = 1; i < BLE_MSG_ID_MAX; i++) {
-    const id = (old + i) % BLE_MSG_ID_MAX;
-    if (RESERVED_MSG_IDS.has(id)) continue;
-    if (isBusy(id)) continue;
-    frame[3] = id;
-    frame[3 + payloadLen] = crc8(frame, 2, 1 + payloadLen);
-    return id;
+    const id = (old + i) % BLE_MSG_ID_MAX
+    if (RESERVED_MSG_IDS.has(id)) continue
+    if (isBusy(id)) continue
+    frame[3] = id
+    frame[3 + payloadLen] = crc8(frame, 2, 1 + payloadLen)
+    return id
   }
-  return -1;
+  return -1
 }
 
 /**
@@ -112,24 +121,24 @@ export function reassignMsgId(frame: Uint8Array, isBusy: (id: number) => boolean
  *   [6..] value      f32 LE (4 bytes) or u8 (1 byte)
  */
 export function encodeParamUpdate(msg: BLEParamUpdateMsg): Uint8Array {
-  const valueSize = msg.value.kind === 'f32' ? 4 : 1;
-  const buf = new ArrayBuffer(BLE_PARAM_MSG_HEADER_SIZE + valueSize);
-  const view = new DataView(buf);
+  const valueSize = msg.value.kind === 'f32' ? 4 : 1
+  const buf = new ArrayBuffer(BLE_PARAM_MSG_HEADER_SIZE + valueSize)
+  const view = new DataView(buf)
 
-  view.setUint8(0, msg.msgId);
-  view.setUint8(1, msg.msgType);
-  view.setUint8(2, msg.targetBlock);
-  view.setUint8(3, msg.channel);
-  view.setUint8(4, msg.paramType);
-  view.setUint8(5, msg.paramIndex);
+  view.setUint8(0, msg.msgId)
+  view.setUint8(1, msg.msgType)
+  view.setUint8(2, msg.targetBlock)
+  view.setUint8(3, msg.channel)
+  view.setUint8(4, msg.paramType)
+  view.setUint8(5, msg.paramIndex)
 
   if (msg.value.kind === 'f32') {
-    view.setFloat32(BLE_PARAM_MSG_HEADER_SIZE, msg.value.value, true);
+    view.setFloat32(BLE_PARAM_MSG_HEADER_SIZE, msg.value.value, true)
   } else {
-    view.setUint8(BLE_PARAM_MSG_HEADER_SIZE, msg.value.value);
+    view.setUint8(BLE_PARAM_MSG_HEADER_SIZE, msg.value.value)
   }
 
-  return new Uint8Array(buf);
+  return new Uint8Array(buf)
 }
 
 // ---------------------------------------------------------------------------
@@ -143,7 +152,7 @@ function buildMsg(
   paramIndex: number,
   value: BLEParamValue,
 ): Uint8Array {
-  const msgId = getNextMsgId();
+  const msgId = getNextMsgId()
   return encodeParamUpdate({
     msgId,
     msgType: BLE_MSG_PARAM_UPDATE,
@@ -152,7 +161,7 @@ function buildMsg(
     paramType,
     paramIndex,
     value,
-  });
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -165,7 +174,10 @@ export function encodeEQBandEnable(
   bandIndex: number,
   enabled: boolean,
 ): Uint8Array {
-  return buildMsg(block, channel, BLE_PARAM_EQ_BAND_ENABLE, bandIndex, { kind: 'u8', value: enabled ? 1 : 0 });
+  return buildMsg(block, channel, BLE_PARAM_EQ_BAND_ENABLE, bandIndex, {
+    kind: 'u8',
+    value: enabled ? 1 : 0,
+  })
 }
 
 export function encodeEQBandFreq(
@@ -174,7 +186,7 @@ export function encodeEQBandFreq(
   bandIndex: number,
   freqHz: number,
 ): Uint8Array {
-  return buildMsg(block, channel, BLE_PARAM_EQ_BAND_FREQ, bandIndex, { kind: 'f32', value: freqHz });
+  return buildMsg(block, channel, BLE_PARAM_EQ_BAND_FREQ, bandIndex, { kind: 'f32', value: freqHz })
 }
 
 export function encodeEQBandGain(
@@ -183,7 +195,7 @@ export function encodeEQBandGain(
   bandIndex: number,
   gainDb: number,
 ): Uint8Array {
-  return buildMsg(block, channel, BLE_PARAM_EQ_BAND_GAIN, bandIndex, { kind: 'f32', value: gainDb });
+  return buildMsg(block, channel, BLE_PARAM_EQ_BAND_GAIN, bandIndex, { kind: 'f32', value: gainDb })
 }
 
 export function encodeEQBandQ(
@@ -192,7 +204,7 @@ export function encodeEQBandQ(
   bandIndex: number,
   q: number,
 ): Uint8Array {
-  return buildMsg(block, channel, BLE_PARAM_EQ_BAND_Q, bandIndex, { kind: 'f32', value: q });
+  return buildMsg(block, channel, BLE_PARAM_EQ_BAND_Q, bandIndex, { kind: 'f32', value: q })
 }
 
 export function encodeEQBandType(
@@ -201,7 +213,10 @@ export function encodeEQBandType(
   bandIndex: number,
   filterType: FilterType,
 ): Uint8Array {
-  return buildMsg(block, channel, BLE_PARAM_EQ_BAND_TYPE, bandIndex, { kind: 'u8', value: FILTER_TYPE_TO_BLE[filterType] });
+  return buildMsg(block, channel, BLE_PARAM_EQ_BAND_TYPE, bandIndex, {
+    kind: 'u8',
+    value: FILTER_TYPE_TO_BLE[filterType],
+  })
 }
 
 /** Convenience: encode any single EQ band parameter update */
@@ -219,15 +234,15 @@ export function encodeEQBandUpdate(
 ): Uint8Array {
   switch (paramType) {
     case BLE_PARAM_EQ_BAND_ENABLE:
-      return encodeEQBandEnable(block, channel, bandIndex, value as boolean);
+      return encodeEQBandEnable(block, channel, bandIndex, value as boolean)
     case BLE_PARAM_EQ_BAND_FREQ:
-      return encodeEQBandFreq(block, channel, bandIndex, value as number);
+      return encodeEQBandFreq(block, channel, bandIndex, value as number)
     case BLE_PARAM_EQ_BAND_GAIN:
-      return encodeEQBandGain(block, channel, bandIndex, value as number);
+      return encodeEQBandGain(block, channel, bandIndex, value as number)
     case BLE_PARAM_EQ_BAND_Q:
-      return encodeEQBandQ(block, channel, bandIndex, value as number);
+      return encodeEQBandQ(block, channel, bandIndex, value as number)
     case BLE_PARAM_EQ_BAND_TYPE:
-      return encodeEQBandType(block, channel, bandIndex, value as FilterType);
+      return encodeEQBandType(block, channel, bandIndex, value as FilterType)
   }
 }
 
@@ -241,7 +256,7 @@ export function encodeGainUpdate(
   channel: number,
   gainDb: number,
 ): Uint8Array {
-  return buildMsg(block, channel, BLE_PARAM_GAIN, 0, { kind: 'f32', value: dbToLinear(gainDb) });
+  return buildMsg(block, channel, BLE_PARAM_GAIN, 0, { kind: 'f32', value: dbToLinear(gainDb) })
 }
 
 export function encodeMuteUpdate(
@@ -249,7 +264,7 @@ export function encodeMuteUpdate(
   channel: number,
   muted: boolean,
 ): Uint8Array {
-  return buildMsg(block, channel, BLE_PARAM_MUTE, 0, { kind: 'u8', value: muted ? 1 : 0 });
+  return buildMsg(block, channel, BLE_PARAM_MUTE, 0, { kind: 'u8', value: muted ? 1 : 0 })
 }
 
 export function encodePhaseUpdate(
@@ -257,7 +272,7 @@ export function encodePhaseUpdate(
   channel: number,
   inverted: boolean,
 ): Uint8Array {
-  return buildMsg(block, channel, BLE_PARAM_PHASE, 0, { kind: 'u8', value: inverted ? 1 : 0 });
+  return buildMsg(block, channel, BLE_PARAM_PHASE, 0, { kind: 'u8', value: inverted ? 1 : 0 })
 }
 
 // ---------------------------------------------------------------------------
@@ -283,27 +298,27 @@ export function encodeCrossoverUpdate(
       type: BLE_PARAM_CROSSOVER_LP_TYPE,
       slope: BLE_PARAM_CROSSOVER_LP_SLOPE,
     },
-  } as const;
+  } as const
 
-  const bleParam = paramMap[hpOrLp][paramType];
+  const bleParam = paramMap[hpOrLp][paramType]
 
-  let bleValue: BLEParamValue;
+  let bleValue: BLEParamValue
   switch (paramType) {
     case 'enable':
-      bleValue = { kind: 'u8', value: (value as boolean) ? 1 : 0 };
-      break;
+      bleValue = { kind: 'u8', value: (value as boolean) ? 1 : 0 }
+      break
     case 'freq':
-      bleValue = { kind: 'f32', value: value as number };
-      break;
+      bleValue = { kind: 'f32', value: value as number }
+      break
     case 'type':
-      bleValue = { kind: 'u8', value: CROSSOVER_TYPE_TO_BLE[value as CrossoverFilterType] };
-      break;
+      bleValue = { kind: 'u8', value: CROSSOVER_TYPE_TO_BLE[value as CrossoverFilterType] }
+      break
     case 'slope':
-      bleValue = { kind: 'u8', value: CROSSOVER_SLOPE_TO_BLE[value as CrossoverSlope] };
-      break;
+      bleValue = { kind: 'u8', value: CROSSOVER_SLOPE_TO_BLE[value as CrossoverSlope] }
+      break
   }
 
-  return buildMsg(BLE_BLOCK_OUTPUT, channel, bleParam, 0, bleValue);
+  return buildMsg(BLE_BLOCK_OUTPUT, channel, bleParam, 0, bleValue)
 }
 
 // ---------------------------------------------------------------------------
@@ -311,19 +326,36 @@ export function encodeCrossoverUpdate(
 // ---------------------------------------------------------------------------
 
 export function encodeDelayUpdate(channel: number, delaySamples: number): Uint8Array {
-  return buildMsg(BLE_BLOCK_OUTPUT, channel, BLE_PARAM_DELAY, 0, { kind: 'f32', value: delaySamples });
+  return buildMsg(BLE_BLOCK_OUTPUT, channel, BLE_PARAM_DELAY, 0, {
+    kind: 'f32',
+    value: delaySamples,
+  })
 }
 
 // ---------------------------------------------------------------------------
 // Routing helpers
 // ---------------------------------------------------------------------------
 
-export function encodeRoutingEnable(inputIdx: number, outputIdx: number, enabled: boolean): Uint8Array {
-  return buildMsg(BLE_BLOCK_ROUTING, inputIdx, BLE_PARAM_ROUTING_ENABLE, outputIdx, { kind: 'u8', value: enabled ? 1 : 0 });
+export function encodeRoutingEnable(
+  inputIdx: number,
+  outputIdx: number,
+  enabled: boolean,
+): Uint8Array {
+  return buildMsg(BLE_BLOCK_ROUTING, inputIdx, BLE_PARAM_ROUTING_ENABLE, outputIdx, {
+    kind: 'u8',
+    value: enabled ? 1 : 0,
+  })
 }
 
-export function encodeRoutingGain(inputIdx: number, outputIdx: number, gainLinear: number): Uint8Array {
-  return buildMsg(BLE_BLOCK_ROUTING, inputIdx, BLE_PARAM_ROUTING_GAIN, outputIdx, { kind: 'f32', value: gainLinear });
+export function encodeRoutingGain(
+  inputIdx: number,
+  outputIdx: number,
+  gainLinear: number,
+): Uint8Array {
+  return buildMsg(BLE_BLOCK_ROUTING, inputIdx, BLE_PARAM_ROUTING_GAIN, outputIdx, {
+    kind: 'f32',
+    value: gainLinear,
+  })
 }
 
 export function encodeRoutingUpdate(
@@ -333,9 +365,9 @@ export function encodeRoutingUpdate(
   value: boolean | number,
 ): Uint8Array {
   if (paramType === 'enable') {
-    return encodeRoutingEnable(inputIdx, outputIdx, value as boolean);
+    return encodeRoutingEnable(inputIdx, outputIdx, value as boolean)
   }
-  return encodeRoutingGain(inputIdx, outputIdx, value as number);
+  return encodeRoutingGain(inputIdx, outputIdx, value as number)
 }
 
 // ---------------------------------------------------------------------------
@@ -344,7 +376,10 @@ export function encodeRoutingUpdate(
 
 /** Encode master volume. Converts dB to linear for the wire. */
 export function encodeMasterVolume(volumeDb: number): Uint8Array {
-  return buildMsg(BLE_BLOCK_GLOBAL, 0, BLE_PARAM_MASTER_VOLUME, 0, { kind: 'f32', value: dbToLinear(volumeDb) });
+  return buildMsg(BLE_BLOCK_GLOBAL, 0, BLE_PARAM_MASTER_VOLUME, 0, {
+    kind: 'f32',
+    value: dbToLinear(volumeDb),
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -356,7 +391,10 @@ export function encodeRoomEQBandEnable(
   bandIndex: number,
   enabled: boolean,
 ): Uint8Array {
-  return buildMsg(BLE_BLOCK_INPUT, channel, BLE_PARAM_ROOM_EQ_BAND_ENABLE, bandIndex, { kind: 'u8', value: enabled ? 1 : 0 });
+  return buildMsg(BLE_BLOCK_INPUT, channel, BLE_PARAM_ROOM_EQ_BAND_ENABLE, bandIndex, {
+    kind: 'u8',
+    value: enabled ? 1 : 0,
+  })
 }
 
 export function encodeRoomEQBandFreq(
@@ -364,7 +402,10 @@ export function encodeRoomEQBandFreq(
   bandIndex: number,
   freqHz: number,
 ): Uint8Array {
-  return buildMsg(BLE_BLOCK_INPUT, channel, BLE_PARAM_ROOM_EQ_BAND_FREQ, bandIndex, { kind: 'f32', value: freqHz });
+  return buildMsg(BLE_BLOCK_INPUT, channel, BLE_PARAM_ROOM_EQ_BAND_FREQ, bandIndex, {
+    kind: 'f32',
+    value: freqHz,
+  })
 }
 
 export function encodeRoomEQBandGain(
@@ -372,15 +413,17 @@ export function encodeRoomEQBandGain(
   bandIndex: number,
   gainDb: number,
 ): Uint8Array {
-  return buildMsg(BLE_BLOCK_INPUT, channel, BLE_PARAM_ROOM_EQ_BAND_GAIN, bandIndex, { kind: 'f32', value: gainDb });
+  return buildMsg(BLE_BLOCK_INPUT, channel, BLE_PARAM_ROOM_EQ_BAND_GAIN, bandIndex, {
+    kind: 'f32',
+    value: gainDb,
+  })
 }
 
-export function encodeRoomEQBandQ(
-  channel: number,
-  bandIndex: number,
-  q: number,
-): Uint8Array {
-  return buildMsg(BLE_BLOCK_INPUT, channel, BLE_PARAM_ROOM_EQ_BAND_Q, bandIndex, { kind: 'f32', value: q });
+export function encodeRoomEQBandQ(channel: number, bandIndex: number, q: number): Uint8Array {
+  return buildMsg(BLE_BLOCK_INPUT, channel, BLE_PARAM_ROOM_EQ_BAND_Q, bandIndex, {
+    kind: 'f32',
+    value: q,
+  })
 }
 
 export function encodeRoomEQBandType(
@@ -388,7 +431,10 @@ export function encodeRoomEQBandType(
   bandIndex: number,
   filterType: FilterType,
 ): Uint8Array {
-  return buildMsg(BLE_BLOCK_INPUT, channel, BLE_PARAM_ROOM_EQ_BAND_TYPE, bandIndex, { kind: 'u8', value: FILTER_TYPE_TO_BLE[filterType] });
+  return buildMsg(BLE_BLOCK_INPUT, channel, BLE_PARAM_ROOM_EQ_BAND_TYPE, bandIndex, {
+    kind: 'u8',
+    value: FILTER_TYPE_TO_BLE[filterType],
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -396,17 +442,23 @@ export function encodeRoomEQBandType(
 // ---------------------------------------------------------------------------
 
 export function encodeDriftKp(kp: number): Uint8Array {
-  return buildMsg(BLE_BLOCK_SYSTEM, 0, BLE_PARAM_SYSTEM_DRIFT_KP, 0, { kind: 'f32', value: kp });
+  return buildMsg(BLE_BLOCK_SYSTEM, 0, BLE_PARAM_SYSTEM_DRIFT_KP, 0, { kind: 'f32', value: kp })
 }
 
 export function encodeDriftKi(ki: number): Uint8Array {
-  return buildMsg(BLE_BLOCK_SYSTEM, 0, BLE_PARAM_SYSTEM_DRIFT_KI, 0, { kind: 'f32', value: ki });
+  return buildMsg(BLE_BLOCK_SYSTEM, 0, BLE_PARAM_SYSTEM_DRIFT_KI, 0, { kind: 'f32', value: ki })
 }
 
 export function encodeDriftTargetFill(target: number): Uint8Array {
-  return buildMsg(BLE_BLOCK_SYSTEM, 0, BLE_PARAM_SYSTEM_DRIFT_TARGET, 0, { kind: 'f32', value: target });
+  return buildMsg(BLE_BLOCK_SYSTEM, 0, BLE_PARAM_SYSTEM_DRIFT_TARGET, 0, {
+    kind: 'f32',
+    value: target,
+  })
 }
 
 export function encodeDriftMaxPpm(maxPpm: number): Uint8Array {
-  return buildMsg(BLE_BLOCK_SYSTEM, 0, BLE_PARAM_SYSTEM_DRIFT_MAX_PPM, 0, { kind: 'f32', value: maxPpm });
+  return buildMsg(BLE_BLOCK_SYSTEM, 0, BLE_PARAM_SYSTEM_DRIFT_MAX_PPM, 0, {
+    kind: 'f32',
+    value: maxPpm,
+  })
 }

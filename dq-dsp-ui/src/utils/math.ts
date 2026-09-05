@@ -1,1 +1,1 @@
-export { dbToLinear, linearToDb, clamp, freqToLogPosition, logPositionToFreq } from '../dsp/utils';
+export { dbToLinear, linearToDb, clamp, freqToLogPosition, logPositionToFreq } from '../dsp/utils'

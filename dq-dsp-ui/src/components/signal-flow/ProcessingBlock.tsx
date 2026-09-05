@@ -1,14 +1,14 @@
 interface ProcessingBlockProps {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  label: string;
-  sublabel?: string;
-  color: string;
-  selected: boolean;
-  muted?: boolean;
-  onClick: () => void;
+  x: number
+  y: number
+  width: number
+  height: number
+  label: string
+  sublabel?: string
+  color: string
+  selected: boolean
+  muted?: boolean
+  onClick: () => void
 }
 
 export function ProcessingBlock({
@@ -73,5 +73,5 @@ export function ProcessingBlock({
         </text>
       )}
     </g>
-  );
+  )
 }

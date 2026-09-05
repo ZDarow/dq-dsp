@@ -1,5 +1,5 @@
-import { useTranslation } from 'react-i18next';
-import { useSerialSupport, useBannerDismissed } from '../../hooks/useSerialSupport';
+import { useTranslation } from 'react-i18next'
+import { useSerialSupport, useBannerDismissed } from '../../hooks/useSerialSupport'
 
 /**
  * Top-of-app warning banner for browsers / environments that can't use
@@ -7,12 +7,12 @@ import { useSerialSupport, useBannerDismissed } from '../../hooks/useSerialSuppo
  * the banner is dismissible per session.
  */
 export function BrowserSupportBanner() {
-  const { t } = useTranslation();
-  const support = useSerialSupport();
-  const [dismissed, dismiss] = useBannerDismissed();
+  const { t } = useTranslation()
+  const support = useSerialSupport()
+  const [dismissed, dismiss] = useBannerDismissed()
 
-  if (support.supported) return null;
-  if (dismissed) return null;
+  if (support.supported) return null
+  if (dismissed) return null
 
   return (
     <div
@@ -56,5 +56,5 @@ export function BrowserSupportBanner() {
         ×
       </button>
     </div>
-  );
+  )
 }

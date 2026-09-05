@@ -1,16 +1,16 @@
-import { useTranslation } from 'react-i18next';
-import { Tooltip } from '../ui/Tooltip';
+import { useTranslation } from 'react-i18next'
+import { Tooltip } from '../ui/Tooltip'
 
 interface MuteButtonProps {
-  muted: boolean;
-  onClick: () => void;
-  size?: 'sm' | 'md';
+  muted: boolean
+  onClick: () => void
+  size?: 'sm' | 'md'
 }
 
 export function MuteButton({ muted, onClick, size = 'md' }: MuteButtonProps) {
-  const { t } = useTranslation();
-  const px = size === 'sm' ? 'px-2 py-0.5' : 'px-3 py-1';
-  const text = size === 'sm' ? 'text-xs' : 'text-xs';
+  const { t } = useTranslation()
+  const px = size === 'sm' ? 'px-2 py-0.5' : 'px-3 py-1'
+  const text = size === 'sm' ? 'text-xs' : 'text-xs'
 
   return (
     <Tooltip content={muted ? t('controls.unmuteTooltip') : t('controls.muteTooltip')}>
@@ -26,5 +26,5 @@ export function MuteButton({ muted, onClick, size = 'md' }: MuteButtonProps) {
         M
       </button>
     </Tooltip>
-  );
+  )
 }

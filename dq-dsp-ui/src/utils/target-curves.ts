@@ -8,7 +8,7 @@
  * Flat target: 0 dB at all frequencies.
  */
 export function flatTarget(frequencies: number[]): number[] {
-  return frequencies.map(() => 0);
+  return frequencies.map(() => 0)
 }
 
 /**
@@ -23,16 +23,16 @@ export function flatTarget(frequencies: number[]): number[] {
 export function harmanTarget(frequencies: number[]): number[] {
   return frequencies.map((f) => {
     if (f <= 100) {
-      return 3;
+      return 3
     } else if (f <= 200) {
       // Linear interpolation in log-freq space from +3 dB at 100 Hz to 0 dB at 200 Hz
-      const t = (Math.log2(f) - Math.log2(100)) / (Math.log2(200) - Math.log2(100));
-      return 3 * (1 - t);
+      const t = (Math.log2(f) - Math.log2(100)) / (Math.log2(200) - Math.log2(100))
+      return 3 * (1 - t)
     } else {
       // -1 dB per octave above 200 Hz
-      return -Math.log2(f / 200);
+      return -Math.log2(f / 200)
     }
-  });
+  })
 }
 
 /**
@@ -44,6 +44,6 @@ export function harmanTarget(frequencies: number[]): number[] {
  */
 export function tiltTarget(frequencies: number[], slopeDbPerOctave: number): number[] {
   return frequencies.map((f) => {
-    return slopeDbPerOctave * Math.log2(f / 1000);
-  });
+    return slopeDbPerOctave * Math.log2(f / 1000)
+  })
 }

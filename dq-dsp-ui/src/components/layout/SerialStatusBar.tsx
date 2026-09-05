@@ -1,49 +1,60 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useDSPStore } from '../../store/dsp-store';
-import { useWebSerial } from '../../hooks/useWebSerial';
-import { createSerialMiddleware } from '../../serial/serial-middleware';
-import { encodeSerialFrame, SERIAL_MSG_SAVE_CONFIG } from '../../types/serial-protocol';
-import type { DSPConfig } from '../../types/dsp';
-import { Tooltip } from '../ui/Tooltip';
-import { useSerialSupport } from '../../hooks/useSerialSupport';
+import { useEffect, useRef, useCallback, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useDSPStore } from '../../store/dsp-store'
+import { useWebSerial } from '../../hooks/useWebSerial'
+import { createSerialMiddleware } from '../../serial/serial-middleware'
+import { encodeSerialFrame, SERIAL_MSG_SAVE_CONFIG } from '../../types/serial-protocol'
+import type { DSPConfig } from '../../types/dsp'
+import { Tooltip } from '../ui/Tooltip'
+import { useSerialSupport } from '../../hooks/useSerialSupport'
 
 export function SerialStatusBar() {
-  const { t } = useTranslation();
-  const serialConnected = useDSPStore((s) => s.serialConnected);
-  const serialConnecting = useDSPStore((s) => s.serialConnecting);
-  const serialPortName = useDSPStore((s) => s.serialPortName);
-  const serialError = useDSPStore((s) => s.serialError);
-  const serialLatency = useDSPStore((s) => s.serialLatency);
+  const { t } = useTranslation()
+  const serialConnected = useDSPStore((s) => s.serialConnected)
+  const serialConnecting = useDSPStore((s) => s.serialConnecting)
+  const serialPortName = useDSPStore((s) => s.serialPortName)
+  const serialError = useDSPStore((s) => s.serialError)
+  const serialLatency = useDSPStore((s) => s.serialLatency)
 
-  const setSerialConnected = useDSPStore((s) => s.setSerialConnected);
-  const setSerialConnecting = useDSPStore((s) => s.setSerialConnecting);
-  const setSerialPortName = useDSPStore((s) => s.setSerialPortName);
-  const setSerialError = useDSPStore((s) => s.setSerialError);
-  const setSerialLatency = useDSPStore((s) => s.setSerialLatency);
-  const clearSerialState = useDSPStore((s) => s.clearSerialState);
+  const setSerialConnected = useDSPStore((s) => s.setSerialConnected)
+  const setSerialConnecting = useDSPStore((s) => s.setSerialConnecting)
+  const setSerialPortName = useDSPStore((s) => s.setSerialPortName)
+  const setSerialError = useDSPStore((s) => s.setSerialError)
+  const setSerialLatency = useDSPStore((s) => s.setSerialLatency)
+  const clearSerialState = useDSPStore((s) => s.clearSerialState)
 
-  const serialConsoleOpen = useDSPStore((s) => s.serialConsoleOpen);
-  const toggleSerialConsole = useDSPStore((s) => s.toggleSerialConsole);
-  const setSerialConsoleOpen = useDSPStore((s) => s.setSerialConsoleOpen);
-  const addSerialLog = useDSPStore((s) => s.addSerialLog);
-  const setSerialTelemetry = useDSPStore((s) => s.setSerialTelemetry);
+  const serialConsoleOpen = useDSPStore((s) => s.serialConsoleOpen)
+  const toggleSerialConsole = useDSPStore((s) => s.toggleSerialConsole)
+  const setSerialConsoleOpen = useDSPStore((s) => s.setSerialConsoleOpen)
+  const addSerialLog = useDSPStore((s) => s.addSerialLog)
+  const setSerialTelemetry = useDSPStore((s) => s.setSerialTelemetry)
 
-  const [uploading, setUploading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const serialSupport = useSerialSupport();
+  const [uploading, setUploading] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const serialSupport = useSerialSupport()
 
-  const { state: serialState, connect: serialConnect, disconnect: serialDisconnect, sendParam, sendBulkConfig, onStatus, onLog, onTelemetry, onConfig, requestConfig } = useWebSerial();
-  const middlewareCleanupRef = useRef<(() => void) | null>(null);
+  const {
+    state: serialState,
+    connect: serialConnect,
+    disconnect: serialDisconnect,
+    sendParam,
+    sendBulkConfig,
+    onStatus,
+    onLog,
+    onTelemetry,
+    onConfig,
+    requestConfig,
+  } = useWebSerial()
+  const middlewareCleanupRef = useRef<(() => void) | null>(null)
 
   // Sync serial hook state -> store
   useEffect(() => {
-    setSerialConnected(serialState.connected);
-    setSerialConnecting(serialState.connecting);
-    setSerialError(serialState.error);
-    setSerialLatency(serialState.latency);
+    setSerialConnected(serialState.connected)
+    setSerialConnecting(serialState.connecting)
+    setSerialError(serialState.error)
+    setSerialLatency(serialState.latency)
     if (serialState.portName) {
-      setSerialPortName(serialState.portName);
+      setSerialPortName(serialState.portName)
     }
   }, [
     serialState.connected,
@@ -56,70 +67,70 @@ export function SerialStatusBar() {
     setSerialPortName,
     setSerialError,
     setSerialLatency,
-  ]);
+  ])
 
   // Setup/teardown serial middleware when connected + auto-open console
   useEffect(() => {
     if (serialState.connected) {
-      middlewareCleanupRef.current = createSerialMiddleware(useDSPStore, sendParam);
-      setSerialConsoleOpen(true);
+      middlewareCleanupRef.current = createSerialMiddleware(useDSPStore, sendParam)
+      setSerialConsoleOpen(true)
     } else {
-      middlewareCleanupRef.current?.();
-      middlewareCleanupRef.current = null;
+      middlewareCleanupRef.current?.()
+      middlewareCleanupRef.current = null
     }
     return () => {
-      middlewareCleanupRef.current?.();
-      middlewareCleanupRef.current = null;
-    };
-  }, [serialState.connected, sendParam, setSerialConsoleOpen]);
+      middlewareCleanupRef.current?.()
+      middlewareCleanupRef.current = null
+    }
+  }, [serialState.connected, sendParam, setSerialConsoleOpen])
 
   // Subscribe to status messages for error display
   useEffect(() => {
     return onStatus((msg) => {
       if (msg.msgType === 0x82) {
-        setSerialError(t('serial.deviceError', { code: msg.statusCode }));
+        setSerialError(t('serial.deviceError', { code: msg.statusCode }))
       }
-    });
-  }, [onStatus, setSerialError, t]);
+    })
+  }, [onStatus, setSerialError, t])
 
   // Subscribe to ESP_LOG messages
   useEffect(() => {
-    return onLog((text) => addSerialLog(text));
-  }, [onLog, addSerialLog]);
+    return onLog((text) => addSerialLog(text))
+  }, [onLog, addSerialLog])
 
   // Subscribe to DSP telemetry
   useEffect(() => {
-    return onTelemetry((data) => setSerialTelemetry(data));
-  }, [onTelemetry, setSerialTelemetry]);
+    return onTelemetry((data) => setSerialTelemetry(data))
+  }, [onTelemetry, setSerialTelemetry])
 
   // Subscribe to device config sync
-  const applyDeviceConfig = useDSPStore((s) => s.applyDeviceConfig);
+  const applyDeviceConfig = useDSPStore((s) => s.applyDeviceConfig)
   useEffect(() => {
     return onConfig((config) => {
-      applyDeviceConfig(config);
-      addSerialLog(t('serial.syncAppliedLog'));
-    });
-  }, [onConfig, applyDeviceConfig, addSerialLog, t]);
+      applyDeviceConfig(config)
+      addSerialLog(t('serial.syncAppliedLog'))
+    })
+  }, [onConfig, applyDeviceConfig, addSerialLog, t])
 
   // Manual sync only — auto-pull on connect raced with user actions
   // (Load Preset, in-flight tweaks) and overwrote local state with the
   // device's stale RAM. The user pulls explicitly via the Sync button.
   const handleSync = useCallback(() => {
-    requestConfig();
-    addSerialLog(t('serial.syncLog'));
-  }, [requestConfig, addSerialLog, t]);
+    requestConfig()
+    addSerialLog(t('serial.syncLog'))
+  }, [requestConfig, addSerialLog, t])
 
   const handleConnect = useCallback(async () => {
-    await serialConnect();
-  }, [serialConnect]);
+    await serialConnect()
+  }, [serialConnect])
 
   const handleDisconnect = useCallback(async () => {
-    await serialDisconnect();
-    clearSerialState();
-  }, [serialDisconnect, clearSerialState]);
+    await serialDisconnect()
+    clearSerialState()
+  }, [serialDisconnect, clearSerialState])
 
   const handleUpload = useCallback(async () => {
-    const state = useDSPStore.getState();
+    const state = useDSPStore.getState()
     const config: DSPConfig = {
       inputs: state.inputs,
       routing: state.routing,
@@ -130,21 +141,21 @@ export function SerialStatusBar() {
       presetName: state.presetName,
       inputLinkGroups: state.inputLinkGroups,
       outputLinkGroups: state.outputLinkGroups,
-    };
-    setUploading(true);
-    setUploadSuccess(false);
-    const ok = await sendBulkConfig(config);
-    setUploading(false);
-    if (ok) {
-      setUploadSuccess(true);
-      setTimeout(() => setUploadSuccess(false), 2000);
     }
-  }, [sendBulkConfig]);
+    setUploading(true)
+    setUploadSuccess(false)
+    const ok = await sendBulkConfig(config)
+    setUploading(false)
+    if (ok) {
+      setUploadSuccess(true)
+      setTimeout(() => setUploadSuccess(false), 2000)
+    }
+  }, [sendBulkConfig])
 
   // Status dot — DSPi uses a small colored dot inline with the label
-  let dotColorVar = 'var(--color-mute)';
-  if (serialConnected) dotColorVar = 'var(--color-meter-normal)';
-  else if (serialConnecting) dotColorVar = 'var(--color-meter-caution)';
+  let dotColorVar = 'var(--color-mute)'
+  if (serialConnected) dotColorVar = 'var(--color-meter-normal)'
+  else if (serialConnecting) dotColorVar = 'var(--color-meter-caution)'
 
   return (
     <div className="flex items-center gap-2">
@@ -162,9 +173,7 @@ export function SerialStatusBar() {
 
       {/* Latency display */}
       {serialConnected && (
-        <span className="text-text-dimmed text-xs font-mono">
-          {serialLatency}ms
-        </span>
+        <span className="text-text-dimmed text-xs font-mono">{serialLatency}ms</span>
       )}
 
       {/* Sync — pull the device's current config into the UI. Use this
@@ -196,7 +205,11 @@ export function SerialStatusBar() {
                 : 'bg-accent text-white border-accent hover:brightness-110'
             } disabled:opacity-50`}
           >
-            {uploading ? t('common.applying') : uploadSuccess ? t('common.applied') : t('common.apply')}
+            {uploading
+              ? t('common.applying')
+              : uploadSuccess
+                ? t('common.applied')
+                : t('common.apply')}
           </button>
         </Tooltip>
       )}
@@ -269,11 +282,9 @@ export function SerialStatusBar() {
       {/* Error display */}
       {serialError && !serialConnecting && (
         <Tooltip content={serialError}>
-          <span className="text-red-400 text-xs truncate max-w-[9.375rem]">
-            {serialError}
-          </span>
+          <span className="text-red-400 text-xs truncate max-w-[9.375rem]">{serialError}</span>
         </Tooltip>
       )}
     </div>
-  );
+  )
 }

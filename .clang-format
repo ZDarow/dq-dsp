@@ -1,0 +1,20 @@
+# C / C++ code style for the DQ-DSP firmware.
+# Mirrors ESP-IDF coding style: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/contribute/style-guide.html
+---
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+PointerAlignment: Right
+BreakBeforeBraces: Attach
+SpaceAfterCStyleCast: true
+SpaceBeforeParens: ControlStatements
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignTrailingComments: true
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
+SortIncludes: false
+IncludeBlocks: Preserve

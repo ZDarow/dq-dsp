@@ -1,16 +1,16 @@
-import { useTranslation } from 'react-i18next';
-import type { FilterType } from '../../types/filter';
-import { FILTER_TYPES } from '../../constants/filter-options';
-import { Tooltip } from '../ui/Tooltip';
+import { useTranslation } from 'react-i18next'
+import type { FilterType } from '../../types/filter'
+import { FILTER_TYPES } from '../../constants/filter-options'
+import { Tooltip } from '../ui/Tooltip'
 
 interface FilterTypeSelectProps {
-  value: FilterType;
-  onChange: (value: FilterType) => void;
+  value: FilterType
+  onChange: (value: FilterType) => void
 }
 
 export function FilterTypeSelect({ value, onChange }: FilterTypeSelectProps) {
-  const { t } = useTranslation();
-  const help = t(`filterType.${value}`, { defaultValue: t('filterType.default') });
+  const { t } = useTranslation()
+  const help = t(`filterType.${value}`, { defaultValue: t('filterType.default') })
   return (
     <Tooltip content={help}>
       <select
@@ -26,5 +26,5 @@ export function FilterTypeSelect({ value, onChange }: FilterTypeSelectProps) {
         ))}
       </select>
     </Tooltip>
-  );
+  )
 }

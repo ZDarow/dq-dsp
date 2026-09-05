@@ -1,41 +1,43 @@
-import { useTranslation } from 'react-i18next';
-import { useDSPStore } from '../../store/dsp-store';
-import { CUSTOM_SUM_COLORS } from '../../types/custom-sum';
-import { OUTPUT_COLORS } from '../../utils/colors';
-import { Tooltip } from '../ui/Tooltip';
+import { useTranslation } from 'react-i18next'
+import { useDSPStore } from '../../store/dsp-store'
+import { CUSTOM_SUM_COLORS } from '../../types/custom-sum'
+import { OUTPUT_COLORS } from '../../utils/colors'
+import { Tooltip } from '../ui/Tooltip'
 
 interface Props {
-  onClose: () => void;
+  onClose: () => void
 }
 
-const NUM_OUTPUTS = 4;
+const NUM_OUTPUTS = 4
 
 export function CustomSumEditor({ onClose }: Props) {
-  const { t } = useTranslation();
-  const customSums = useDSPStore((s) => s.customSums);
-  const addCustomSum = useDSPStore((s) => s.addCustomSum);
-  const removeCustomSum = useDSPStore((s) => s.removeCustomSum);
-  const updateCustomSum = useDSPStore((s) => s.updateCustomSum);
+  const { t } = useTranslation()
+  const customSums = useDSPStore((s) => s.customSums)
+  const addCustomSum = useDSPStore((s) => s.addCustomSum)
+  const removeCustomSum = useDSPStore((s) => s.removeCustomSum)
+  const updateCustomSum = useDSPStore((s) => s.updateCustomSum)
 
   const handleToggleOutput = (id: string, outputIdx: number, currentList: number[]) => {
-    const has = currentList.includes(outputIdx);
+    const has = currentList.includes(outputIdx)
     const next = has
       ? currentList.filter((i) => i !== outputIdx)
-      : [...currentList, outputIdx].sort((a, b) => a - b);
-    updateCustomSum(id, { outputIndices: next });
-  };
+      : [...currentList, outputIdx].sort((a, b) => a - b)
+    updateCustomSum(id, { outputIndices: next })
+  }
 
   const handleAdd = () => {
     // Pick a color not currently in use, or cycle through palette.
-    const used = new Set(customSums.map((s) => s.color));
-    const color = CUSTOM_SUM_COLORS.find((c) => !used.has(c)) ?? CUSTOM_SUM_COLORS[customSums.length % CUSTOM_SUM_COLORS.length];
+    const used = new Set(customSums.map((s) => s.color))
+    const color =
+      CUSTOM_SUM_COLORS.find((c) => !used.has(c)) ??
+      CUSTOM_SUM_COLORS[customSums.length % CUSTOM_SUM_COLORS.length]
     addCustomSum({
       name: `Σ ${t('customSum.sum')} ${customSums.length + 1}`,
       color,
       outputIndices: [],
       enabled: true,
-    });
-  };
+    })
+  }
 
   return (
     <div
@@ -126,11 +128,19 @@ export function CustomSumEditor({ onClose }: Props) {
 
               {/* Output checkboxes */}
               <div className="flex items-center gap-3 text-xs">
-                <span className="text-text-dimmed uppercase tracking-wider">{t('customSum.outputs')}:</span>
+                <span className="text-text-dimmed uppercase tracking-wider">
+                  {t('customSum.outputs')}:
+                </span>
                 {Array.from({ length: NUM_OUTPUTS }, (_, oi) => {
-                  const checked = sum.outputIndices.includes(oi);
+                  const checked = sum.outputIndices.includes(oi)
                   return (
-                    <Tooltip key={oi} content={t('customSum.toggleOutput', { action: checked ? t('customSum.remove') : t('customSum.include'), n: oi + 1 })}>
+                    <Tooltip
+                      key={oi}
+                      content={t('customSum.toggleOutput', {
+                        action: checked ? t('customSum.remove') : t('customSum.include'),
+                        n: oi + 1,
+                      })}
+                    >
                       <label
                         className="flex items-center gap-1 cursor-pointer select-none"
                         style={{ color: checked ? OUTPUT_COLORS[oi] : 'var(--color-text-dimmed)' }}
@@ -145,7 +155,7 @@ export function CustomSumEditor({ onClose }: Props) {
                         {t('nav.output', { n: oi + 1 })}
                       </label>
                     </Tooltip>
-                  );
+                  )
                 })}
               </div>
             </div>
@@ -158,5 +168,5 @@ export function CustomSumEditor({ onClose }: Props) {
         </div>
       </div>
     </div>
-  );
+  )
 }

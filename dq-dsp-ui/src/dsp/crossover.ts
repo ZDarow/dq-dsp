@@ -1,5 +1,5 @@
-import type { BiquadCoefficients, CrossoverFilterType, CrossoverSlope } from '../types/filter';
-import { calculateBiquadCoefficients } from './biquad';
+import type { BiquadCoefficients, CrossoverFilterType, CrossoverSlope } from '../types/filter'
+import { calculateBiquadCoefficients } from './biquad'
 
 /**
  * Decompose a crossover filter into cascaded biquad stages.
@@ -21,12 +21,12 @@ export function calculateCrossoverStages(
   frequency: number,
   sampleRate: number,
 ): BiquadCoefficients[] {
-  const filterKind = type === 'highPass' ? 'highPass' : 'lowPass';
+  const filterKind = type === 'highPass' ? 'highPass' : 'lowPass'
 
   if (filterType === 'butterworth') {
-    return butterworthStages(filterKind, slope, frequency, sampleRate);
+    return butterworthStages(filterKind, slope, frequency, sampleRate)
   } else {
-    return linkwitzRileyStages(filterKind, slope, frequency, sampleRate);
+    return linkwitzRileyStages(filterKind, slope, frequency, sampleRate)
   }
 }
 
@@ -36,17 +36,17 @@ function butterworthStages(
   frequency: number,
   sampleRate: number,
 ): BiquadCoefficients[] {
-  const order = slope / 6; // 12->2, 24->4, 48->8
-  const numStages = order / 2;
-  const stages: BiquadCoefficients[] = [];
+  const order = slope / 6 // 12->2, 24->4, 48->8
+  const numStages = order / 2
+  const stages: BiquadCoefficients[] = []
 
   for (let i = 0; i < numStages; i++) {
     // Q values for cascaded Butterworth stages
-    const q = butterworthQ(order, i);
-    stages.push(calculateBiquadCoefficients(type, frequency, sampleRate, 0, q));
+    const q = butterworthQ(order, i)
+    stages.push(calculateBiquadCoefficients(type, frequency, sampleRate, 0, q))
   }
 
-  return stages;
+  return stages
 }
 
 function linkwitzRileyStages(
@@ -57,18 +57,18 @@ function linkwitzRileyStages(
 ): BiquadCoefficients[] {
   // Linkwitz-Riley = two identical Butterworth filters cascaded
   // LR2N = BW_N squared
-  const bwOrder = slope / 12; // LR12->BW1(approx), LR24->BW2, LR48->BW4
-  const bwSlope = (bwOrder * 6) as CrossoverSlope;
+  const bwOrder = slope / 12 // LR12->BW1(approx), LR24->BW2, LR48->BW4
+  const bwSlope = (bwOrder * 6) as CrossoverSlope
 
   // For LR12, use a single stage with Q=0.5 (critically damped pair)
   if (slope === 12) {
-    const q = 0.5;
-    return [calculateBiquadCoefficients(type, frequency, sampleRate, 0, q)];
+    const q = 0.5
+    return [calculateBiquadCoefficients(type, frequency, sampleRate, 0, q)]
   }
 
   // For LR24 and LR48: cascade two Butterworth filters of half the order
-  const bwStages = butterworthStages(type, bwSlope, frequency, sampleRate);
-  return [...bwStages, ...bwStages]; // doubled
+  const bwStages = butterworthStages(type, bwSlope, frequency, sampleRate)
+  return [...bwStages, ...bwStages] // doubled
 }
 
 /**
@@ -76,6 +76,6 @@ function linkwitzRileyStages(
  * Q = 1 / (2 * cos(pi * (2*k + 1) / (2*n))) where k = stage index
  */
 function butterworthQ(order: number, stageIndex: number): number {
-  const angle = (Math.PI * (2 * stageIndex + 1)) / (2 * order);
-  return 1 / (2 * Math.cos(angle));
+  const angle = (Math.PI * (2 * stageIndex + 1)) / (2 * order)
+  return 1 / (2 * Math.cos(angle))
 }

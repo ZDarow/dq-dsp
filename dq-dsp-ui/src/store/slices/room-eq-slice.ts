@@ -1,10 +1,10 @@
-import type { StateCreator } from 'zustand';
-import type { EQBand } from '../../types/filter';
-import type { InputChannel } from '../../types/dsp';
-import type { MeasurementPoint } from '../../utils/rew-parser';
-import type { DSPStore } from '../dsp-store';
-import { parseREWMeasurement } from '../../utils/rew-parser';
-import { createDefaultEQBands } from '../../constants/defaults';
+import type { StateCreator } from 'zustand'
+import type { EQBand } from '../../types/filter'
+import type { InputChannel } from '../../types/dsp'
+import type { MeasurementPoint } from '../../utils/rew-parser'
+import type { DSPStore } from '../dsp-store'
+import { parseREWMeasurement } from '../../utils/rew-parser'
+import { createDefaultEQBands } from '../../constants/defaults'
 
 /**
  * Mirror the top-level roomEqBands into inputs[i].roomEqBands.
@@ -25,17 +25,17 @@ function syncInputsRoomEq(
   return [
     { ...inputs[0], roomEqBands: roomEqBands[0].map((b) => ({ ...b })) },
     { ...inputs[1], roomEqBands: roomEqBands[1].map((b) => ({ ...b })) },
-  ];
+  ]
 }
 
 export interface RoomEQSlice {
-  roomMeasurement: MeasurementPoint[] | null;
-  roomSmoothing: 3 | 6 | 12 | 24;
-  roomTargetCurve: 'flat' | 'harman' | 'tilt';
-  roomTiltSlope: number;
-  roomEqBands: [EQBand[], EQBand[]]; // per input channel
-  roomEqEnabled: boolean; // master enable for room EQ
-  roomLinked: boolean; // when true, edits apply to both inputs
+  roomMeasurement: MeasurementPoint[] | null
+  roomSmoothing: 3 | 6 | 12 | 24
+  roomTargetCurve: 'flat' | 'harman' | 'tilt'
+  roomTiltSlope: number
+  roomEqBands: [EQBand[], EQBand[]] // per input channel
+  roomEqEnabled: boolean // master enable for room EQ
+  roomLinked: boolean // when true, edits apply to both inputs
   /**
    * Snapshot of per-band `enabled` flags from before the global toggle was
    * switched off. Restored on toggle-on so users get their previous selection
@@ -47,16 +47,16 @@ export interface RoomEQSlice {
    * mass-disable every band on toggle-off (the diff middleware then ships
    * per-band disables to the device) and restore from the stash on toggle-on.
    */
-  roomEqEnabledStash: [boolean[], boolean[]] | null;
-  importRoomMeasurement: (text: string) => void;
-  clearRoomMeasurement: () => void;
-  setRoomSmoothing: (n: 3 | 6 | 12 | 24) => void;
-  setRoomTargetCurve: (curve: 'flat' | 'harman' | 'tilt') => void;
-  setRoomTiltSlope: (slope: number) => void;
-  setRoomEQBand: (inputIdx: number, bandIdx: number, updates: Partial<EQBand>) => void;
-  toggleRoomEQBand: (inputIdx: number, bandIdx: number) => void;
-  setRoomLinked: (linked: boolean) => void;
-  setRoomEqEnabled: (enabled: boolean) => void;
+  roomEqEnabledStash: [boolean[], boolean[]] | null
+  importRoomMeasurement: (text: string) => void
+  clearRoomMeasurement: () => void
+  setRoomSmoothing: (n: 3 | 6 | 12 | 24) => void
+  setRoomTargetCurve: (curve: 'flat' | 'harman' | 'tilt') => void
+  setRoomTiltSlope: (slope: number) => void
+  setRoomEQBand: (inputIdx: number, bandIdx: number, updates: Partial<EQBand>) => void
+  toggleRoomEQBand: (inputIdx: number, bandIdx: number) => void
+  setRoomLinked: (linked: boolean) => void
+  setRoomEqEnabled: (enabled: boolean) => void
 }
 
 export const createRoomEQSlice: StateCreator<DSPStore, [], [], RoomEQSlice> = (set) => ({
@@ -70,9 +70,9 @@ export const createRoomEQSlice: StateCreator<DSPStore, [], [], RoomEQSlice> = (s
   roomLinked: true,
 
   importRoomMeasurement: (text) => {
-    const points = parseREWMeasurement(text);
+    const points = parseREWMeasurement(text)
     if (points.length > 0) {
-      set({ roomMeasurement: points });
+      set({ roomMeasurement: points })
     }
   },
 
@@ -86,44 +86,44 @@ export const createRoomEQSlice: StateCreator<DSPStore, [], [], RoomEQSlice> = (s
 
   setRoomEQBand: (inputIdx, bandIdx, updates) =>
     set((state) => {
-      const roomEqBands = [
-        [...state.roomEqBands[0]],
-        [...state.roomEqBands[1]],
-      ] as [EQBand[], EQBand[]];
+      const roomEqBands = [[...state.roomEqBands[0]], [...state.roomEqBands[1]]] as [
+        EQBand[],
+        EQBand[],
+      ]
       roomEqBands[inputIdx][bandIdx] = {
         ...roomEqBands[inputIdx][bandIdx],
         ...updates,
-      };
+      }
       if (state.roomLinked) {
-        const other = inputIdx ^ 1;
+        const other = inputIdx ^ 1
         roomEqBands[other][bandIdx] = {
           ...roomEqBands[other][bandIdx],
           ...updates,
-        };
+        }
       }
-      return { roomEqBands, inputs: syncInputsRoomEq(state.inputs, roomEqBands) };
+      return { roomEqBands, inputs: syncInputsRoomEq(state.inputs, roomEqBands) }
     }),
 
   toggleRoomEQBand: (inputIdx, bandIdx) =>
     set((state) => {
-      const roomEqBands = [
-        [...state.roomEqBands[0]],
-        [...state.roomEqBands[1]],
-      ] as [EQBand[], EQBand[]];
-      const newEnabled = !roomEqBands[inputIdx][bandIdx].enabled;
-      roomEqBands[inputIdx][bandIdx] = { ...roomEqBands[inputIdx][bandIdx], enabled: newEnabled };
+      const roomEqBands = [[...state.roomEqBands[0]], [...state.roomEqBands[1]]] as [
+        EQBand[],
+        EQBand[],
+      ]
+      const newEnabled = !roomEqBands[inputIdx][bandIdx].enabled
+      roomEqBands[inputIdx][bandIdx] = { ...roomEqBands[inputIdx][bandIdx], enabled: newEnabled }
       if (state.roomLinked) {
-        const other = inputIdx ^ 1;
-        roomEqBands[other][bandIdx] = { ...roomEqBands[other][bandIdx], enabled: newEnabled };
+        const other = inputIdx ^ 1
+        roomEqBands[other][bandIdx] = { ...roomEqBands[other][bandIdx], enabled: newEnabled }
       }
-      return { roomEqBands, inputs: syncInputsRoomEq(state.inputs, roomEqBands) };
+      return { roomEqBands, inputs: syncInputsRoomEq(state.inputs, roomEqBands) }
     }),
 
   setRoomLinked: (linked) => set({ roomLinked: linked }),
 
   setRoomEqEnabled: (enabled) =>
     set((state) => {
-      if (enabled === state.roomEqEnabled) return {};
+      if (enabled === state.roomEqEnabled) return {}
 
       if (!enabled) {
         // Disabling: stash current per-band enabled flags, then force every
@@ -131,32 +131,32 @@ export const createRoomEQSlice: StateCreator<DSPStore, [], [], RoomEQSlice> = (s
         const stash: [boolean[], boolean[]] = [
           state.roomEqBands[0].map((b) => b.enabled),
           state.roomEqBands[1].map((b) => b.enabled),
-        ];
+        ]
         const newBands: [EQBand[], EQBand[]] = [
           state.roomEqBands[0].map((b) => ({ ...b, enabled: false })),
           state.roomEqBands[1].map((b) => ({ ...b, enabled: false })),
-        ];
+        ]
         return {
           roomEqEnabled: false,
           roomEqBands: newBands,
           roomEqEnabledStash: stash,
           inputs: syncInputsRoomEq(state.inputs, newBands),
-        };
+        }
       }
 
       // Enabling: restore from stash if we have one; otherwise leave bands
       // untouched (covers first-run / preset-import / legacy state).
-      const stash = state.roomEqEnabledStash;
-      if (!stash) return { roomEqEnabled: true };
+      const stash = state.roomEqEnabledStash
+      if (!stash) return { roomEqEnabled: true }
       const newBands: [EQBand[], EQBand[]] = [
         state.roomEqBands[0].map((b, i) => ({ ...b, enabled: stash[0][i] ?? b.enabled })),
         state.roomEqBands[1].map((b, i) => ({ ...b, enabled: stash[1][i] ?? b.enabled })),
-      ];
+      ]
       return {
         roomEqEnabled: true,
         roomEqBands: newBands,
         roomEqEnabledStash: null,
         inputs: syncInputsRoomEq(state.inputs, newBands),
-      };
+      }
     }),
-});
+})

@@ -1,15 +1,15 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef } from 'react'
 
 interface KnobProps {
-  value: number;
-  min: number;
-  max: number;
-  step?: number;
-  onChange: (value: number) => void;
-  label: string;
-  formatValue?: (v: number) => string;
-  size?: number;
-  color?: string;
+  value: number
+  min: number
+  max: number
+  step?: number
+  onChange: (value: number) => void
+  label: string
+  formatValue?: (v: number) => string
+  size?: number
+  color?: string
 }
 
 export function Knob({
@@ -23,45 +23,45 @@ export function Knob({
   size = 64,
   color = '#4466ff',
 }: KnobProps) {
-  const dragRef = useRef<{ startY: number; startValue: number } | null>(null);
+  const dragRef = useRef<{ startY: number; startValue: number } | null>(null)
 
-  const normalizedValue = (value - min) / (max - min);
-  const angle = -135 + normalizedValue * 270;
-  const radius = size / 2 - 4;
+  const normalizedValue = (value - min) / (max - min)
+  const angle = -135 + normalizedValue * 270
+  const radius = size / 2 - 4
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
-      e.preventDefault();
-      dragRef.current = { startY: e.clientY, startValue: value };
-      const el = e.currentTarget;
-      el.setPointerCapture(e.pointerId);
+      e.preventDefault()
+      dragRef.current = { startY: e.clientY, startValue: value }
+      const el = e.currentTarget
+      el.setPointerCapture(e.pointerId)
     },
     [value],
-  );
+  )
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (!dragRef.current) return;
-      const dy = dragRef.current.startY - e.clientY;
-      const range = max - min;
-      const sensitivity = range / 150;
-      let newValue = dragRef.current.startValue + dy * sensitivity;
-      newValue = Math.round(newValue / step) * step;
-      newValue = Math.min(max, Math.max(min, newValue));
-      onChange(newValue);
+      if (!dragRef.current) return
+      const dy = dragRef.current.startY - e.clientY
+      const range = max - min
+      const sensitivity = range / 150
+      let newValue = dragRef.current.startValue + dy * sensitivity
+      newValue = Math.round(newValue / step) * step
+      newValue = Math.min(max, Math.max(min, newValue))
+      onChange(newValue)
     },
     [min, max, step, onChange],
-  );
+  )
 
   const handlePointerUp = useCallback(() => {
-    dragRef.current = null;
-  }, []);
+    dragRef.current = null
+  }, [])
 
-  const cx = size / 2;
-  const cy = size / 2;
-  const rad = (angle * Math.PI) / 180;
-  const indicatorX = cx + Math.cos(rad) * (radius - 6);
-  const indicatorY = cy + Math.sin(rad) * (radius - 6);
+  const cx = size / 2
+  const cy = size / 2
+  const rad = (angle * Math.PI) / 180
+  const indicatorX = cx + Math.cos(rad) * (radius - 6)
+  const indicatorY = cy + Math.sin(rad) * (radius - 6)
 
   return (
     <div className="flex flex-col items-center gap-0.5">
@@ -98,5 +98,5 @@ export function Knob({
       <span className="text-text-primary text-xs font-mono">{formatValue(value)}</span>
       <span className="text-text-dimmed text-xs">{label}</span>
     </div>
-  );
+  )
 }

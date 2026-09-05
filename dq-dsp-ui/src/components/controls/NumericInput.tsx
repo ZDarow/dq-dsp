@@ -1,14 +1,14 @@
-import { Tooltip } from '../ui/Tooltip';
+import { Tooltip } from '../ui/Tooltip'
 
 interface NumericInputProps {
-  value: number;
-  min: number;
-  max: number;
-  step?: number;
-  onChange: (value: number) => void;
-  label?: string;
-  format?: (v: number) => string;
-  className?: string;
+  value: number
+  min: number
+  max: number
+  step?: number
+  onChange: (value: number) => void
+  label?: string
+  format?: (v: number) => string
+  className?: string
 }
 
 export function NumericInput({
@@ -32,13 +32,13 @@ export function NumericInput({
           step={step}
           value={format ? format(value) : value}
           onChange={(e) => {
-            const v = Number(e.target.value);
-            if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v)));
+            const v = Number(e.target.value)
+            if (!isNaN(v)) onChange(Math.min(max, Math.max(min, v)))
           }}
           className="bg-control-bg text-text-primary text-xs px-2 py-1 rounded w-20 border border-surface-bg focus:border-accent focus:outline-none font-mono text-right"
           aria-label={label}
         />
       </Tooltip>
     </div>
-  );
+  )
 }

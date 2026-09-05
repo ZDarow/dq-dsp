@@ -1,7 +1,7 @@
-import { InputChannelStrip } from './InputChannelStrip';
+import { InputChannelStrip } from './InputChannelStrip'
 
 interface InputStageProps {
-  inputIndex: number;
+  inputIndex: number
 }
 
 export function InputStage({ inputIndex }: InputStageProps) {
@@ -9,5 +9,5 @@ export function InputStage({ inputIndex }: InputStageProps) {
     <div className="p-2">
       <InputChannelStrip index={inputIndex} />
     </div>
-  );
+  )
 }

@@ -1,16 +1,16 @@
-import { Fragment } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useDSPStore } from '../../store/dsp-store';
-import { INPUT_COLORS, OUTPUT_COLORS } from '../../utils/colors';
-import { NUM_INPUTS, NUM_OUTPUTS } from '../../constants/filter-options';
-import { CrosspointCell } from './CrosspointCell';
+import { Fragment } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useDSPStore } from '../../store/dsp-store'
+import { INPUT_COLORS, OUTPUT_COLORS } from '../../utils/colors'
+import { NUM_INPUTS, NUM_OUTPUTS } from '../../constants/filter-options'
+import { CrosspointCell } from './CrosspointCell'
 
 export function RoutingMatrix() {
-  const { t } = useTranslation();
-  const routing = useDSPStore((s) => s.routing);
-  const toggleRoutingPoint = useDSPStore((s) => s.toggleRoutingPoint);
-  const setRoutingGain = useDSPStore((s) => s.setRoutingGain);
-  const setRoutingPreset = useDSPStore((s) => s.setRoutingPreset);
+  const { t } = useTranslation()
+  const routing = useDSPStore((s) => s.routing)
+  const toggleRoutingPoint = useDSPStore((s) => s.toggleRoutingPoint)
+  const setRoutingGain = useDSPStore((s) => s.setRoutingGain)
+  const setRoutingPreset = useDSPStore((s) => s.setRoutingPreset)
 
   return (
     <div className="p-4">
@@ -38,11 +38,18 @@ export function RoutingMatrix() {
         </div>
       </div>
 
-      <div className="inline-grid gap-2" style={{ gridTemplateColumns: `auto repeat(${NUM_OUTPUTS}, 80px)` }}>
+      <div
+        className="inline-grid gap-2"
+        style={{ gridTemplateColumns: `auto repeat(${NUM_OUTPUTS}, 80px)` }}
+      >
         {/* Header row */}
         <div />
         {Array.from({ length: NUM_OUTPUTS }, (_, o) => (
-          <div key={`hdr-${o}`} className="text-center text-xs font-bold" style={{ color: OUTPUT_COLORS[o] }}>
+          <div
+            key={`hdr-${o}`}
+            className="text-center text-xs font-bold"
+            style={{ color: OUTPUT_COLORS[o] }}
+          >
             {t('nav.output', { n: o + 1 })}
           </div>
         ))}
@@ -50,7 +57,10 @@ export function RoutingMatrix() {
         {/* Matrix rows */}
         {Array.from({ length: NUM_INPUTS }, (_, i) => (
           <Fragment key={`row-${i}`}>
-            <div className="flex items-center text-xs font-bold pr-2" style={{ color: INPUT_COLORS[i] }}>
+            <div
+              className="flex items-center text-xs font-bold pr-2"
+              style={{ color: INPUT_COLORS[i] }}
+            >
               {t('nav.input', { n: i + 1 })}
             </div>
             {Array.from({ length: NUM_OUTPUTS }, (_, o) => (
@@ -69,5 +79,5 @@ export function RoutingMatrix() {
         ))}
       </div>
     </div>
-  );
+  )
 }

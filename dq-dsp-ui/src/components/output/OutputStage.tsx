@@ -1,7 +1,7 @@
-import { OutputChannelStrip } from './OutputChannelStrip';
+import { OutputChannelStrip } from './OutputChannelStrip'
 
 interface OutputStageProps {
-  outputIndex: number;
+  outputIndex: number
 }
 
 export function OutputStage({ outputIndex }: OutputStageProps) {
@@ -9,5 +9,5 @@ export function OutputStage({ outputIndex }: OutputStageProps) {
     <div className="p-2">
       <OutputChannelStrip index={outputIndex} />
     </div>
-  );
+  )
 }

@@ -1,35 +1,35 @@
-import { useTranslation } from 'react-i18next';
-import { useDSPStore } from '../../store/dsp-store';
-import { getLinkPartners } from '../../store/slices/link-slice';
-import { getInputColor } from '../../utils/colors';
-import { GainSlider } from '../controls/GainSlider';
-import { MuteButton } from '../controls/MuteButton';
-import { PhaseButton } from '../controls/PhaseButton';
-import { LinkButton } from '../controls/LinkButton';
-import { CopyPicker } from '../output/CopyPicker';
-import { PEQEditor } from '../eq/PEQEditor';
-import type { EQBand } from '../../types/filter';
+import { useTranslation } from 'react-i18next'
+import { useDSPStore } from '../../store/dsp-store'
+import { getLinkPartners } from '../../store/slices/link-slice'
+import { getInputColor } from '../../utils/colors'
+import { GainSlider } from '../controls/GainSlider'
+import { MuteButton } from '../controls/MuteButton'
+import { PhaseButton } from '../controls/PhaseButton'
+import { LinkButton } from '../controls/LinkButton'
+import { CopyPicker } from '../output/CopyPicker'
+import { PEQEditor } from '../eq/PEQEditor'
+import type { EQBand } from '../../types/filter'
 
 interface InputChannelStripProps {
-  index: number;
+  index: number
 }
 
 export function InputChannelStrip({ index }: InputChannelStripProps) {
-  const { t } = useTranslation();
-  const input = useDSPStore((s) => s.inputs[index]);
-  const sampleRate = useDSPStore((s) => s.sampleRate);
-  const setInputGain = useDSPStore((s) => s.setInputGain);
-  const toggleInputMute = useDSPStore((s) => s.toggleInputMute);
-  const toggleInputPhase = useDSPStore((s) => s.toggleInputPhase);
-  const setInputEQBand = useDSPStore((s) => s.setInputEQBand);
-  const inputLinkGroups = useDSPStore((s) => s.inputLinkGroups);
-  const toggleInputLinkMember = useDSPStore((s) => s.toggleInputLinkMember);
-  const copyInput = useDSPStore((s) => s.copyInput);
-  const color = getInputColor(index);
+  const { t } = useTranslation()
+  const input = useDSPStore((s) => s.inputs[index])
+  const sampleRate = useDSPStore((s) => s.sampleRate)
+  const setInputGain = useDSPStore((s) => s.setInputGain)
+  const toggleInputMute = useDSPStore((s) => s.toggleInputMute)
+  const toggleInputPhase = useDSPStore((s) => s.toggleInputPhase)
+  const setInputEQBand = useDSPStore((s) => s.setInputEQBand)
+  const inputLinkGroups = useDSPStore((s) => s.inputLinkGroups)
+  const toggleInputLinkMember = useDSPStore((s) => s.toggleInputLinkMember)
+  const copyInput = useDSPStore((s) => s.copyInput)
+  const color = getInputColor(index)
 
-  const partners = getLinkPartners(inputLinkGroups, index);
-  const isLinked = partners.length > 0;
-  const other = index === 0 ? 1 : 0;
+  const partners = getLinkPartners(inputLinkGroups, index)
+  const isLinked = partners.length > 0
+  const other = index === 0 ? 1 : 0
 
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -78,5 +78,5 @@ export function InputChannelStrip({ index }: InputChannelStripProps) {
         />
       </div>
     </div>
-  );
+  )
 }

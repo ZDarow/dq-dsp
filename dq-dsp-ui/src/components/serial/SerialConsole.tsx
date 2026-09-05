@@ -1,54 +1,57 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useDSPStore } from '../../store/dsp-store';
-import { JitterChart } from './JitterChart';
-import { DriftChart } from './DriftChart';
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useDSPStore } from '../../store/dsp-store'
+import { JitterChart } from './JitterChart'
+import { DriftChart } from './DriftChart'
 
-const MIN_WIDTH = 300;
-const MAX_WIDTH = 1000;
-const DEFAULT_WIDTH = 400;
+const MIN_WIDTH = 300
+const MAX_WIDTH = 1000
+const DEFAULT_WIDTH = 400
 
 export function SerialConsole() {
-  const { t } = useTranslation();
-  const logs = useDSPStore((s) => s.serialLogs);
-  const telemetry = useDSPStore((s) => s.serialTelemetry);
-  const telemetryHistory = useDSPStore((s) => s.serialTelemetryHistory);
-  const clearLogs = useDSPStore((s) => s.clearSerialLogs);
-  const logContainerRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
-  const dragging = useRef(false);
-  const startX = useRef(0);
-  const startWidth = useRef(0);
+  const { t } = useTranslation()
+  const logs = useDSPStore((s) => s.serialLogs)
+  const telemetry = useDSPStore((s) => s.serialTelemetry)
+  const telemetryHistory = useDSPStore((s) => s.serialTelemetryHistory)
+  const clearLogs = useDSPStore((s) => s.clearSerialLogs)
+  const logContainerRef = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(DEFAULT_WIDTH)
+  const dragging = useRef(false)
+  const startX = useRef(0)
+  const startWidth = useRef(0)
 
   // Auto-scroll only the log container, not the page. Previously used
   // scrollIntoView() which bubbles up to every scrollable ancestor and
   // dragged the whole page down on each new line.
   useEffect(() => {
-    const el = logContainerRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [logs.length]);
+    const el = logContainerRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [logs.length])
 
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    dragging.current = true;
-    startX.current = e.clientX;
-    startWidth.current = width;
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      dragging.current = true
+      startX.current = e.clientX
+      startWidth.current = width
 
-    const onMouseMove = (ev: MouseEvent) => {
-      if (!dragging.current) return;
-      const delta = startX.current - ev.clientX;
-      setWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth.current + delta)));
-    };
+      const onMouseMove = (ev: MouseEvent) => {
+        if (!dragging.current) return
+        const delta = startX.current - ev.clientX
+        setWidth(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth.current + delta)))
+      }
 
-    const onMouseUp = () => {
-      dragging.current = false;
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-    };
+      const onMouseUp = () => {
+        dragging.current = false
+        document.removeEventListener('mousemove', onMouseMove)
+        document.removeEventListener('mouseup', onMouseUp)
+      }
 
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  }, [width]);
+      document.addEventListener('mousemove', onMouseMove)
+      document.addEventListener('mouseup', onMouseUp)
+    },
+    [width],
+  )
 
   return (
     <div
@@ -83,7 +86,10 @@ export function SerialConsole() {
       <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-surface-bg/60">
         <span className="section-label mr-1">{t('console.serialLog')}</span>
         {telemetry && (
-          <span className="pill-badge" style={{ ['--pill-color' as string]: 'var(--color-text-dimmed)', opacity: 0.75 }}>
+          <span
+            className="pill-badge"
+            style={{ ['--pill-color' as string]: 'var(--color-text-dimmed)', opacity: 0.75 }}
+          >
             <span className="value-mono">{telemetry.blocksProcessed}</span> blk/s
           </span>
         )}
@@ -96,7 +102,10 @@ export function SerialConsole() {
       </div>
       {/* Log area — flex-1 + min-h-0 lets the container actually shrink so the
        * overflow-auto kicks in instead of pushing parent past its bounds. */}
-      <div ref={logContainerRef} className="flex-1 min-h-0 overflow-auto p-2 font-mono text-[0.7rem] leading-tight text-text-primary">
+      <div
+        ref={logContainerRef}
+        className="flex-1 min-h-0 overflow-auto p-2 font-mono text-[0.7rem] leading-tight text-text-primary"
+      >
         {logs.length === 0 ? (
           <span className="text-text-dimmed">{t('console.waitingLogs')}</span>
         ) : (
@@ -108,5 +117,5 @@ export function SerialConsole() {
         )}
       </div>
     </div>
-  );
+  )
 }

@@ -1,5 +1,5 @@
-import type { BLEAckMsg, BLEErrorMsg, BLEDeviceInfo, BLEStatusCode } from '../types/ble-protocol';
-import { BLE_MSG_ACK, BLE_MSG_ERROR } from '../types/ble-protocol';
+import type { BLEAckMsg, BLEErrorMsg, BLEDeviceInfo, BLEStatusCode } from '../types/ble-protocol'
+import { BLE_MSG_ACK, BLE_MSG_ERROR } from '../types/ble-protocol'
 
 /**
  * Decode a status/ACK/error notification from the ESP-32 status characteristic.
@@ -16,16 +16,16 @@ import { BLE_MSG_ACK, BLE_MSG_ERROR } from '../types/ble-protocol';
  *   [3] detail      u8
  */
 export function decodeStatusMessage(data: DataView): BLEAckMsg | BLEErrorMsg {
-  const msgId = data.getUint8(0);
-  const msgType = data.getUint8(1);
-  const statusCode = data.getUint8(2) as BLEStatusCode;
+  const msgId = data.getUint8(0)
+  const msgType = data.getUint8(1)
+  const statusCode = data.getUint8(2) as BLEStatusCode
 
   if (msgType === BLE_MSG_ERROR) {
-    const detail = data.byteLength >= 4 ? data.getUint8(3) : 0;
-    return { msgId, msgType: BLE_MSG_ERROR, statusCode, detail };
+    const detail = data.byteLength >= 4 ? data.getUint8(3) : 0
+    return { msgId, msgType: BLE_MSG_ERROR, statusCode, detail }
   }
 
-  return { msgId, msgType: BLE_MSG_ACK, statusCode };
+  return { msgId, msgType: BLE_MSG_ACK, statusCode }
 }
 
 /**
@@ -51,5 +51,5 @@ export function decodeDeviceInfo(data: DataView): BLEDeviceInfo {
     numInputs: data.getUint8(9),
     numOutputs: data.getUint8(10),
     maxEqBands: data.getUint8(11),
-  };
+  }
 }

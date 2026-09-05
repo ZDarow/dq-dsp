@@ -1,15 +1,15 @@
-import { useTranslation } from 'react-i18next';
-import { formatDb } from '../../utils/format';
-import { Tooltip } from '../ui/Tooltip';
+import { useTranslation } from 'react-i18next'
+import { formatDb } from '../../utils/format'
+import { Tooltip } from '../ui/Tooltip'
 
 interface GainSliderProps {
-  value: number;
-  min?: number;
-  max?: number;
-  step?: number;
-  onChange: (value: number) => void;
-  label?: string;
-  color?: string;
+  value: number
+  min?: number
+  max?: number
+  step?: number
+  onChange: (value: number) => void
+  label?: string
+  color?: string
 }
 
 export function GainSlider({
@@ -21,11 +21,11 @@ export function GainSlider({
   label,
   color,
 }: GainSliderProps) {
-  const { t } = useTranslation();
-  const resolvedLabel = label ?? t('controls.gain');
-  const pct = ((value - min) / (max - min)) * 100;
-  const isMuted = value <= min;
-  const fillColor = isMuted ? 'var(--color-text-dimmed)' : (color || 'var(--color-accent)');
+  const { t } = useTranslation()
+  const resolvedLabel = label ?? t('controls.gain')
+  const pct = ((value - min) / (max - min)) * 100
+  const isMuted = value <= min
+  const fillColor = isMuted ? 'var(--color-text-dimmed)' : color || 'var(--color-accent)'
 
   return (
     <div className="rounded-lg border border-surface-bg bg-panel-bg p-3">
@@ -33,13 +33,20 @@ export function GainSlider({
         <span className="text-text-secondary text-xs font-medium">{resolvedLabel}</span>
         <span
           className="text-sm font-mono font-semibold"
-          style={{ color: isMuted ? 'var(--color-text-dimmed)' : (color || 'var(--color-text-primary)') }}
+          style={{
+            color: isMuted ? 'var(--color-text-dimmed)' : color || 'var(--color-text-primary)',
+          }}
         >
           {formatDb(value)}
         </span>
       </div>
       <Tooltip
-        content={t('controls.gainTooltip', { label: resolvedLabel, value: formatDb(value), min, max })}
+        content={t('controls.gainTooltip', {
+          label: resolvedLabel,
+          value: formatDb(value),
+          min,
+          max,
+        })}
         wrapperClassName="block"
       >
         <input
@@ -58,5 +65,5 @@ export function GainSlider({
         />
       </Tooltip>
     </div>
-  );
+  )
 }

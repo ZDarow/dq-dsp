@@ -1,18 +1,18 @@
-import type { StateCreator } from 'zustand';
-import type { CustomSum } from '../../types/custom-sum';
-import type { DSPStore } from '../dsp-store';
-import { createDefaultCustomSums } from '../../constants/defaults';
+import type { StateCreator } from 'zustand'
+import type { CustomSum } from '../../types/custom-sum'
+import type { DSPStore } from '../dsp-store'
+import { createDefaultCustomSums } from '../../constants/defaults'
 
 export interface CustomSumSlice {
-  customSums: CustomSum[];
-  addCustomSum: (sum: Omit<CustomSum, 'id'>) => void;
-  removeCustomSum: (id: string) => void;
-  updateCustomSum: (id: string, updates: Partial<Omit<CustomSum, 'id'>>) => void;
-  setCustomSums: (sums: CustomSum[]) => void;
+  customSums: CustomSum[]
+  addCustomSum: (sum: Omit<CustomSum, 'id'>) => void
+  removeCustomSum: (id: string) => void
+  updateCustomSum: (id: string, updates: Partial<Omit<CustomSum, 'id'>>) => void
+  setCustomSums: (sums: CustomSum[]) => void
 }
 
 function newId(): string {
-  return `sum-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  return `sum-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
 export const createCustomSumSlice: StateCreator<DSPStore, [], [], CustomSumSlice> = (set) => ({
@@ -34,4 +34,4 @@ export const createCustomSumSlice: StateCreator<DSPStore, [], [], CustomSumSlice
     })),
 
   setCustomSums: (sums) => set({ customSums: sums }),
-});
+})

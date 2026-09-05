@@ -1,10 +1,10 @@
-import { AppShell } from './components/layout/AppShell';
-import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { AppShell } from './components/layout/AppShell'
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 
 function App() {
-  useKeyboardShortcuts();
+  useKeyboardShortcuts()
 
-  return <AppShell />;
+  return <AppShell />
 }
 
-export default App;
+export default App

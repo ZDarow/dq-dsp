@@ -1,6 +1,6 @@
 # DQ-DSP — Web UI
 
-### 🎥 [**Watch the demo**](https://youtu.be/UXzky9iujUc)  ·  📝 [**Full write-up & build story**](https://tamduongs.com/blog/dq-dsp)  ·  👉 [**Live UI**](https://dq-dsp.tamduongs.com)  ·  🔥 [**Firmware repo**](https://github.com/agooddaytowork/dq-dsp-firmware)  ·  📦 [**Pre-built v1.0.0 binary**](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)
+### 🎥 [**Watch the demo**](https://youtu.be/UXzky9iujUc) · 📝 [**Full write-up & build story**](https://tamduongs.com/blog/dq-dsp) · 👉 [**Live UI**](https://dq-dsp.tamduongs.com) · 🔥 [**Firmware repo**](https://github.com/agooddaytowork/dq-dsp-firmware) · 📦 [**Pre-built v1.0.0 binary**](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)
 
 Real-time control surface for **DQ-DSP** — an ESP32-S3 USB Audio Class
 device with a 2-in / 4-out parametric pipeline. Parameter edits stream
@@ -8,21 +8,21 @@ to the device live over Web Serial; presets live in the browser's
 localStorage and can be exported as JSON or committed to the device's
 flash.
 
-> *(DQ = my daughter's name. Yes, I named a DSP after her. Don't @ me.)*
+> _(DQ = my daughter's name. Yes, I named a DSP after her. Don't @ me.)_
 
 > **📝 [The full story →](https://tamduongs.com/blog/dq-dsp)** —
-> *why an active speaker, what I tried first (a Wondom ADAU1701 board, a
+> _why an active speaker, what I tried first (a Wondom ADAU1701 board, a
 > failed attempt to ship a miniDSP into Vietnam), and the complete $20
 > build journey with photos. This README is the technical reference for
-> the UI; the blog is the narrative.*
+> the UI; the blog is the narrative._
 
 ![DQ-DSP UI screenshot](docs/images/sample.png)
 
 ### ▶ Video demo
 
-[![Watch the 3-minute demo on YouTube](https://img.youtube.com/vi/UXzky9iujUc/maxresdefault.jpg)](https://youtu.be/UXzky9iujUc "Click to watch on YouTube")
+[![Watch the 3-minute demo on YouTube](https://img.youtube.com/vi/UXzky9iujUc/maxresdefault.jpg)](https://youtu.be/UXzky9iujUc 'Click to watch on YouTube')
 
-*Me, the dev-board, two purple PCM5102As, and a bookshelf speaker pair, in one shot.*
+_Me, the dev-board, two purple PCM5102As, and a bookshelf speaker pair, in one shot._
 
 ## What do I actually do with this?
 
@@ -30,7 +30,7 @@ Plug an ESP32-S3 dev-board with two PCM5102A breakouts soldered in into
 your laptop. Your OS sees a generic USB audio device showing up as
 **usb uac** in the audio picker (that's the UAC interface descriptor
 the upstream TinyUSB component ships — feel free to rename it to
-*DQ-DSP* in your OS sound settings if you want). Open this UI in Chrome
+_DQ-DSP_ in your OS sound settings if you want). Open this UI in Chrome
 on the same laptop, click **Connect Serial**, and now every PEQ knob
 you drag goes straight into the chip — no recompile, no MIDI, no $400
 miniDSP.
@@ -44,12 +44,12 @@ inductors and capacitors inside the cab. Active bi-amp rips that out
 and feeds each driver its own amp, with the crossover done in DSP.
 DQ-DSP makes it a $20 BOM:
 
-| DSP output | Drives        | Typical settings                          |
-|------------|---------------|-------------------------------------------|
-| Out 1      | Left woofer   | LP @ XO freq, LR4 24 dB/oct               |
+| DSP output | Drives        | Typical settings                            |
+| ---------- | ------------- | ------------------------------------------- |
+| Out 1      | Left woofer   | LP @ XO freq, LR4 24 dB/oct                 |
 | Out 2      | Left tweeter  | HP @ XO freq, LR4 24 dB/oct, optional delay |
-| Out 3      | Right tweeter | mirror of Out 2 via link group            |
-| Out 4      | Right woofer  | mirror of Out 1 via link group            |
+| Out 3      | Right tweeter | mirror of Out 2 via link group              |
+| Out 4      | Right woofer  | mirror of Out 1 via link group              |
 
 Pick the crossover frequency off the driver's spec sheet (usually
 1.5–3 kHz for a 1" dome / 5" mid), trim gain, time-align with delay,
@@ -63,18 +63,18 @@ the full story are in the [blog write-up](https://tamduongs.com/blog/dq-dsp).
 
 ## What the UI lets you do
 
-| Section | Feature | Detail |
-|---|---|---|
-| **Per-input** (×2) | Room EQ + Input PEQ | Two 10-band parametric EQ stages — Room EQ (REW import + auto-EQ vs flat / Harman / tilt) sits before the Input PEQ, both run before routing |
-| **Routing matrix** | 2 in × 4 out, per-cell gain | Enable / disable any crosspoint, linear gain 0–100 % per cell — mono-sum, balance, sub blends, all of it |
-| **Per-output** (×4) | PEQ · crossover · delay · gain · phase · mute | 10-band PEQ + HP / LP crossover (Linkwitz-Riley or Butterworth, 6 / 12 / 18 / 24 dB/oct) + 0–10 ms sample-accurate delay |
-| **Link groups** | Any-to-any output mirroring | Link Out 1 + Out 3, or all four — parameter edits replicate across every member of the group, ideal for stereo pairs or ganging amps onto one sub |
-| **ASRC drift comp** | Tunable PI controller | Kp / Ki / target fill / max PPM all live-tunable from the System panel; clock-drift + buffer-fill charts redraw at 1 Hz |
-| **Master stage** | Volume + soft-clip limiter | Post-processing dB knob applied right before the DAC |
-| **Acoustic sums** | User-defined sum curves | Add Σ Speaker L = Out 1 + Out 2 etc. — chart plots their complex (phase-aware) sum so you can verify the bi-amp blend |
-| **Presets** | Browser localStorage + JSON | Save New / Save / Save to File / Load — dirty indicator (Saved · Modified · Unsaved) vs the loaded preset |
-| **Device sync** | Apply + Save to Device | Live diff-streaming on every knob; **Apply** bulk-pushes the whole config to RAM, **Save to Device** commits to NVS |
-| **UX polish** | Liquid Glass · light + dark · custom tooltips · keyboard nav | Theme-aware Tooltip with REW export step-by-step baked into the Import REW button. Auto-detect banner on Firefox / Safari / mobile / HTTP — Connect button greys out with a contextual reason |
+| Section             | Feature                                                      | Detail                                                                                                                                                                                        |
+| ------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Per-input** (×2)  | Room EQ + Input PEQ                                          | Two 10-band parametric EQ stages — Room EQ (REW import + auto-EQ vs flat / Harman / tilt) sits before the Input PEQ, both run before routing                                                  |
+| **Routing matrix**  | 2 in × 4 out, per-cell gain                                  | Enable / disable any crosspoint, linear gain 0–100 % per cell — mono-sum, balance, sub blends, all of it                                                                                      |
+| **Per-output** (×4) | PEQ · crossover · delay · gain · phase · mute                | 10-band PEQ + HP / LP crossover (Linkwitz-Riley or Butterworth, 6 / 12 / 18 / 24 dB/oct) + 0–10 ms sample-accurate delay                                                                      |
+| **Link groups**     | Any-to-any output mirroring                                  | Link Out 1 + Out 3, or all four — parameter edits replicate across every member of the group, ideal for stereo pairs or ganging amps onto one sub                                             |
+| **ASRC drift comp** | Tunable PI controller                                        | Kp / Ki / target fill / max PPM all live-tunable from the System panel; clock-drift + buffer-fill charts redraw at 1 Hz                                                                       |
+| **Master stage**    | Volume + soft-clip limiter                                   | Post-processing dB knob applied right before the DAC                                                                                                                                          |
+| **Acoustic sums**   | User-defined sum curves                                      | Add Σ Speaker L = Out 1 + Out 2 etc. — chart plots their complex (phase-aware) sum so you can verify the bi-amp blend                                                                         |
+| **Presets**         | Browser localStorage + JSON                                  | Save New / Save / Save to File / Load — dirty indicator (Saved · Modified · Unsaved) vs the loaded preset                                                                                     |
+| **Device sync**     | Apply + Save to Device                                       | Live diff-streaming on every knob; **Apply** bulk-pushes the whole config to RAM, **Save to Device** commits to NVS                                                                           |
+| **UX polish**       | Liquid Glass · light + dark · custom tooltips · keyboard nav | Theme-aware Tooltip with REW export step-by-step baked into the Import REW button. Auto-detect banner on Firefox / Safari / mobile / HTTP — Connect button greys out with a contextual reason |
 
 ## Demo notes
 
@@ -117,13 +117,13 @@ The wire-protocol contract is documented there in
 
 ### Bill of materials
 
-| # | Part | Qty | Notes |
-|---|------|-----|-------|
-| 1 | **ESP32-S3-DevKitC-1 N16R8** | 1 | 16 MB flash + 8 MB Octal PSRAM, 38-pin Espressif dev-board. |
-| 2 | **GY-PCM5102 / TENSTAR ROBOT PCM5102A** breakout | 2 | Purple board, 3.5 mm jack + L/R/G analog pads. |
-| 3 | USB-C data cable | 2 | DevKitC-1 has two USB-C ports — **USB-Serial-JTAG** (UART0, used for flashing AND web-UI control) and **native USB-OTG** (used for UAC audio). Both stay plugged in during normal use; both must be data-capable. |
-| 4 | Dupont jumper wires (M-F) | ≥ 12 | 3 I2S signals × 2 DACs + shared power = 8 min + a few for the jumper pads. |
-| 5 | 3.5 mm audio cable / pigtail | 2 | One per DAC, into amp or powered speakers. |
+| #   | Part                                             | Qty  | Notes                                                                                                                                                                                                             |
+| --- | ------------------------------------------------ | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **ESP32-S3-DevKitC-1 N16R8**                     | 1    | 16 MB flash + 8 MB Octal PSRAM, 38-pin Espressif dev-board.                                                                                                                                                       |
+| 2   | **GY-PCM5102 / TENSTAR ROBOT PCM5102A** breakout | 2    | Purple board, 3.5 mm jack + L/R/G analog pads.                                                                                                                                                                    |
+| 3   | USB-C data cable                                 | 2    | DevKitC-1 has two USB-C ports — **USB-Serial-JTAG** (UART0, used for flashing AND web-UI control) and **native USB-OTG** (used for UAC audio). Both stay plugged in during normal use; both must be data-capable. |
+| 4   | Dupont jumper wires (M-F)                        | ≥ 12 | 3 I2S signals × 2 DACs + shared power = 8 min + a few for the jumper pads.                                                                                                                                        |
+| 5   | 3.5 mm audio cable / pigtail                     | 2    | One per DAC, into amp or powered speakers.                                                                                                                                                                        |
 
 Roughly **US $15–20** end-to-end. Pre-built firmware binary lives on the
 firmware repo's [v1.0.0 release](https://github.com/agooddaytowork/dq-dsp-firmware/releases/tag/v1.0.0)
@@ -133,14 +133,14 @@ firmware repo's [v1.0.0 release](https://github.com/agooddaytowork/dq-dsp-firmwa
 
 ![Wiring — ESP32-S3 → 2× PCM5102A](docs/images/pin-diagram.svg)
 
-| Function           | ESP32-S3 GPIO |
-|--------------------|---------------|
-| I2S0 BCK (DAC #1)  | 4             |
-| I2S0 LRCK          | 5             |
-| I2S0 DOUT          | 6             |
-| I2S1 BCK (DAC #2)  | 16            |
-| I2S1 LRCK          | 17            |
-| I2S1 DOUT          | 18            |
+| Function          | ESP32-S3 GPIO |
+| ----------------- | ------------- |
+| I2S0 BCK (DAC #1) | 4             |
+| I2S0 LRCK         | 5             |
+| I2S0 DOUT         | 6             |
+| I2S1 BCK (DAC #2) | 16            |
+| I2S1 LRCK         | 17            |
+| I2S1 DOUT         | 18            |
 
 Both DACs share 3V3 + GND. On each PCM5102A breakout:
 **XSMT → 3V3** (un-mute — default jumper position is LOW = silence),

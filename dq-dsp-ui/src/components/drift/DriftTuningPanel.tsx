@@ -1,7 +1,7 @@
-import { useTranslation } from 'react-i18next';
-import { useDSPStore } from '../../store/dsp-store';
-import { DEFAULT_DRIFT } from '../../store/slices/drift-slice';
-import { Tooltip } from '../ui/Tooltip';
+import { useTranslation } from 'react-i18next'
+import { useDSPStore } from '../../store/dsp-store'
+import { DEFAULT_DRIFT } from '../../store/slices/drift-slice'
+import { Tooltip } from '../ui/Tooltip'
 
 function SliderRow({
   label,
@@ -13,18 +13,18 @@ function SliderRow({
   format,
   hint,
 }: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  onChange: (v: number) => void;
-  format?: (v: number) => string;
-  hint?: string;
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  onChange: (v: number) => void
+  format?: (v: number) => string
+  hint?: string
 }) {
-  const pct = ((value - min) / (max - min)) * 100;
-  const display = format ? format(value) : String(value);
-  const tooltip = `${label}: ${display} (range ${min}–${max})${hint ? ` — ${hint}` : ''}`;
+  const pct = ((value - min) / (max - min)) * 100
+  const display = format ? format(value) : String(value)
+  const tooltip = `${label}: ${display} (range ${min}–${max})${hint ? ` — ${hint}` : ''}`
   return (
     <Tooltip content={tooltip} wrapperClassName="block">
       <div className="rounded-lg border border-surface-bg bg-panel-bg p-3">
@@ -48,23 +48,23 @@ function SliderRow({
         />
       </div>
     </Tooltip>
-  );
+  )
 }
 
 export function DriftTuningPanel() {
-  const { t } = useTranslation();
-  const drift = useDSPStore((s) => s.drift);
-  const setKp = useDSPStore((s) => s.setDriftKp);
-  const setKi = useDSPStore((s) => s.setDriftKi);
-  const setTarget = useDSPStore((s) => s.setDriftTargetFill);
-  const setMaxPpm = useDSPStore((s) => s.setDriftMaxPpm);
+  const { t } = useTranslation()
+  const drift = useDSPStore((s) => s.drift)
+  const setKp = useDSPStore((s) => s.setDriftKp)
+  const setKi = useDSPStore((s) => s.setDriftKi)
+  const setTarget = useDSPStore((s) => s.setDriftTargetFill)
+  const setMaxPpm = useDSPStore((s) => s.setDriftMaxPpm)
 
   const handleReset = () => {
-    setKp(DEFAULT_DRIFT.kp);
-    setKi(DEFAULT_DRIFT.ki);
-    setTarget(DEFAULT_DRIFT.targetFill);
-    setMaxPpm(DEFAULT_DRIFT.maxPpm);
-  };
+    setKp(DEFAULT_DRIFT.kp)
+    setKi(DEFAULT_DRIFT.ki)
+    setTarget(DEFAULT_DRIFT.targetFill)
+    setMaxPpm(DEFAULT_DRIFT.maxPpm)
+  }
 
   return (
     <div className="p-4 space-y-4">
@@ -87,16 +87,20 @@ export function DriftTuningPanel() {
           <p className="text-text-primary font-medium">{t('drift.howToTune')}</p>
           <ul className="list-disc list-inside space-y-0.5 text-text-dimmed">
             <li>
-              <span className="text-text-secondary">{t('drift.kp')}</span> &mdash; {t('drift.kpDesc')}
+              <span className="text-text-secondary">{t('drift.kp')}</span> &mdash;{' '}
+              {t('drift.kpDesc')}
             </li>
             <li>
-              <span className="text-text-secondary">{t('drift.ki')}</span> &mdash; {t('drift.kiDesc')}
+              <span className="text-text-secondary">{t('drift.ki')}</span> &mdash;{' '}
+              {t('drift.kiDesc')}
             </li>
             <li>
-              <span className="text-text-secondary">{t('drift.targetFill')}</span> &mdash; {t('drift.targetDesc')}
+              <span className="text-text-secondary">{t('drift.targetFill')}</span> &mdash;{' '}
+              {t('drift.targetDesc')}
             </li>
             <li>
-              <span className="text-text-secondary">{t('drift.maxPpm')}</span> &mdash; {t('drift.maxPpmDesc')}
+              <span className="text-text-secondary">{t('drift.maxPpm')}</span> &mdash;{' '}
+              {t('drift.maxPpmDesc')}
             </li>
           </ul>
         </div>
@@ -154,5 +158,5 @@ export function DriftTuningPanel() {
         />
       </div>
     </div>
-  );
+  )
 }

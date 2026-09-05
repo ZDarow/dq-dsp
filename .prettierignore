@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+build/
+**/build/
+out/
+
+# ESP-IDF artifacts
+managed_components/
+.espressif/
+*.bin
+*.elf
+*.map
+sdkconfig
+sdkconfig.defaults
+dependencies.lock
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Logs / temp
+*.log
+*.tmp
+.firebase-debug.log
+firebase-debug.log
+
+# Coverage
+coverage/
+htmlcov/
+*.lcov
+
+# Generated
+*.generated.*
+*.d.ts.bak
+
+# Playwright MCP
+.playwright-mcp/
+
+# IDE
+.vscode/
+.idea/

@@ -1,25 +1,25 @@
-import { useState } from 'react';
-import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
-import { Toolbar } from './Toolbar';
-import { SignalFlowNav } from './SignalFlowNav';
-import { SignalFlowDiagram } from '../signal-flow/SignalFlowDiagram';
-import { useDSPStore } from '../../store/dsp-store';
-import { InputStage } from '../input/InputStage';
-import { RoutingMatrix } from '../routing/RoutingMatrix';
-import { OutputStage } from '../output/OutputStage';
-import { SerialConsole } from '../serial/SerialConsole';
-import { AllChannelsResponseChart } from '../eq/AllChannelsResponseChart';
-import { RoomEQPanel } from '../room-eq/RoomEQPanel';
-import { DriftTuningPanel } from '../drift/DriftTuningPanel';
-import { AboutDialog } from '../about/AboutDialog';
-import { AppFooter } from './AppFooter';
-import { BrowserSupportBanner } from './BrowserSupportBanner';
+import { useState } from 'react'
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts'
+import { Toolbar } from './Toolbar'
+import { SignalFlowNav } from './SignalFlowNav'
+import { SignalFlowDiagram } from '../signal-flow/SignalFlowDiagram'
+import { useDSPStore } from '../../store/dsp-store'
+import { InputStage } from '../input/InputStage'
+import { RoutingMatrix } from '../routing/RoutingMatrix'
+import { OutputStage } from '../output/OutputStage'
+import { SerialConsole } from '../serial/SerialConsole'
+import { AllChannelsResponseChart } from '../eq/AllChannelsResponseChart'
+import { RoomEQPanel } from '../room-eq/RoomEQPanel'
+import { DriftTuningPanel } from '../drift/DriftTuningPanel'
+import { AboutDialog } from '../about/AboutDialog'
+import { AppFooter } from './AppFooter'
+import { BrowserSupportBanner } from './BrowserSupportBanner'
 
 export function AppShell() {
-  useKeyboardShortcuts();
-  const [showAbout, setShowAbout] = useState(false);
-  const selectedBlock = useDSPStore((s) => s.selectedBlock);
-  const serialConsoleOpen = useDSPStore((s) => s.serialConsoleOpen);
+  useKeyboardShortcuts()
+  const [showAbout, setShowAbout] = useState(false)
+  const selectedBlock = useDSPStore((s) => s.selectedBlock)
+  const serialConsoleOpen = useDSPStore((s) => s.serialConsoleOpen)
 
   return (
     <div className="h-screen flex flex-col md:flex-row overflow-hidden">
@@ -28,7 +28,10 @@ export function AppShell() {
        * main-column height. */}
       <div className="flex-1 min-w-0 min-h-0 overflow-y-auto">
         {/* Toolbar — sticky at top, liquid glass */}
-        <div className="sticky top-0 z-40 glass-panel-strong" style={{ borderRadius: 0, borderLeft: 0, borderRight: 0, borderTop: 0 }}>
+        <div
+          className="sticky top-0 z-40 glass-panel-strong"
+          style={{ borderRadius: 0, borderLeft: 0, borderRight: 0, borderTop: 0 }}
+        >
           <BrowserSupportBanner />
           <Toolbar onAbout={() => setShowAbout(true)} />
           <SignalFlowNav />
@@ -73,5 +76,5 @@ export function AppShell() {
       {/* About dialog */}
       {showAbout && <AboutDialog onClose={() => setShowAbout(false)} />}
     </div>
-  );
+  )
 }

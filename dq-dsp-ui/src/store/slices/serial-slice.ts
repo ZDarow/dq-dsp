@@ -1,32 +1,32 @@
-import type { StateCreator } from 'zustand';
-import type { DSPStore } from '../dsp-store';
-import type { DSPTelemetry } from '../../types/serial-protocol';
+import type { StateCreator } from 'zustand'
+import type { DSPStore } from '../dsp-store'
+import type { DSPTelemetry } from '../../types/serial-protocol'
 
-const TELEMETRY_HISTORY_MAX = 60;
+const TELEMETRY_HISTORY_MAX = 60
 
 export interface SerialSlice {
-  serialConnected: boolean;
-  serialConnecting: boolean;
-  serialPortName: string;
-  serialError: string | null;
-  serialLatency: number;
-  serialConsoleOpen: boolean;
-  serialLogs: string[];
-  serialTelemetry: DSPTelemetry | null;
-  serialTelemetryHistory: DSPTelemetry[];
+  serialConnected: boolean
+  serialConnecting: boolean
+  serialPortName: string
+  serialError: string | null
+  serialLatency: number
+  serialConsoleOpen: boolean
+  serialLogs: string[]
+  serialTelemetry: DSPTelemetry | null
+  serialTelemetryHistory: DSPTelemetry[]
 
-  setSerialConnected: (connected: boolean) => void;
-  setSerialConnecting: (connecting: boolean) => void;
-  setSerialPortName: (name: string) => void;
-  setSerialError: (error: string | null) => void;
-  setSerialLatency: (latency: number) => void;
-  clearSerialState: () => void;
-  toggleSerialConsole: () => void;
-  setSerialConsoleOpen: (open: boolean) => void;
-  addSerialLog: (text: string) => void;
-  clearSerialLogs: () => void;
-  setSerialTelemetry: (data: DSPTelemetry | null) => void;
-  clearSerialTelemetryHistory: () => void;
+  setSerialConnected: (connected: boolean) => void
+  setSerialConnecting: (connecting: boolean) => void
+  setSerialPortName: (name: string) => void
+  setSerialError: (error: string | null) => void
+  setSerialLatency: (latency: number) => void
+  clearSerialState: () => void
+  toggleSerialConsole: () => void
+  setSerialConsoleOpen: (open: boolean) => void
+  addSerialLog: (text: string) => void
+  clearSerialLogs: () => void
+  setSerialTelemetry: (data: DSPTelemetry | null) => void
+  clearSerialTelemetryHistory: () => void
 }
 
 export const createSerialSlice: StateCreator<DSPStore, [], [], SerialSlice> = (set) => ({
@@ -56,15 +56,17 @@ export const createSerialSlice: StateCreator<DSPStore, [], [], SerialSlice> = (s
     }),
   toggleSerialConsole: () => set((s) => ({ serialConsoleOpen: !s.serialConsoleOpen })),
   setSerialConsoleOpen: (open) => set({ serialConsoleOpen: open }),
-  addSerialLog: (text) => set((s) => ({
-    serialLogs: [...s.serialLogs.slice(-(500 - 1)), text],
-  })),
+  addSerialLog: (text) =>
+    set((s) => ({
+      serialLogs: [...s.serialLogs.slice(-(500 - 1)), text],
+    })),
   clearSerialLogs: () => set({ serialLogs: [] }),
-  setSerialTelemetry: (data) => set((s) => ({
-    serialTelemetry: data,
-    serialTelemetryHistory: data
-      ? [...s.serialTelemetryHistory.slice(-(TELEMETRY_HISTORY_MAX - 1)), data]
-      : s.serialTelemetryHistory,
-  })),
+  setSerialTelemetry: (data) =>
+    set((s) => ({
+      serialTelemetry: data,
+      serialTelemetryHistory: data
+        ? [...s.serialTelemetryHistory.slice(-(TELEMETRY_HISTORY_MAX - 1)), data]
+        : s.serialTelemetryHistory,
+    })),
   clearSerialTelemetryHistory: () => set({ serialTelemetryHistory: [] }),
-});
+})

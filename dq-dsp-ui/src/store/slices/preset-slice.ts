@@ -1,37 +1,41 @@
-import type { StateCreator } from 'zustand';
-import type { DSPConfig } from '../../types/dsp';
-import type { EQBand } from '../../types/filter';
-import type { DSPStore } from '../dsp-store';
-import { createDefaultDSPConfig, createDefaultCustomSums, createDefaultEQBands } from '../../constants/defaults';
+import type { StateCreator } from 'zustand'
+import type { DSPConfig } from '../../types/dsp'
+import type { EQBand } from '../../types/filter'
+import type { DSPStore } from '../dsp-store'
+import {
+  createDefaultDSPConfig,
+  createDefaultCustomSums,
+  createDefaultEQBands,
+} from '../../constants/defaults'
 
 export interface PresetData {
-  name: string;
-  config: DSPConfig;
+  name: string
+  config: DSPConfig
 }
 
 export interface PresetSlice {
-  presetIndex: number;
-  presetName: string;
-  presets: PresetData[];
-  setPresetName: (name: string) => void;
+  presetIndex: number
+  presetName: string
+  presets: PresetData[]
+  setPresetName: (name: string) => void
   /** Save current config into the preset list at a given index (overwrite) */
-  savePreset: (index: number) => void;
+  savePreset: (index: number) => void
   /** Load a preset from the list by index */
-  loadPreset: (index: number) => void;
+  loadPreset: (index: number) => void
   /** Save current config as a new preset appended to the list */
-  saveCurrentAsPreset: () => void;
+  saveCurrentAsPreset: () => void
   /** Delete a preset from the list */
-  deletePreset: (index: number) => void;
+  deletePreset: (index: number) => void
   /** Rename a preset in the list */
-  renamePreset: (index: number, name: string) => void;
+  renamePreset: (index: number, name: string) => void
   /** Add multiple presets to the list (for batch import) */
-  addPresets: (presets: PresetData[]) => void;
+  addPresets: (presets: PresetData[]) => void
   /** Snapshot current state as DSPConfig */
-  exportConfig: () => DSPConfig;
+  exportConfig: () => DSPConfig
   /** Load a DSPConfig into the store */
-  importConfig: (config: DSPConfig) => void;
+  importConfig: (config: DSPConfig) => void
   /** Reset to factory defaults */
-  resetAll: () => void;
+  resetAll: () => void
 }
 
 export const createPresetSlice: StateCreator<DSPStore, [], [], PresetSlice> = (set, get) => ({
@@ -42,52 +46,52 @@ export const createPresetSlice: StateCreator<DSPStore, [], [], PresetSlice> = (s
   setPresetName: (name) => set({ presetName: name }),
 
   savePreset: (index) => {
-    const state = get();
-    const config = state.exportConfig();
+    const state = get()
+    const config = state.exportConfig()
     set((s) => {
-      const presets = [...s.presets];
-      presets[index] = { name: config.presetName, config };
-      return { presets, presetIndex: index };
-    });
+      const presets = [...s.presets]
+      presets[index] = { name: config.presetName, config }
+      return { presets, presetIndex: index }
+    })
   },
 
   loadPreset: (index) => {
-    const state = get();
-    const preset = state.presets[index];
+    const state = get()
+    const preset = state.presets[index]
     if (preset) {
-      state.importConfig(preset.config);
-      set({ presetIndex: index });
+      state.importConfig(preset.config)
+      set({ presetIndex: index })
     }
   },
 
   saveCurrentAsPreset: () => {
-    const state = get();
-    const config = state.exportConfig();
+    const state = get()
+    const config = state.exportConfig()
     set((s) => {
-      const presets = [...s.presets, { name: config.presetName, config }];
-      return { presets, presetIndex: presets.length - 1 };
-    });
+      const presets = [...s.presets, { name: config.presetName, config }]
+      return { presets, presetIndex: presets.length - 1 }
+    })
   },
 
   deletePreset: (index) =>
     set((s) => {
-      const presets = s.presets.filter((_, i) => i !== index);
-      let presetIndex = s.presetIndex;
+      const presets = s.presets.filter((_, i) => i !== index)
+      let presetIndex = s.presetIndex
       if (presetIndex === index) {
-        presetIndex = -1; // deselect
+        presetIndex = -1 // deselect
       } else if (presetIndex > index) {
-        presetIndex--; // shift down
+        presetIndex-- // shift down
       }
-      return { presets, presetIndex };
+      return { presets, presetIndex }
     }),
 
   renamePreset: (index, name) =>
     set((s) => {
-      const presets = [...s.presets];
+      const presets = [...s.presets]
       if (presets[index]) {
-        presets[index] = { ...presets[index], name };
+        presets[index] = { ...presets[index], name }
       }
-      return { presets };
+      return { presets }
     }),
 
   addPresets: (newPresets) =>
@@ -96,7 +100,7 @@ export const createPresetSlice: StateCreator<DSPStore, [], [], PresetSlice> = (s
     })),
 
   exportConfig: () => {
-    const state = get();
+    const state = get()
     return {
       inputs: state.inputs,
       routing: state.routing,
@@ -108,14 +112,14 @@ export const createPresetSlice: StateCreator<DSPStore, [], [], PresetSlice> = (s
       customSums: state.customSums,
       inputLinkGroups: state.inputLinkGroups,
       outputLinkGroups: state.outputLinkGroups,
-    };
+    }
   },
 
   importConfig: (config) => {
     const roomEqBands: [EQBand[], EQBand[]] = [
       config.inputs[0]?.roomEqBands?.map((b) => ({ ...b })) ?? createDefaultEQBands(),
       config.inputs[1]?.roomEqBands?.map((b) => ({ ...b })) ?? createDefaultEQBands(),
-    ];
+    ]
     set({
       inputs: config.inputs,
       routing: config.routing,
@@ -126,13 +130,15 @@ export const createPresetSlice: StateCreator<DSPStore, [], [], PresetSlice> = (s
       presetName: config.presetName,
       roomEqBands,
       customSums: config.customSums ?? createDefaultCustomSums(),
-      inputLinkGroups: config.inputLinkGroups ?? ((config as unknown as { inputsLinked?: boolean }).inputsLinked ? [[0, 1]] : []),
+      inputLinkGroups:
+        config.inputLinkGroups ??
+        ((config as unknown as { inputsLinked?: boolean }).inputsLinked ? [[0, 1]] : []),
       outputLinkGroups: config.outputLinkGroups ?? [],
-    });
+    })
   },
 
   resetAll: () => {
-    const defaults = createDefaultDSPConfig();
+    const defaults = createDefaultDSPConfig()
     set({
       inputs: defaults.inputs,
       routing: defaults.routing,
@@ -148,6 +154,6 @@ export const createPresetSlice: StateCreator<DSPStore, [], [], PresetSlice> = (s
       ],
       inputLinkGroups: [],
       outputLinkGroups: [],
-    });
+    })
   },
-});
+})

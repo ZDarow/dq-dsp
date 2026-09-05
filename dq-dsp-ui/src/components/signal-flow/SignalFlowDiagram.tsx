@@ -1,35 +1,39 @@
-import { useTranslation } from 'react-i18next';
-import { useDSPStore } from '../../store/dsp-store';
-import { INPUT_COLORS, OUTPUT_COLORS } from '../../utils/colors';
-import { ProcessingBlock } from './ProcessingBlock';
-import { ConnectionLine } from './ConnectionLine';
-import { LevelMeter } from './LevelMeter';
+import { useTranslation } from 'react-i18next'
+import { useDSPStore } from '../../store/dsp-store'
+import { INPUT_COLORS, OUTPUT_COLORS } from '../../utils/colors'
+import { ProcessingBlock } from './ProcessingBlock'
+import { ConnectionLine } from './ConnectionLine'
+import { LevelMeter } from './LevelMeter'
 
 export function SignalFlowDiagram() {
-  const { t } = useTranslation();
-  const selectedBlock = useDSPStore((s) => s.selectedBlock);
-  const setSelectedBlock = useDSPStore((s) => s.setSelectedBlock);
-  const inputs = useDSPStore((s) => s.inputs);
-  const outputs = useDSPStore((s) => s.outputs);
-  const routing = useDSPStore((s) => s.routing);
+  const { t } = useTranslation()
+  const selectedBlock = useDSPStore((s) => s.selectedBlock)
+  const setSelectedBlock = useDSPStore((s) => s.setSelectedBlock)
+  const inputs = useDSPStore((s) => s.inputs)
+  const outputs = useDSPStore((s) => s.outputs)
+  const routing = useDSPStore((s) => s.routing)
 
-  const W = 900;
-  const H = 200;
+  const W = 900
+  const H = 200
 
   // Layout constants
-  const adcX = 20;
-  const inputX = 100;
-  const routingX = 280;
-  const outputX = 460;
-  const dacX = 780;
-  const blockW = 100;
-  const blockH = 36;
+  const adcX = 20
+  const inputX = 100
+  const routingX = 280
+  const outputX = 460
+  const dacX = 780
+  const blockW = 100
+  const blockH = 36
 
-  const inputY = [40, 120];
-  const outputY = [20, 60, 100, 140];
+  const inputY = [40, 120]
+  const outputY = [20, 60, 100, 140]
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="h-full min-w-[37.5rem] md:min-w-0 md:w-full" preserveAspectRatio="xMidYMid meet">
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="h-full min-w-[37.5rem] md:min-w-0 md:w-full"
+      preserveAspectRatio="xMidYMid meet"
+    >
       <defs>
         <filter id="glow">
           <feGaussianBlur stdDeviation="2" result="blur" />
@@ -43,10 +47,25 @@ export function SignalFlowDiagram() {
       {/* ADC Labels */}
       {inputY.map((y, i) => (
         <g key={`adc-${i}`}>
-          <text x={adcX} y={y + blockH / 2} fill={INPUT_COLORS[i]} fontSize={10} fontWeight={600} dominantBaseline="middle">
+          <text
+            x={adcX}
+            y={y + blockH / 2}
+            fill={INPUT_COLORS[i]}
+            fontSize={10}
+            fontWeight={600}
+            dominantBaseline="middle"
+          >
             ADC {i + 1}
           </text>
-          <line x1={adcX + 38} y1={y + blockH / 2} x2={inputX} y2={y + blockH / 2} stroke={INPUT_COLORS[i]} strokeWidth={1.5} opacity={0.5} />
+          <line
+            x1={adcX + 38}
+            y1={y + blockH / 2}
+            x2={inputX}
+            y2={y + blockH / 2}
+            stroke={INPUT_COLORS[i]}
+            strokeWidth={1.5}
+            opacity={0.5}
+          />
         </g>
       ))}
 
@@ -95,13 +114,13 @@ export function SignalFlowDiagram() {
 
       {/* Routing -> Output connections */}
       {outputY.map((oy, o) => {
-        const hasSignal = routing.some((row) => row[o]?.enabled);
+        const hasSignal = routing.some((row) => row[o]?.enabled)
         // Find color of first active input
-        let lineColor = OUTPUT_COLORS[o];
+        let lineColor = OUTPUT_COLORS[o]
         for (let i = 0; i < routing.length; i++) {
           if (routing[i][o]?.enabled) {
-            lineColor = OUTPUT_COLORS[o];
-            break;
+            lineColor = OUTPUT_COLORS[o]
+            break
           }
         }
         return (
@@ -114,7 +133,7 @@ export function SignalFlowDiagram() {
             color={lineColor}
             active={hasSignal}
           />
-        );
+        )
       })}
 
       {/* Output Processing Blocks */}
@@ -172,5 +191,5 @@ export function SignalFlowDiagram() {
         {t('signalflow.flowLabel')}
       </text>
     </svg>
-  );
+  )
 }
