@@ -41,4 +41,4 @@ jobs:
           esp_idf_version: v5.5.5
           target: esp32s3
           path: dq-dsp-firmware
-          command: "cd dq-dsp-firmware && idf.py build"
+          command: "idf.py build"
