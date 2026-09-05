@@ -1,13 +1,15 @@
 ﻿{
-    "json.schemas":  [
+    "json.schemas": [
 
-                     ],
-    "telemetry.telemetryLevel":  "off",
-    "idf.currentSetup":  "C:/Users/Mi/esp-idf-v5.5.5",
-    "cmake.sourceDirectory":  "C:/Users/Mi/dq-dsp/dq-dsp-firmware",
-    "idf.terminal":  "integrated",
-    "idf.flashTypeColor":  "white",
-    "env":  {
-                "IDF_PATH":  "C:/Users/Mi/esp-idf-v5.5.5"
-            }
+    ],
+    "telemetry.telemetryLevel": "off",
+    "idf.currentSetup": "C:/Users/Mi/esp-idf-v5.5.5",
+    "cmake.sourceDirectory": "C:/Users/Mi/dq-dsp/dq-dsp-firmware",
+    "idf.terminal": "integrated",
+    "idf.flashTypeColor": "white",
+    "cmake.configureOnOpen": false,
+    "C_Cpp.default.compileCommands": "C:/Users/Mi/dq-dsp/dq-dsp-firmware/build/compile_commands.json",
+    "env": {
+        "IDF_PATH": "C:/Users/Mi/esp-idf-v5.5.5"
+    }
 }
