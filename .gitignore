@@ -1,27 +1,73 @@
-# Playwright MCP временные артефакты
-.playwright-mcp/
+```
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Editors
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.ENV
+.python-version
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+.tox/
 
 # OS
 .DS_Store
+Thumbs.db
 
-# ESP-IDF
-build/
-**/build/
-*.bin
-sdkconfig
-sdkconfig.defaults
-managed_components/
-.espressif/
-
-# Node
-node_modules/
-
-# Debug / artifacts
-*.log
-Screenshot_*.png
-web-ui-*.png
-*.local
-.vscode/*
-!.vscode/extensions.json
-!.vscode/tasks.json
-!.vscode/settings.json
+# Compression
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+```
