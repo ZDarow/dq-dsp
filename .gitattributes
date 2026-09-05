@@ -1,0 +1,64 @@
+# Auto-detect text files and normalise to LF on commit.
+* text=auto eol=lf
+
+# C / C++ / shell / YAML / TOML / Makefile — always LF
+*.c text eol=lf
+*.h text eol=lf
+*.cpp text eol=lf
+*.hpp text eol=lf
+*.sh text eol=lf
+*.mk text eol=lf
+Makefile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+
+# TypeScript / JavaScript / JSON / Markdown — LF
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+
+# Web / docs
+*.html text eol=lf
+*.svg text eol=lf
+*.xml text eol=lf
+
+# Config / lock
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+*.editorconfig text eol=lf
+.lock text eol=lf
+package-lock.json text eol=lf
+yarn.lock text eol=lf
+dependencies.lock text eol=lf
+
+# Windows-native — CRLF (preserved)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary — leave as-is
+*.bin binary
+*.elf binary
+*.map binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+*.bz2 binary
+*.xz binary
+*.7z binary
+*.woff binary
+*.woff2 binary
