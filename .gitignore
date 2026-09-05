@@ -4,6 +4,16 @@
 # OS
 .DS_Store
 
+# IDE-специфичные кеши
+.kilo/
+.claude/
+.cursor/
+.idea/
+
+# Артефакты установки драйверов CH34x (скрипт создаёт файлы query/start)
+query
+start
+
 # ESP-IDF
 build/
 **/build/
@@ -12,6 +22,8 @@ sdkconfig
 sdkconfig.defaults
 managed_components/
 .espressif/
+dependencies.lock
+.flash_args
 
 # Node
 node_modules/
@@ -25,3 +37,6 @@ web-ui-*.png
 !.vscode/extensions.json
 !.vscode/tasks.json
 !.vscode/settings.json
+!.vscode/launch.json
+!.vscode/c_cpp_properties.json
+!.vscode/cmake-variants.json
