@@ -4,25 +4,49 @@
 
 | Компонент | Версия/требование |
 |---|---|
-| ESP-IDF | **5.5.5** (установлен в `C:\Users\Mi\esp-idf-v5.5.5`), target `esp32s3` |
-| Python | 3.14 (в виртуальном окружении IDF) |
+| ESP-IDF | **5.5.5** (target `esp32s3`) |
+| Python | 3.11+ (ESP-IDF 5.5 требует ≥ 3.8; используйте venv из инсталлятора) |
 | Node | см. `dq-dsp-ui/package.json` (`engines`) |
 | npm | в паре с Node |
+| gcc + make | для host golden-тестов прошивки (`make -C tests test-host`) |
 
-## 2. Прошивка (Windows PowerShell)
+ESP-IDF 5.5.5 официально поддерживает **Windows 10/11 (x64)**, **Linux (x64, aarch64)**,
+**macOS (x64, aarch64/Apple Silicon)**. Все команды ниже приведены для каждой ОС.
 
-### Экспорт окружения ESP-IDF
+## 2. Сборка и прошивка
 
+### 2.1 Экспорт окружения ESP-IDF
+
+Удобнее всего задать `IDF_PATH` и использовать обёртки, поставляемые с проектом.
+
+**Windows (PowerShell):**
 ```powershell
-& "C:\Users\Mi\esp-idf-v5.5.5\export.ps1" | Out-Null
+$env:IDF_PATH = "C:\esp\esp-idf"  # или ваш путь
+.\dq-dsp-firmware\idf.ps1 build
 ```
 
-### Сборка
+**Linux / macOS (bash/zsh):**
+```bash
+export IDF_PATH="$HOME/esp/esp-idf"
+./dq-dsp-firmware/idf.sh build
+```
 
+Скрипты `idf.sh` / `idf.ps1` автоматически подхватывают `IDF_PATH` из переменной
+окружения или ищут его в типичных местах (`$HOME/esp/esp-idf`,
+`$HOME/.espressif/esp-idf`, `C:\esp\esp-idf`).
+
+### 2.2 Сборка
+
+**Windows:**
 ```powershell
-cd C:\Users\Mi\dq-dsp\dq-dsp-firmware
-& "C:\Users\Mi\esp-idf-v5.5.5\export.ps1" | Out-Null
-idf.py build
+cd C:\path\to\dq-dsp\dq-dsp-firmware
+.\idf.ps1 build
+```
+
+**Linux / macOS:**
+```bash
+cd /path/to/dq-dsp/dq-dsp-firmware
+./idf.sh build
 ```
 
 Успех: `Project build complete`. Ожидаемые инфо-сообщения (не ошибки):
@@ -32,23 +56,42 @@ idf.py build
   — безвредные замечания Kconfig-парсера IDF 5.5;
 - `bootloader 36% free`, `app ... 93% free` — занятость разделов.
 
-### Поиск COM-порта
+### 2.3 Поиск COM/tty-порта
 
+**Windows (PowerShell):**
 ```powershell
 [System.IO.Ports.SerialPort]::GetPortNames()
 ```
 
-Устройство — `COM14` (CH343 USB-Serial-JTAG, основной порт). Если портов нет —
-проверить, что плата подключена USB-кабелем с данными и драйвер CH343 установлен.
-
-### Прошивка
-
-```powershell
-idf.py -p COM14 flash
+**Linux:**
+```bash
+ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null
 ```
 
-или полная команда esptool:
+**macOS:**
+```bash
+ls /dev/cu.usbserial* /dev/cu.usbmodem* 2>/dev/null
+```
 
+Обычно устройство — `COM14` (Windows, CH343 USB-Serial-JTAG) или
+`/dev/ttyUSB0` (Linux), `/dev/cu.usbserial-XXXX` (macOS). Если портов нет —
+проверьте кабель (должен быть data-кабель) и драйвер CH343/CH340.
+
+### 2.4 Прошивка
+
+**Windows:**
+```powershell
+.\idf.ps1 flash -p COM14
+```
+
+**Linux / macOS:**
+```bash
+./idf.sh flash -p /dev/ttyUSB0
+```
+
+Или полная команда esptool:
+
+**Windows:**
 ```powershell
 python -m esptool --chip esp32s3 -b 460800 --before default-reset --after hard-reset `
   write-flash --flash-mode dio --flash-size 8MB --flash-freq 40m `
@@ -57,29 +100,46 @@ python -m esptool --chip esp32s3 -b 460800 --before default-reset --after hard-r
   0x10000 build\esp32s3_audio_dsp.bin
 ```
 
+**Linux / macOS:**
+```bash
+python -m esptool --chip esp32s3 -b 460800 --before default-reset --after hard-reset \
+  write-flash --flash-mode dio --flash-size 8MB --flash-freq 40m \
+  0x0 build/bootloader/bootloader.bin \
+  0x8000 build/partition_table/partition-table.bin \
+  0x10000 build/esp32s3_audio_dsp.bin
+```
+
 Признак успеха: `Hash of data verified.` для каждого образа и `Hard resetting via RTS pin...`.
-Перед прошивкой закрыть всё, что держит порт (терминалы, UI-подключение, аудио-плеер).
+Перед прошивкой закройте всё, что держит порт (терминалы, UI-подключение, аудио-плеер).
 
-### Мониторинг логов
+### 2.5 Мониторинг логов
 
+**Windows:**
 ```powershell
-idf.py -p COM14 monitor
+.\idf.ps1 monitor -p COM14
+```
+
+**Linux / macOS:**
+```bash
+./idf.sh monitor -p /dev/ttyUSB0
 ```
 
 ## 3. UI (Vite + React)
 
-```powershell
-cd C:\Users\Mi\dq-dsp\dq-dsp-ui
+Команды идентичны на всех ОС:
+
+```bash
+cd dq-dsp-ui
 npm install
 npm run dev          # dev-сервер
 ```
 
 ### Production-сборка и проверки
 
-```powershell
+```bash
 npm run build        # tsc -b && vite build → dist/
 npx eslint .         # линт всего проекта (0 предупреждений — цель)
-npx vitest run       # unit-тесты (17/17)
+npx vitest run       # unit-тесты (64/64)
 npm audit            # уязвимости (0 — после npm audit fix)
 npm outdated         # устаревшие зависимости (анализ вручную)
 ```
@@ -89,8 +149,8 @@ npm outdated         # устаревшие зависимости (анализ
 ## 4. Порядок полной верификации изменений
 
 1. `cd dq-dsp-ui && npm run build && npx eslint . && npx vitest run`
-2. `cd dq-dsp-firmware && idf.py build`
-3. При наличии железа: `idf.py -p COMxx flash` → проверить в UI (Connect → правки
+2. `cd dq-dsp-firmware && ./idf.sh build` (Linux/macOS) или `.\idf.ps1 build` (Windows)
+3. При наличии железа: прошивка → проверить в UI (Connect → правки
    параметров → Apply → Save to Device).
 
 ## 5. Частые команды
@@ -102,6 +162,7 @@ npm outdated         # устаревшие зависимости (анализ
 | Меню конфигурации | `idf.py menuconfig` (I2S GPIO, битрейт, частота — `Kconfig.projbuild`) |
 | Обновить зависимости UI | `npm audit fix` (патчи) / `npm update` (в рамках semver) |
 | Установить managed-компоненты | автоматически при сборке (`dependencies.lock`) |
+| Host-тесты DSP (кросс-платформенные) | `cd dq-dsp-firmware/tests && make test-host` |
 
 ## 6. Версионирование
 

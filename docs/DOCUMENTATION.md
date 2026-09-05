@@ -385,7 +385,7 @@ AA 55 | length (≤252) | payload | CRC-8 (poly 0x07, init 0)
 
 | Компонент | Требование |
 |---|---|
-| ESP-IDF | 5.5.5, target `esp32s3` (Linux — `~/.espressif/tools/activate_idf_v5.5.5.sh`; Windows — `C:\Users\Mi\esp-idf-v5.5.5\export.ps1`) |
+| ESP-IDF | 5.5.5, target `esp32s3` (см. `docs/build-and-flash.md` для путей под каждую ОС) |
 | Python | 3.14 (в venv IDF) |
 | Node.js | 22+ |
 | npm | в паре с Node |
@@ -403,38 +403,80 @@ AA 55 | length (≤252) | payload | CRC-8 (poly 0x07, init 0)
 
 ### 3.3 Прошивка: сборка, прошивка, мониторинг
 
-**Linux (данная машина, ESP-IDF 5.5.5):**
+Команды идентичны на всех ОС — отличается только синтаксис оболочки. Используйте
+обёртки `idf.sh` / `idf.ps1` из каталога `dq-dsp-firmware/`.
+
+**Linux (bash/zsh):**
 
 ```bash
-# 1. Экспорт окружения ESP-IDF
-export IDF_TOOLS_PATH=/home/mi/.espressif/tools
-source ~/.espressif/tools/activate_idf_v5.5.5.sh
+# 1. Экспорт окружения ESP-IDF (любой из вариантов)
+export IDF_PATH="$HOME/esp/esp-idf"
+. "$IDF_PATH/export.sh"
+# или, если установлено через online installer:
+# . "$HOME/.espressif/tools/activate_idf_v5.5.5.sh"
 
 # 2. Сборка (из корня проекта прошивки)
-cd /home/mi/DQ-DSP/dq-dsp-firmware
-idf.py build
+cd /path/to/dq-dsp/dq-dsp-firmware
+./idf.sh build
+```
+
+**Windows (PowerShell):**
+
+```powershell
+# 1. Экспорт окружения
+$env:IDF_PATH = "C:\esp\esp-idf"
+. "$env:IDF_PATH\export.ps1"
+
+# 2. Сборка
+cd C:\path\to\dq-dsp\dq-dsp-firmware
+.\idf.ps1 build
+```
+
+**macOS (bash/zsh):**
+
+```bash
+export IDF_PATH="$HOME/esp/esp-idf"
+. "$IDF_PATH/export.sh"
+cd /path/to/dq-dsp/dq-dsp-firmware
+./idf.sh build
 ```
 
 Ожидаемый успех: `Project build complete`. Инфо-сообщения (не ошибки):
 
 - `CMake Warning ... component_validation.cmake:98` — нота tinyusb;
 - `NOTE: ... BT_NIMBLE_MESH_PROVISIONER ... 'default 0' is not a valid bool` —
-  замечания парсера Kconfig IDF 6;
+  замечания парсера Kconfig IDF 5.5;
 - `bootloader 36% free`, `app ... 93% free`.
 
-**Поиск COM-порта (Linux):**
+**Поиск COM/tty-порта:**
 
 ```bash
+# Linux
 ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null
+# macOS
+ls /dev/cu.usbserial* /dev/cu.usbmodem* 2>/dev/null
+```
+
+```powershell
+# Windows
+[System.IO.Ports.SerialPort]::GetPortNames()
 ```
 
 **Прошивка:**
 
 ```bash
-idf.py -p /dev/ttyUSB0 flash
+# Linux
+./idf.sh flash -p /dev/ttyUSB0
+# macOS
+./idf.sh flash -p /dev/cu.usbserial-XXXX
 ```
 
-или вручную через esptool:
+```powershell
+# Windows
+.\idf.ps1 flash -p COM14
+```
+
+или вручную через esptool (команды едины, пути `build/` одинаковы):
 
 ```bash
 python -m esptool --chip esp32s3 -b 460800 --before default-reset --after hard-reset \
@@ -451,11 +493,14 @@ python -m esptool --chip esp32s3 -b 460800 --before default-reset --after hard-r
 **Мониторинг логов:**
 
 ```bash
-idf.py -p /dev/ttyUSB0 monitor
+# Linux / macOS
+./idf.sh monitor -p /dev/ttyUSB0
 ```
 
-**macOS/Windows:** на других машинах используйте `idf.sh` в корне прошивки
-(обновите пути под своё окружение) или штатный `export.ps1`:
+```powershell
+# Windows
+.\idf.ps1 monitor -p COM14
+```
 
 ```bash
 ./idf.sh build

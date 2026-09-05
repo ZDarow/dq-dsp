@@ -10,7 +10,13 @@
 CC      ?= gcc
 CFLAGS  ?= -O2 -Wall
 LDLIBS  := -lm
-BINDIR  := /tmp/dq-dsp-host-tests
+
+# Cross-platform BINDIR: prefer mktemp on Unix, %TEMP%\... on Windows (Git-Bash / MSYS).
+ifeq ($(OS),Windows_NT)
+    BINDIR := $(shell cmd //c "echo %TEMP%")\dq-dsp-host-tests
+else
+    BINDIR := $(shell mktemp -d 2>/dev/null || echo /tmp/dq-dsp-host-tests)
+endif
 
 TESTS := golden_biquad golden_crc golden_crossover
 

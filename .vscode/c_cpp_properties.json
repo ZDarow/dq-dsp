@@ -2,13 +2,13 @@
     "configurations": [
         {
             "name": "ESP-IDF",
-            "compilerPath": "C:/Users/Mi/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20240530/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc.exe",
-            "compileCommands": "C:/Users/Mi/dq-dsp/dq-dsp-firmware/build/compile_commands.json",
+            "compilerPath": "${env:IDF_TOOLS_PATH}/xtensa-esp-elf/esp-13.2.0_20240530/xtensa-esp-elf/bin/xtensa-esp32s3-elf-gcc.exe",
+            "compileCommands": "${workspaceFolder}/dq-dsp-firmware/build/compile_commands.json",
             "includePath": [
                 "${workspaceFolder}/dq-dsp-firmware/main",
                 "${workspaceFolder}/dq-dsp-firmware/shared/dsp",
                 "${workspaceFolder}/dq-dsp-firmware/components/usb_device_uac/include",
-                "C:/Users/Mi/esp-idf-v5.5.5/components/**",
+                "${env:IDF_PATH}/components/**",
                 "${workspaceFolder}/**"
             ],
             "intelliSenseMode": "gcc-x64",
