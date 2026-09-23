@@ -35,7 +35,8 @@ extern void save_config_to_nvs_immediate(void);
 #define SERIAL_RX_TASK_STACK  4096
 #define SERIAL_RX_TASK_PRIO   3
 #define SERIAL_RX_TASK_CORE   0
-#define SERIAL_TX_QUEUE_LEN   16
+#define SERIAL_TX_QUEUE_LEN   32
+#define SERIAL_TX_QUEUE_WAIT_MS 5
 #define SERIAL_TX_TASK_STACK  2048
 #define SERIAL_TX_TASK_PRIO   2
 #define SERIAL_TX_TASK_CORE   0
@@ -81,8 +82,10 @@ static void serial_send_frame(const uint8_t *payload, uint8_t payload_len)
     memcpy(tx_frame.data, frame, frame_len);
     tx_frame.len = frame_len;
 
-    /* Drop frame if queue full — better than blocking the RX task. */
-    xQueueSend(tx_queue, &tx_frame, 0);
+    /* Backpressure: give the TX task a brief window (5 ms) to drain before
+     * dropping — avoids losing config-dump frames under transient load
+     * while still never blocking the RX task indefinitely (audit M4). */
+    xQueueSend(tx_queue, &tx_frame, pdMS_TO_TICKS(SERIAL_TX_QUEUE_WAIT_MS));
 }
 
 /* -----------------------------------------------------------------------

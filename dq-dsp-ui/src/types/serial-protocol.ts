@@ -46,7 +46,16 @@ export const SERIAL_MSG_PONG = 0xa1 as const
 export const SERIAL_MSG_SYNC_CONFIG = 0xa2 as const
 export const SERIAL_MSG_LOG = 0xa3 as const
 export const SERIAL_MSG_TELEMETRY = 0xa4 as const
+/**
+ * SAVE_CONFIG: host -> device, persist current config to NVS flash.
+ *
+ * Payload: [0xA5, authToken]. The auth token prevents a rogue BLE/GATT
+ * client from triggering unauthorized NVS writes (audit M2).
+ */
 export const SERIAL_MSG_SAVE_CONFIG = 0xa5 as const
+
+/** Authentication token required as the second byte of a SAVE_CONFIG payload. */
+export const SERIAL_MSG_SAVE_CONFIG_AUTH_TOKEN = 0x5a as const
 
 export type SerialMessageType =
   | typeof SERIAL_MSG_PING

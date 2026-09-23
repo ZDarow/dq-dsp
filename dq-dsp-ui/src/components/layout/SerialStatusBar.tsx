@@ -3,7 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { useDSPStore } from '../../store/dsp-store'
 import { useWebSerial } from '../../hooks/useWebSerial'
 import { createSerialMiddleware } from '../../serial/serial-middleware'
-import { encodeSerialFrame, SERIAL_MSG_SAVE_CONFIG } from '../../types/serial-protocol'
+import {
+  encodeSerialFrame,
+  SERIAL_MSG_SAVE_CONFIG,
+  SERIAL_MSG_SAVE_CONFIG_AUTH_TOKEN,
+} from '../../types/serial-protocol'
 import type { DSPConfig } from '../../types/dsp'
 import { Tooltip } from '../ui/Tooltip'
 import { useSerialSupport } from '../../hooks/useSerialSupport'
@@ -219,7 +223,13 @@ export function SerialStatusBar() {
       {serialConnected && (
         <Tooltip content={t('serial.saveTooltip')}>
           <button
-            onClick={() => sendParam(encodeSerialFrame(new Uint8Array([SERIAL_MSG_SAVE_CONFIG])))}
+            onClick={() =>
+              sendParam(
+                encodeSerialFrame(
+                  new Uint8Array([SERIAL_MSG_SAVE_CONFIG, SERIAL_MSG_SAVE_CONFIG_AUTH_TOKEN]),
+                ),
+              )
+            }
             className="text-xs px-2 py-0.5 rounded border bg-control-bg text-text-secondary border-surface-bg hover:text-text-primary hover:border-mute transition-colors"
           >
             {t('serial.saveToDevice')}

@@ -203,7 +203,18 @@ void msg_handler_process(const uint8_t *payload, uint8_t payload_len)
         return;
     }
 
-    if (first_byte == SERIAL_MSG_SAVE_CONFIG && payload_len == 1) {
+    if (first_byte == SERIAL_MSG_SAVE_CONFIG) {
+        /* Require auth token (audit M2): unauthenticated SAVE_CONFIG over BLE
+         * would let any connected GATT client wear out NVS flash or corrupt
+         * config by interrupting a write. Payload is now [0xA5, 0x5A]. */
+        if (payload_len < 2 || payload[1] != SERIAL_MSG_SAVE_CONFIG_AUTH_TOKEN) {
+            ESP_LOGW(TAG, "SAVE_CONFIG rejected (len=%d, token=0x%02X)",
+                     (int)payload_len, (int)(payload_len >= 2 ? payload[1] : 0));
+            if (s_transport->send_error) {
+                s_transport->send_error(0, BLE_STATUS_INVALID_PARAM, 0);
+            }
+            return;
+        }
         if (s_transport->save_config) {
             s_transport->save_config();
         }

@@ -61,8 +61,17 @@
 /** TELEMETRY: device -> host structured DSP stats. Payload: [0xA4, ...binary_stats] */
 #define SERIAL_MSG_TELEMETRY      0xA4
 
-/** SAVE_CONFIG: host -> device, persist current config to NVS flash. Payload: [0xA5] */
-#define SERIAL_MSG_SAVE_CONFIG    0xA5
+/** SAVE_CONFIG: host -> device, persist current config to NVS flash.
+ *
+ *  Payload: [0xA5, auth_token]. The auth_token (SERIAL_MSG_SAVE_CONFIG_AUTH_TOKEN)
+ *  prevents a rogue BLE/GATT client from triggering NVS writes, which would
+ *  erase the flash write-cycle budget and could corrupt config if interrupted
+ *  mid-write (audit M2).
+ */
+#define SERIAL_MSG_SAVE_CONFIG            0xA5
+
+/** Authentication token required as the second byte of a SAVE_CONFIG payload. */
+#define SERIAL_MSG_SAVE_CONFIG_AUTH_TOKEN 0x5A
 
 /* -----------------------------------------------------------------------
  * DSP Telemetry Structure (sent via SERIAL_MSG_TELEMETRY)

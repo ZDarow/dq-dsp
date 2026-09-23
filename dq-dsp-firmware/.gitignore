@@ -2,6 +2,10 @@ build/
 .cache/
 managed_components/
 
+# ESP-IDF build artifacts emitted to project root
+/flash_args
+/SHA256SUMS
+
 # User-local IDF config — only sdkconfig.defaults + Kconfig are tracked
 sdkconfig
 sdkconfig.old
