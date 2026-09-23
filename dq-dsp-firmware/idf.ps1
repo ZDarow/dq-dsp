@@ -24,8 +24,9 @@ if (-not $env:IDF_PATH) {
     $candidates = @(
         "$HOME\esp\esp-idf",
         "$HOME\.espressif\esp-idf",
-        "C:\esp\esp-idf",
+        "C:\Users\Mi\.espressif\",
         "C:\Espressif\frameworks\esp-idf-v5.5.5"
+        "E:\esp\v6.0.2\esp-idf"
     )
     foreach ($p in $candidates) {
         if (Test-Path -LiteralPath $p) {
